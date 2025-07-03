@@ -2,54 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>MP4-on-Marker AR</title>
-
-  <!-- A-Frame + AR.js single bundle -->
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.4/aframe/build/aframe-ar-nft.js"></script>
-
-  <style>
-    /* keep the scene inside its own box so you can add UI around it */
-    #ar-wrapper {width: 640px; margin: 0 auto;}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Libraries -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 </head>
 <body>
-<div id="ar-wrapper">
+<a-scene
+    mindar-image="imageTargetSrc: ./targets/card.mind;"
+    embedded
+    color-space="sRGB"
+    vr-mode-ui="enabled: false">
 
-  <!-- hidden HTML video (must be muted for mobile autoplay) -->
-  <video id="clip" src="./video/123.mp4"
-         autoplay muted loop playsinline style="display:none"></video>
+  <!-- Assets are pre-loaded before the camera switches on -->
+  <a-assets>
+    <video id="promo"
+           src="./video/123.mp4s"
+           preload="auto"
+           playsinline
+           webkit-playsinline
+           muted loop></video>
+  </a-assets>
 
-  <!-- single (not nested!) A-Frame scene -->
-  <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false">
+  <a-camera position="0 0 0"></a-camera>
 
-    <!-- Hiro marker. Change to your own NFT/QR pattern if you like -->
-    <a-marker preset="hiro">
-
-      <!-- plane that shows the MP4 -->
-      <a-video src="#clip"
-               width="1.5"  height="0.85"
-               rotation="-90 0 0"
-               play-on-click>
-      </a-video>
-
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
-</div>
+  <!-- Plane appears when the image target is recognised -->
+  <a-entity mindar-image-target="targetIndex: 0" id="handle">
+    <a-video src="#promo" width="1" height="0.56"></a-video>
+  </a-entity>
+</a-scene>
 
 <script>
-/* 1️⃣  tiny helper so iOS/Safari starts playback after first tap */
-AFRAME.registerComponent('play-on-click', {
+  // Play / pause exactly when the target is visible
+  AFRAME.registerComponent('video-handler', {
+    init() {
+      const vid = document.querySelector('#promo');
+      this.el.addEventListener('targetFound', () => vid.play());
+      this.el.addEventListener('targetLost',  () => vid.pause());
+    }
+  });
+  document.querySelector('#handle').setAttribute('video-handler','');
+</script>
+</body>
+
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.4/aframe/build/aframe-ar.js"></script>
+
+<a-scene embedded arjs="trackingMethod: best">
+  <a-assets>
+    <video id="mp4" src="./video/datentime_kenburns.mp4" loop muted playsinline></video>
+  </a-assets>
+
+  <a-marker preset="hiro">
+    <a-video vidhandler src="#mp4" width="2" height="1"></a-video>
+  </a-marker>
+  <a-entity camera></a-entity>
+</a-scene>
+
+<script>
+AFRAME.registerComponent('vidhandler', {
   init() {
-    const vid = document.querySelector('#clip');
-    this.el.addEventListener('click', () => { if (vid.paused) vid.play(); });
+    this.visible = false;
+    const video = document.querySelector('#mp4');
+    this.el.sceneEl.addEventListener('markerFound',  () => video.play());
+    this.el.sceneEl.addEventListener('markerLost',   () => video.pause());
   }
 });
 </script>
+</body>
 </body>
 </html>
