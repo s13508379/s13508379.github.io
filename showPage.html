@@ -1,123 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Video & 3D Viewer</title>
-    <style>
-        body {
-            background: #181818;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
+<meta charset="UTF-8">
+<title>Webcam + multiple AR overlays</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--overlay-w:320px;}                     /* default overlay size */
 
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 24px;
-            background: #232323;
-            border-radius: 12px;
-            box-shadow: 0 2px 16px #0008;
-        }
+  html,body{margin:0;height:100%;overflow:hidden;font-family:sans-serif}
+  #stage{position:relative;width:100%;height:100%;background:#000;overflow:hidden}
 
-        h1 {
-            text-align: center;
-        }
+  /*  🔴 Live camera layer  */
+  #cam{width:100%;height:100%;object-fit:cover}
 
-        video,
-        canvas {
-            display: block;
-            margin: 24px auto;
-            border-radius: 8px;
-        }
+  /*  🔴 Every overlay video gets this class  */
+  .overlay{
+    position:absolute;top:50%;left:50%;
+    width:var(--overlay-w);transform:translate(-50%,-50%);
+    pointer-events:none;                        /* clicks pass through cam */
+    mix-blend-mode:screen;                      /* lighten-blend for glow */
+  }
 
-        #camera , #overlay {
-            width: 640px;
-            height: 480px;
-            background: #000;
-        }
-
-        .section {
-            margin-bottom: 32px;
-        }
-    </style>
+  /*  🔴 Control panel  */
+  #controls{
+    position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,.6);color:#fff;padding:8px 14px;border-radius:12px;
+    display:flex;gap:10px;align-items:center;font-size:14px
+  }
+  #controls label{cursor:pointer}
+  #effects>button{margin:0 2px;padding:4px 8px;border:1px solid #888;background:#222;color:#fff;border-radius:6px;cursor:pointer}
+  #effects>button.active{background:#4caf50}
+</style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>AR Video & 3D Viewer</h1>
-        <div class="section">
-            <h2>Choose AR Video Layers</h2>
-            <div style="text-align:center;">
-                <label><input type="checkbox" class="mp4-layer" value="cat_kenburns.mp4" checked> Cat Kenburns</label>
-                <label><input type="checkbox" class="mp4-layer" value="dog_kenburns.mp4"> Dog Kenburns</label>
-                <label><input type="checkbox" class="mp4-layer" value="event_kenburns.mp4"> Event Kenburns</label>
-            </div>
-            <div id="video-layers" style="position:relative; width:640px; height:360px; margin:24px auto;">
-                <video class="ar-video" width="640" height="360"
-                    style="position:absolute; top:0; left:0; display:block;" controls loop>
-                    <source src="./video/123.mp4" type="video/mp4">
-                </video>
-                <video class="ar-video" width="640" height="360" style="position:absolute; top:0; left:0; display:none;"
-                    controls loop>
-                    <source src="./video/123.mp4" type="video/mp4">
-                </video>
-                <video class="ar-video" width="640" height="360" style="position:absolute; top:0; left:0; display:none;"
-                    controls loop>
-                    <source src="./video/123.mp4" type="video/mp4">
-                </video>
-            </div>
-        </div>
-        <div class="section">
-            <h2>Camera AR 3D Overlay</h2>
-            <video id="camera" autoplay playsinline muted></video>
-            <video id="overlay" src="./video/123.mp4" playsinline autoplay loop muted></video>
-            <p style="text-align:center;">(Live camera with 3D overlay demo)</p>
-        </div>
-    </div>
 
+<div id="stage">
+  <video id="cam" playsinline autoplay muted></video>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
+<div id="controls">
+  <label>+ Add overlay
+    <input type="file" id="filePicker" accept="video/mp4,video/webm" hidden>
+  </label>
+  <div id="effects">
+    <!-- built-in demo clips (replace with your own URLs) -->
+    <button data-src="https://cdn.example.com/effects/fire.webm">🔥 Fire</button>
+    <button data-src="https://cdn.example.com/effects/sparkle.webm">✨ Sparkle</button>
+    <button data-src="https://cdn.example.com/effects/confetti.webm">🎉 Confetti</button>
+  </div>
+</div>
 
-    <script>
-        const checkboxes = document.querySelectorAll('.mp4-layer');
-        const videos = document.querySelectorAll('.ar-video');
+<script>
+/* 1️⃣  Boot the camera */
+(async () => {
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById('cam').srcObject = stream;
+  }catch(e){
+    alert('Unable to access webcam: '+e.message);
+  }
+})();
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        const cam = document.getElementById('cam');
-        cam.srcObject = stream;
-        cam.onloadedmetadata = () => {
-            document.getElementById('overlay').play();
-        };
-        cam.play();
+/* 2️⃣  Helper: spawn an overlay video element */
+function createOverlay(src){
+  const vid = document.createElement('video');
+  vid.src = src;
+  vid.loop = true;
+  vid.muted = true;
+  vid.playsInline = true;
+  vid.autoplay = true;
+  vid.className = 'overlay';
+  /* simple drag-to-move */
+  let ox=0, oy=0;
+  vid.addEventListener('pointerdown', e=>{
+    ox = e.offsetX; oy = e.offsetY;
+    const move = m=>{
+      vid.style.left = m.pageX - ox +'px';
+      vid.style.top  = m.pageY - oy +'px';
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', ()=>document.removeEventListener('pointermove', move), {once:true});
+  });
+  document.getElementById('stage').appendChild(vid);
+}
 
-        AFRAME.registerComponent('play-on-click', {
-            init: function () {
-                const video = document.querySelector('#myVid');
-                this.el.addEventListener('click', () => {
-                    if (video.paused) video.play();
-                });
-            }
-        });
+/* 3️⃣  Local file picker */
+document.getElementById('filePicker').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(file) createOverlay(URL.createObjectURL(file));
+  e.target.value='';                             // reset so same file can be re-selected
+});
 
-        checkboxes.forEach((cb, i) => {
-            cb.addEventListener('change', () => {
-                videos[i].style.display = cb.checked ? 'block' : 'none';
-                if (cb.checked) {
-                    videos[i].play();
-                } else {
-                    videos[i].pause();
-                }
-            });
-        });
+/* 4️⃣  Built-in effects toggles */
+document.querySelectorAll('#effects button').forEach(btn=>{
+  let added = false, overlayEl;
+  btn.addEventListener('click', () => {
+    if(!added){                                   // add
+      overlayEl = createOverlay(btn.dataset.src);
+      btn.classList.add('active');
+      added = true;
+    }else{                                        // remove
+      overlayEl.remove();
+      btn.classList.remove('active');
+      added = false;
+    }
+  });
+});
+</script>
 
-
-    </script>
 </body>
-
 </html>
