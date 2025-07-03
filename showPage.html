@@ -1,65 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Webcam + MP4 AR overlay</title>
-<style>
-  /* Fill the viewport */
-  body,html{margin:0;height:100%;overflow:hidden;}
-  /* Hold both videos in the same stacking context */
-  #stage{
-    position:relative;
-    width:100%;
-    height:100%;
-    background:#000;            /* fallback if cam fails */
-    overflow:hidden;
-  }
-  /* Live camera feed */
-  #cam{
-    width:100%;                 /* keep aspect with object-fit */
-    height:100%;
-    object-fit:cover;
-  }
-  /* MP4 “AR” layer */
-  #overlay{
-    position:absolute;          /* float on top of cam */
-    top:50%;left:50%;
-    width:400px;                /* tweak to taste / use JS for dynamic sizing */
-    transform:translate(-50%,-50%); /* center */
-    pointer-events:none;        /* clicks go through */
-    mix-blend-mode:screen;      /* optional – lighter comp */
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Video & 3D Viewer</title>
+    <style>
+        body {
+            background: #181818;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 24px;
+            background: #232323;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px #0008;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        video,
+        canvas {
+            display: block;
+            margin: 24px auto;
+            border-radius: 8px;
+        }
+
+        #camera {
+            width: 640px;
+            height: 480px;
+            background: #000;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        #overlay {
+            position: absolute;
+            width: 400px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+    </style>
 </head>
+
 <body>
+    <div class="container">
+        <h1>AR Video & 3D Viewer</h1>
+        <div class="section">
+            <h2>Choose AR Video Layers</h2>
+            <div style="text-align:center;">
+                <label><input type="checkbox" class="mp4-layer" value="cat_kenburns.mp4" checked> Cat Kenburns</label>
+                <label><input type="checkbox" class="mp4-layer" value="dog_kenburns.mp4"> Dog Kenburns</label>
+                <label><input type="checkbox" class="mp4-layer" value="event_kenburns.mp4"> Event Kenburns</label>
+            </div>
+            <div id="video-layers" style="position:relative; width:640px; height:360px; margin:24px auto;">
+                <video class="ar-video" width="640" height="360"
+                    style="position:absolute; top:0; left:0; display:block;" controls loop>
+                    <source src="./video/123.mp4" type="video/mp4">
+                </video>
+                <video class="ar-video" width="640" height="360" style="position:absolute; top:0; left:0; display:none;"
+                    controls loop>
+                    <source src="./video/123.mp4" type="video/mp4">
+                </video>
+                <video class="ar-video" width="640" height="360" style="position:absolute; top:0; left:0; display:none;"
+                    controls loop>
+                    <source src="./video/123.mp4" type="video/mp4">
+                </video>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Camera AR 3D Overlay</h2>
+            <video id="camera" autoplay playsinline muted></video>
+            <video id="overlay" src="./video/123.mp4" playsinline autoplay loop muted></video>
+            <p style="text-align:center;">(Live camera with 3D overlay demo)</p>
+        </div>
+    </div>
 
-<div id="stage">
-  <video id="cam" playsinline autoplay muted></video>
 
-  <!-- Replace overlay.mp4 with your transparent or green-screen clip -->
-  <video id="overlay"
-         src="/video/123.mp4"
-         playsinline
-         autoplay
-         muted
-         loop></video>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
 
-<script>
-(async () => {
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
-    const cam = document.getElementById('cam');
-    cam.srcObject = stream;
-    cam.onloadedmetadata = () => {
-      document.getElementById('overlay').play();
-    };
-  }catch(err){
-    console.error('Camera error:', err);
-    alert('Could not access camera 💔');
-  }
-})();
-</script>
+    <script>
+        const checkboxes = document.querySelectorAll('.mp4-layer');
+        const videos = document.querySelectorAll('.ar-video');
 
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const cam = document.getElementById('cam');
+        cam.srcObject = stream;
+        cam.onloadedmetadata = () => {
+            document.getElementById('overlay').play();
+        };
+        cam.play();
+
+        AFRAME.registerComponent('play-on-click', {
+            init: function () {
+                const video = document.querySelector('#myVid');
+                this.el.addEventListener('click', () => {
+                    if (video.paused) video.play();
+                });
+            }
+        });
+
+        checkboxes.forEach((cb, i) => {
+            cb.addEventListener('change', () => {
+                videos[i].style.display = cb.checked ? 'block' : 'none';
+                if (cb.checked) {
+                    videos[i].play();
+                } else {
+                    videos[i].pause();
+                }
+            });
+        });
+
+
+    </script>
 </body>
+
 </html>
