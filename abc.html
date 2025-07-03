@@ -1,94 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WebXR true-AR MP4 demo</title>
-  <style>body{margin:0;overflow:hidden}</style>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{margin:0;overflow:hidden;font:16px/1.4 system-ui, sans-serif}
+    #fallback{padding:2em;text-align:center}
+    a{color:#06f}
+  </style>
 </head>
 <body>
+
+<div id="fallback" hidden>
+  <p><strong>This experience needs an AR-capable browser.</strong></p>
+  <p>Try Chrome 124 + on Android, or a PC with an XR headset (Quest 3/Pro in Link, Vive XR Elite, Varjo, etc.).</p>
+  <p><a href="https://immersiveweb.dev/" target="_blank">More about WebXR »</a></p>
+</div>
+
 <script type="module">
 import * as THREE   from 'https://unpkg.com/three@0.155.0/build/three.module.js';
 import { ARButton } from 'https://unpkg.com/three@0.155.0/examples/jsm/webxr/ARButton.js';
 
-/* ───────────────────────────── renderer & scene ─────────────────────────── */
+/* ── 0 · Test AR support ────────────────────────────── */
+const supported = await navigator.xr?.isSessionSupported?.('immersive-ar');
+if (!supported) {
+  document.getElementById('fallback').hidden = false;
+  throw new Error('immersive-ar not supported');
+}
+
+/* ── 1 · Renderer / scene / camera ───────────────────── */
 const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
 renderer.xr.enabled = true;
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const scene   = new THREE.Scene();
-const camera  = new THREE.PerspectiveCamera();
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera();
 
-/* ─────────────────────────────  XR entry button ─────────────────────────── */
+/* ── 2 · WebXR entry button ─────────────────────────── */
 document.body.appendChild(
   ARButton.createButton(renderer, { requiredFeatures:['hit-test','anchors'] })
-); // hit-test → plane detection · anchors → world-locked poses  :contentReference[oaicite:1]{index=1}
+);
 
-/* ─────────────────────────────  video texture  ──────────────────────────── */
-const video = document.createElement('video');
-Object.assign(video, { src:'/video/123.mp4', loop:true, muted:true, playsInline:true });
+/* ── 3 · Video element & texture (starts on first tap) ─ */
+const video = Object.assign(document.createElement('video'), {
+  src:'/video/123.mp4',
+  loop:true,
+  muted:true,
+  playsInline:true
+});
+let videoTexture; // created after first play()
 
-/* MP4 must start *inside* a gesture – we’ll call play() after user taps      */
-
-/* ─────────────────────────────  reticle (cursor)  ───────────────────────── */
+/* ── 4 · Reticle (cursor) ───────────────────────────── */
 const reticle = new THREE.Mesh(
-  new THREE.RingGeometry(0.05, 0.06, 32).rotateX(-Math.PI/2),
+  new THREE.RingGeometry(0.05,0.06,32).rotateX(-Math.PI/2),
   new THREE.MeshBasicMaterial({ color:0xffffff })
 );
 reticle.matrixAutoUpdate = false;
 reticle.visible = false;
 scene.add(reticle);
 
-/* ─────────────────────────────  hit-test setup  ─────────────────────────── */
-let hitTestSource = null;
-let viewerSpace   = null;
+/* ── 5 · Hit-test & anchor plumbing ─────────────────── */
+let hitTestSource = null, viewerSpace = null;
 
 renderer.xr.addEventListener('sessionstart', async () => {
   const session = renderer.xr.getSession();
   viewerSpace   = await session.requestReferenceSpace('viewer');
-  hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+  hitTestSource = await session.requestHitTestSource({ space:viewerSpace });
 
   session.addEventListener('end', () => { hitTestSource = viewerSpace = null; });
 });
 
-/* ─────────────────────────────  controller tap  ─────────────────────────── */
+/* ── 6 · Controller: tap to place video ─────────────── */
 const controller = renderer.xr.getController(0);
-controller.addEventListener('select', placeVideo);
+controller.addEventListener('select', place);
 scene.add(controller);
 
-async function placeVideo() {
+async function place() {
   if (!reticle.visible) return;
 
-  /* first tap starts playback */
-  if (video.paused) await video.play();
-
-  const texture = new THREE.VideoTexture(video);
-  texture.encoding = THREE.sRGBEncoding;
-  texture.generateMipmaps = false;
+  /* First tap: start playback & make the texture */
+  if (video.paused) {
+    await video.play();
+    videoTexture = new THREE.VideoTexture(video);
+    videoTexture.encoding = THREE.sRGBEncoding;
+    videoTexture.generateMipmaps = false;
+  }
 
   const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 0.6),          // 1 m × 0.6 m billboard
-    new THREE.MeshBasicMaterial({ map:texture, side:THREE.DoubleSide })
+    new THREE.PlaneGeometry(1,0.6),              // 1 m × 0.6 m
+    new THREE.MeshBasicMaterial({ map:videoTexture, side:THREE.DoubleSide })
   );
   plane.position.setFromMatrixPosition(reticle.matrix);
   plane.quaternion.setFromRotationMatrix(reticle.matrix);
   scene.add(plane);
 
-  /* pin pose to world via Anchor */
+  /* Anchor makes the pose stick as SLAM refines */
   const anchor = await renderer.xr.getSession()
-    .createAnchor(reticle.matrix, renderer.xr.getReferenceSpace());  // :contentReference[oaicite:2]{index=2}
-  anchor.context = plane; // optional bookkeeping
+    .createAnchor(reticle.matrix, renderer.xr.getReferenceSpace());
+  anchor.context = plane;      // (optional bookkeeping)
 }
 
-/* ─────────────────────────────  main loop  ──────────────────────────────── */
+/* ── 7 · Main loop ──────────────────────────────────── */
 renderer.setAnimationLoop((t, frame) => {
   if (frame && hitTestSource) {
-    const results = frame.getHitTestResults(hitTestSource);          // :contentReference[oaicite:3]{index=3}
-    if (results.length) {
-      const pose = results[0].getPose(renderer.xr.getReferenceSpace());
-      reticle.visible = true;
+    const hits = frame.getHitTestResults(hitTestSource);
+    if (hits.length) {
+      const pose = hits[0].getPose(renderer.xr.getReferenceSpace());
       reticle.matrix.fromArray(pose.transform.matrix);
+      reticle.visible = true;
     } else {
       reticle.visible = false;
     }
