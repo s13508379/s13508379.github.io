@@ -1,47 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Libraries -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-</head>
-<body>
-<a-scene
-    mindar-image="imageTargetSrc: ./targets/card.mind;"
-    embedded
-    color-space="sRGB"
-    vr-mode-ui="enabled: false">
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.4/aframe/build/aframe-ar.js"></script>
 
-  <!-- Assets are pre-loaded before the camera switches on -->
+<a-scene embedded arjs="trackingMethod: best">
   <a-assets>
-    <video id="promo"
-           src="./video/123.mp4"
-           preload="auto"
-           playsinline
-           webkit-playsinline
-           muted loop></video>
+    <video id="mp4" src="trailer.mp4" loop muted playsinline></video>
   </a-assets>
 
-  <a-camera position="0 0 0"></a-camera>
-
-  <!-- Plane appears when the image target is recognised -->
-  <a-entity mindar-image-target="targetIndex: 0" id="handle">
-    <a-video src="#promo" width="1" height="0.56"></a-video>
-  </a-entity>
+  <a-marker preset="hiro">
+    <a-video vidhandler src="#mp4" width="2" height="1"></a-video>
+  </a-marker>
+  <a-entity camera></a-entity>
 </a-scene>
 
 <script>
-  // Play / pause exactly when the target is visible
-  AFRAME.registerComponent('video-handler', {
-    init() {
-      const vid = document.querySelector('#promo');
-      this.el.addEventListener('targetFound', () => vid.play());
-      this.el.addEventListener('targetLost',  () => vid.pause());
-    }
-  });
-  document.querySelector('#handle').setAttribute('video-handler','');
+AFRAME.registerComponent('vidhandler', {
+  init() {
+    this.visible = false;
+    const video = document.querySelector('#mp4');
+    this.el.sceneEl.addEventListener('markerFound',  () => video.play());
+    this.el.sceneEl.addEventListener('markerLost',   () => video.pause());
+  }
+});
 </script>
-</body>
-</html>
