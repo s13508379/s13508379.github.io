@@ -1,119 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Webcam + fixed overlays + layer panel</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  :root{--ov-w:280px;}                       /* overlay width */
+    <meta charset="UTF-8">
+    <title>Webcam + multiple AR overlays</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        :root {
+            --overlay-w: 320px;
+        }
 
-  html,body{margin:0;height:100%;overflow:hidden;font-family:sans-serif}
-  #stage{position:relative;width:100%;height:100%;background:#000;}
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: sans-serif
+        }
 
-  #cam{width:100%;height:100%;object-fit:cover}
+        #stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden
+        }
 
-  .overlay{
-    position:absolute;width:var(--ov-w);
-    top:50%;left:50%;transform:translate(-50%,-50%);
-    pointer-events:none;mix-blend-mode:screen;
-  }
-  /* Control panes */
-  #hud{
-    position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
-    display:flex;gap:12px;align-items:center;
-  }
-  #hud>div{background:rgba(0,0,0,.6);color:#fff;border-radius:10px;padding:6px 10px}
+        #cam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
 
-  #layers li{cursor:pointer;white-space:nowrap}
-  #layers li.active{background:#4caf50}
-  .posBtn{padding:2px 6px;margin:0 2px;border:1px solid #888;border-radius:4px;background:#222;color:#fff;cursor:pointer;font-size:11px}
-</style>
+        .overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: var(--overlay-w);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+
+            mix-blend-mode: screen;
+
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, .6);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 12px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 14px
+        }
+
+        #controls label {
+            cursor: pointer
+        }
+
+        #effects>button {
+            margin: 0 2px;
+            padding: 4px 8px;
+            border: 1px solid #888;
+            background: #222;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer
+        }
+
+        #effects>button.active {
+            background: #4caf50
+        }
+
+        #posEditor {
+            background: rgba(0, 0, 0, .6);
+            color: #fff;
+            border-radius: 10px;
+            padding: 6px 10px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: 13px
+        }
+
+        #posEditor input {
+            width: 60px;
+            font-size: 13px;
+            padding: 2px;
+            border-radius: 4px;
+            border: 1px solid #888;
+            background: #222;
+            color: #fff
+        }
+
+        #applyPos {
+            padding: 3px 8px;
+            border: 1px solid #888;
+            border-radius: 6px;
+            background: #4caf50;
+            color: #fff;
+            cursor: pointer
+        }
+    </style>
+    </style>
 </head>
+
 <body>
 
-<div id="stage">
-  <video id="cam" playsinline autoplay muted></video>
-</div>
+    <div id="stage">
+        <video id="cam" playsinline autoplay muted></video>
+    </div>
 
-<!-- HUD -->
-<div id="hud">
-  <div>
-    + Add overlay
-    <input type="file" id="pick" accept="video/mp4,video/webm" hidden>
-  </div>
-  <div id="layers">
-    <strong>Layers</strong>
-    <ul style="list-style:none;margin:0;padding:0"></ul>
-  </div>
-</div>
+    <div id="controls">
+        <label>+ Add overlay
+            <input type="file" id="filePicker" accept="video/mp4,video/webm" hidden>
+        </label>
+        <div id="effects">
+            <!-- built-in demo clips (replace with your own URLs) -->
+            <button data-src="/video/123.mp4">123</button>
+            <button data-src="/video/456.mp4">456</button>
+            <button data-src="/video/123.mp4">123</button>
+        </div>
 
-<script>
-/* Boot webcam */
-(async()=>{
-  try{
-    const str=await navigator.mediaDevices.getUserMedia({video:true});
-    cam.srcObject=str;
-  }catch(e){alert('Cam error: '+e.message);}
-})();
+        <div id="posEditor" hidden>
+            top <input id="topInp" placeholder="e.g. 10%">
+            left <input id="leftInp" placeholder="e.g. 50%">
+            tx <input id="txInp" placeholder="-50%">
+            ty <input id="tyInp" placeholder="-50%">
+            <button id="applyPos">Apply</button>
+        </div>
+        <script>
 
-/* Helpers */
-const stage = document.getElementById('stage');
-const list  = document.querySelector('#layers ul');
+            (async () => {
+                try { cam.srcObject = await navigator.mediaDevices.getUserMedia({ video: true }) }
+                catch (e) { alert('Cam error: ' + e.message) }
+            })();
 
-function fixedPos(el,pos){
-  const map={
-    'TL':{top:'0%', left:'0%'},
-    'TR':{top:'0%', left:'100%', tx:'-100%'},
-    'BL':{top:'100%', left:'0%', ty:'-100%'},
-    'BR':{top:'100%', left:'100%', tx:'-100%', ty:'-100%'},
-    'C' :{top:'50%', left:'50%', tx:'-50%', ty:'-50%'}
-  };
-  const m=map[pos];
-  el.style.top=m.top; el.style.left=m.left;
-  el.style.transform=`translate(${m.tx||'0'},${m.ty||'0'})`;
-  el.dataset.pos=pos;
-}
 
-function makeButtons(el){
-  const span=document.createElement('span');
-  ['TL','TR','BL','BR','C'].forEach(p=>{
-    const b=document.createElement('button');
-    b.textContent=p; b.className='posBtn';
-    b.onclick=e=>fixedPos(el,p);
-    span.appendChild(b);
-  });
-  return span;
-}
+            const stage = document.getElementById('stage');
+            const posBox = document.getElementById('posEditor');
+            const topInp = document.getElementById('topInp');
+            const leftInp = document.getElementById('leftInp');
+            const txInp = document.getElementById('txInp');
+            const tyInp = document.getElementById('tyInp');
+            const applyBtn = document.getElementById('applyPos');
+            let currentOV = null;   // ← the overlay we’re editing
 
-function addLayerEntry(el,name){
-  const li=document.createElement('li');
-  li.textContent=name; li.onclick=()=>select(li,el);
-  li.appendChild(makeButtons(el));
-  list.appendChild(li);
-  select(li,el);          // auto-select new
-}
 
-function select(li,overlay){
-  [...list.children].forEach(x=>x.classList.remove('active'));
-  li.classList.add('active');
-  // bring selected overlay to front
-  [...stage.querySelectorAll('.overlay')].forEach((o,i)=>o.style.zIndex=i);
-  overlay.style.zIndex=9999;
-}
+            function showPosEditor(ov) {
+                currentOV = ov;
+                topInp.value = ov.style.top || '50%';
+                leftInp.value = ov.style.left || '50%';
+                // grab translateX/Y out of the transform string
+                const m = /translate\(([^,]+),\s*([^)]+)\)/.exec(ov.style.transform) || ['', '-50%', '-50%'];
+                txInp.value = m[1]; tyInp.value = m[2];
+                posBox.hidden = false;
+                // bump to front so you can see what you’re doing
+                ov.style.zIndex = 9999;
+            }
 
-/* Add from file */
-document.getElementById('pick').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f)return;
-  const url=URL.createObjectURL(f);
-  const v=document.createElement('video');
-  v.src=url; v.loop=v.muted=v.playsInline=v.autoplay=true;
-  v.className='overlay'; stage.appendChild(v);
-  addLayerEntry(v,f.name);
-  e.target.value='';
-});
 
-/* open file picker when +Add clicked */
-document.querySelector('#hud div').onclick=()=>document.getElementById('pick').click();
-</script>
+            function createOverlay(src) {
+                const vid = document.createElement('video');
+                Object.assign(vid, { src, loop: true, muted: true, playsInline: true, autoplay: true, className: 'overlay' });
+                stage.appendChild(vid);
+                showPosEditor(vid);             // auto-select when first added
+
+
+                let ox = 0, oy = 0;
+                vid.addEventListener('pointerdown', e => {
+                    ox = e.offsetX; oy = e.offsetY;
+                    const move = m => {
+                        vid.style.left = m.pageX - ox + 'px';
+                        vid.style.top = m.pageY - oy + 'px';
+                    };
+                    document.addEventListener('pointermove', move);
+                    document.addEventListener('pointerup', () => {
+                        document.removeEventListener('pointermove', move);
+                        showPosEditor(vid);         // update inputs after drag
+                    }, { once: true });
+                });
+
+
+                vid.addEventListener('click', e => { e.stopPropagation(); showPosEditor(vid) });
+                return vid;
+            }
+
+
+            filePicker.onchange = e => {
+                const f = e.target.files[0];
+                if (f) createOverlay(URL.createObjectURL(f));
+                e.target.value = '';
+            };
+
+
+            document.querySelectorAll('#effects button').forEach(btn => {
+                let ov = null;
+                btn.onclick = () => {
+                    if (!ov) {                      // add
+                        ov = createOverlay(btn.dataset.src);
+                        btn.classList.add('active');
+                    } else {                        // remove
+                        ov.remove(); ov = null; btn.classList.remove('active');
+                        if (currentOV === ov) { posBox.hidden = true; currentOV = null; }
+                    }
+                };
+            });
+
+
+            applyBtn.onclick = () => {
+                if (!currentOV) return;
+                currentOV.style.top = topInp.value || '0';
+                currentOV.style.left = leftInp.value || '0';
+                currentOV.style.transform = `translate(${txInp.value || '0'},${tyInp.value || '0'})`;
+            };
+        </script>
+
 </body>
+
 </html>
