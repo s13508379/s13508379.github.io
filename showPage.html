@@ -1,24 +1,11 @@
-<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.4/aframe/build/aframe-ar.js"></script>
-
-<a-scene embedded arjs="trackingMethod: best">
-  <a-assets>
-    <video id="mp4" src="./video/123.mp4" loop muted playsinline></video>
-  </a-assets>
-
-  <a-marker preset="hiro">
-    <a-video vidhandler src="#mp4" width="2" height="1"></a-video>
-  </a-marker>
-  <a-entity camera></a-entity>
-</a-scene>
-
-<script>
-AFRAME.registerComponent('vidhandler', {
-  init() {
-    this.visible = false;
-    const video = document.querySelector('#mp4');
-    this.el.sceneEl.addEventListener('markerFound',  () => video.play());
-    this.el.sceneEl.addEventListener('markerLost',   () => video.pause());
-  }
-});
-</script>
+<!doctype HTML>
+<html>
+<script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
+<script src="https://raw.githack.com/jeromeetienne/AR.js/2.0.5/aframe/build/aframe-ar.js"></script>
+<body style='margin : 0px; overflow: scroll;'>
+  <a-scene embedded arjs>
+    <a-box position='0 0.5 0' material='opacity: 0.5;'></a-box>
+    <a-marker-camera preset='hiro'></a-marker-camera>
+  </a-scene>
+</body>
+</html>
