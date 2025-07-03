@@ -1,146 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>AR Video & 3D Viewer</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MP4-on-Marker AR</title>
+
+  <!-- A-Frame + AR.js single bundle -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.4/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
-    body{margin:0;font-family:Arial;background:#181818;color:#fff}
-    .container{max-width:900px;margin:40px auto;padding:24px;background:#232323;
-               border-radius:12px;box-shadow:0 2px 16px #0008}
-    h1{text-align:center}
-    /* simple centering for demo */
-    #video-layers, video, canvas{display:block;margin:24px auto;border-radius:8px}
-    #canvas{width:640px;height:480px;background:#000}
+    /* keep the scene inside its own box so you can add UI around it */
+    #ar-wrapper {width: 640px; margin: 0 auto;}
   </style>
-
-  <!-- A-Frame & AR.js -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
-  <!-- Three.js only needed for the separate overlay demo -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
 </head>
-
 <body>
-<div class="container">
-  <h1>AR Video & 3D Viewer</h1>
+<div id="ar-wrapper">
 
-  <!-- ===== (A) SELECTABLE VIDEO LAYERS  ================================= -->
-  <section>
-    <h2>Choose AR Video Layers</h2>
-    <div style="text-align:center">
-      <label><input type="checkbox" class="mp4-layer" value="cat_kenburns.mp4" checked> Cat Kenburns</label>
-      <label><input type="checkbox" class="mp4-layer" value="dog_kenburns.mp4"> Dog Kenburns</label>
-      <label><input type="checkbox" class="mp4-layer" value="event_kenburns.mp4"> Event Kenburns</label>
-    </div>
+  <!-- hidden HTML video (must be muted for mobile autoplay) -->
+  <video id="clip" src="./video/123.mp4"
+         autoplay muted loop playsinline style="display:none"></video>
 
-    <div id="video-layers" style="position:relative;width:640px;height:360px">
-      <video class="ar-video" width="640" height="360" style="position:absolute" controls loop>
-        <source src="./video/123.mp4" type="video/mp4">
-      </video>
-      <video class="ar-video" width="640" height="360" style="position:absolute;display:none" controls loop>
-        <source src="./video/123.mp4" type="video/mp4">
-      </video>
-      <video class="ar-video" width="640" height="360" style="position:absolute;display:none" controls loop>
-        <source src="./video/123.mp4" type="video/mp4">
-      </video>
-    </div>
-  </section>
-
-  <!-- ===== (B) AR.JS SCENE ============================================= -->
-  <section>
-    <h2>Camera AR 3D Overlay</h2>
-
-    <!-- Hidden video used as a texture; needed for play-on-click -->
-    <video id="myVid" src="./video/123.mp4" muted loop playsinline style="display:none"></video>
-
-    <a-scene
+  <!-- single (not nested!) A-Frame scene -->
+  <a-scene
       embedded
       vr-mode-ui="enabled: false"
       arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false">
 
-      <a-marker preset="hiro">
-        <a-video
-          src="#myVid"
-          width="1.5" height="0.85"
-          rotation="-90 0 0"
-          play-on-click>
-        </a-video>
-      </a-marker>
+    <!-- Hiro marker. Change to your own NFT/QR pattern if you like -->
+    <a-marker preset="hiro">
 
-      <a-entity camera></a-entity>
-    </a-scene>
-  </section>
+      <!-- plane that shows the MP4 -->
+      <a-video src="#clip"
+               width="1.5"  height="0.85"
+               rotation="-90 0 0"
+               play-on-click>
+      </a-video>
 
-  <!-- ===== (C) OPTIONAL THREE.JS CANVAS OVERLAY (separate from AR.js) === -->
-  <section>
-    <h2>Standalone Webcam + Three.js Demo</h2>
-    <video id="webcam" style="display:none" playsinline></video>
-    <canvas id="canvas" width="640" height="480"></canvas>
-  </section>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
 </div>
 
 <script>
-/* ---------- (1) toggle visible video layers --------------------------- */
-const checkboxes = document.querySelectorAll('.mp4-layer');
-const videos     = document.querySelectorAll('.ar-video');
-
-checkboxes.forEach((cb, i) => {
-  cb.addEventListener('change', () => {
-    videos[i].style.display = cb.checked ? 'block' : 'none';
-    cb.checked ? videos[i].play() : videos[i].pause();
-  });
-});
-
-/* ---------- (2) A-Frame helper: play video after user tap ------------- */
+/* 1️⃣  tiny helper so iOS/Safari starts playback after first tap */
 AFRAME.registerComponent('play-on-click', {
   init() {
-    const video = document.querySelector('#myVid');
-    this.el.addEventListener('click', () => { if (video.paused) video.play(); });
+    const vid = document.querySelector('#clip');
+    this.el.addEventListener('click', () => { if (vid.paused) vid.play(); });
   }
 });
-
-/* ---------- (3) Optional Three.js overlay (separate canvas) ----------- */
-const webcam  = document.getElementById('webcam');
-const canvas  = document.getElementById('canvas');
-const ctx     = canvas.getContext('2d');
-
-navigator.mediaDevices.getUserMedia({video:true})
-  .then(stream => {
-    webcam.srcObject = stream;
-    webcam.onloadedmetadata = () => webcam.play();
-  })
-  .catch(err => console.error('Camera error:', err));
-
-function drawWebcam() {
-  ctx.drawImage(webcam,0,0,canvas.width,canvas.height);
-  requestAnimationFrame(drawWebcam);
-}
-webcam.addEventListener('play', drawWebcam);
-
-/* --- Three.js cube on same canvas (alpha blended) -------------------- */
-const renderer = new THREE.WebGLRenderer({canvas, alpha:true});
-renderer.setSize(canvas.width, canvas.height);
-renderer.setClearColor(0x000000, 0);
-
-const scene   = new THREE.Scene();
-const camera3 = new THREE.PerspectiveCamera(
-  70, canvas.width/canvas.height, 0.01, 10);
-camera3.position.z = 2;
-
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(0.5,0.5,0.5),
-  new THREE.MeshNormalMaterial()
-);
-scene.add(cube);
-
-(function animate(){
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
-  renderer.render(scene, camera3);
-  requestAnimationFrame(animate);
-})();
 </script>
 </body>
 </html>
