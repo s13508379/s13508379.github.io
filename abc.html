@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Webcam + fixed overlays + layer panel</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--ov-w:280px;}                       /* overlay width */
+
+  html,body{margin:0;height:100%;overflow:hidden;font-family:sans-serif}
+  #stage{position:relative;width:100%;height:100%;background:#000;}
+
+  #cam{width:100%;height:100%;object-fit:cover}
+
+  .overlay{
+    position:absolute;width:var(--ov-w);
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    pointer-events:none;mix-blend-mode:screen;
+  }
+  /* Control panes */
+  #hud{
+    position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+    display:flex;gap:12px;align-items:center;
+  }
+  #hud>div{background:rgba(0,0,0,.6);color:#fff;border-radius:10px;padding:6px 10px}
+
+  #layers li{cursor:pointer;white-space:nowrap}
+  #layers li.active{background:#4caf50}
+  .posBtn{padding:2px 6px;margin:0 2px;border:1px solid #888;border-radius:4px;background:#222;color:#fff;cursor:pointer;font-size:11px}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="cam" playsinline autoplay muted></video>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div>
+    + Add overlay
+    <input type="file" id="pick" accept="video/mp4,video/webm" hidden>
+  </div>
+  <div id="layers">
+    <strong>Layers</strong>
+    <ul style="list-style:none;margin:0;padding:0"></ul>
+  </div>
+</div>
+
+<script>
+/* Boot webcam */
+(async()=>{
+  try{
+    const str=await navigator.mediaDevices.getUserMedia({video:true});
+    cam.srcObject=str;
+  }catch(e){alert('Cam error: '+e.message);}
+})();
+
+/* Helpers */
+const stage = document.getElementById('stage');
+const list  = document.querySelector('#layers ul');
+
+function fixedPos(el,pos){
+  const map={
+    'TL':{top:'0%', left:'0%'},
+    'TR':{top:'0%', left:'100%', tx:'-100%'},
+    'BL':{top:'100%', left:'0%', ty:'-100%'},
+    'BR':{top:'100%', left:'100%', tx:'-100%', ty:'-100%'},
+    'C' :{top:'50%', left:'50%', tx:'-50%', ty:'-50%'}
+  };
+  const m=map[pos];
+  el.style.top=m.top; el.style.left=m.left;
+  el.style.transform=`translate(${m.tx||'0'},${m.ty||'0'})`;
+  el.dataset.pos=pos;
+}
+
+function makeButtons(el){
+  const span=document.createElement('span');
+  ['TL','TR','BL','BR','C'].forEach(p=>{
+    const b=document.createElement('button');
+    b.textContent=p; b.className='posBtn';
+    b.onclick=e=>fixedPos(el,p);
+    span.appendChild(b);
+  });
+  return span;
+}
+
+function addLayerEntry(el,name){
+  const li=document.createElement('li');
+  li.textContent=name; li.onclick=()=>select(li,el);
+  li.appendChild(makeButtons(el));
+  list.appendChild(li);
+  select(li,el);          // auto-select new
+}
+
+function select(li,overlay){
+  [...list.children].forEach(x=>x.classList.remove('active'));
+  li.classList.add('active');
+  // bring selected overlay to front
+  [...stage.querySelectorAll('.overlay')].forEach((o,i)=>o.style.zIndex=i);
+  overlay.style.zIndex=9999;
+}
+
+/* Add from file */
+document.getElementById('pick').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const url=URL.createObjectURL(f);
+  const v=document.createElement('video');
+  v.src=url; v.loop=v.muted=v.playsInline=v.autoplay=true;
+  v.className='overlay'; stage.appendChild(v);
+  addLayerEntry(v,f.name);
+  e.target.value='';
+});
+
+/* open file picker when +Add clicked */
+document.querySelector('#hud div').onclick=()=>document.getElementById('pick').click();
+</script>
+</body>
+</html>
