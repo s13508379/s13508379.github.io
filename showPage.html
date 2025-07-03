@@ -1,11 +1,65 @@
-<!doctype HTML>
-<html>
-<script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
-<script src="https://raw.githack.com/jeromeetienne/AR.js/2.0.5/aframe/build/aframe-ar.js"></script>
-<body style='margin : 0px; overflow: scroll;'>
-  <a-scene embedded arjs>
-    <a-box position='0 0.5 0' material='opacity: 0.5;'></a-box>
-    <a-marker-camera preset='hiro'></a-marker-camera>
-  </a-scene>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Webcam + MP4 AR overlay</title>
+<style>
+  /* Fill the viewport */
+  body,html{margin:0;height:100%;overflow:hidden;}
+  /* Hold both videos in the same stacking context */
+  #stage{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:#000;            /* fallback if cam fails */
+    overflow:hidden;
+  }
+  /* Live camera feed */
+  #cam{
+    width:100%;                 /* keep aspect with object-fit */
+    height:100%;
+    object-fit:cover;
+  }
+  /* MP4 “AR” layer */
+  #overlay{
+    position:absolute;          /* float on top of cam */
+    top:50%;left:50%;
+    width:400px;                /* tweak to taste / use JS for dynamic sizing */
+    transform:translate(-50%,-50%); /* center */
+    pointer-events:none;        /* clicks go through */
+    mix-blend-mode:screen;      /* optional – lighter comp */
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="cam" playsinline autoplay muted></video>
+
+  <!-- Replace overlay.mp4 with your transparent or green-screen clip -->
+  <video id="overlay"
+         src="/video/123.mp4"
+         playsinline
+         autoplay
+         muted
+         loop></video>
+</div>
+
+<script>
+(async () => {
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
+    const cam = document.getElementById('cam');
+    cam.srcObject = stream;
+    cam.onloadedmetadata = () => {
+      document.getElementById('overlay').play();
+    };
+  }catch(err){
+    console.error('Camera error:', err);
+    alert('Could not access camera 💔');
+  }
+})();
+</script>
+
 </body>
 </html>
