@@ -46,30 +46,5 @@
 </body>
 
 
-<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.4/aframe/build/aframe-ar.js"></script>
 
-<a-scene embedded arjs="trackingMethod: best">
-  <a-assets>
-    <video id="mp4" src="./video/datentime_kenburns.mp4" loop muted playsinline></video>
-  </a-assets>
-
-  <a-marker preset="hiro">
-    <a-video vidhandler src="#mp4" width="2" height="1"></a-video>
-  </a-marker>
-  <a-entity camera></a-entity>
-</a-scene>
-
-<script>
-AFRAME.registerComponent('vidhandler', {
-  init() {
-    this.visible = false;
-    const video = document.querySelector('#mp4');
-    this.el.sceneEl.addEventListener('markerFound',  () => video.play());
-    this.el.sceneEl.addEventListener('markerLost',   () => video.pause());
-  }
-});
-</script>
-</body>
-</body>
 </html>
