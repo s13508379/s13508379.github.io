@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Video & 3D Viewer</title>
+    <style>
+        body {
+            background: #181818;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 24px;
+            background: #232323;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px #0008;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        video,
+        canvas {
+            display: block;
+            margin: 24px auto;
+            border-radius: 8px;
+        }
+
+        #canvas {
+            width: 640px;
+            height: 480px;
+            background: #000;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>AR Video & 3D Viewer</h1>
+        <div class="section">
+            <h2>Choose AR Video Layers</h2>
+            <div style="text-align:center;">
+                <label><input type="checkbox" class="mp4-layer" value="cat_kenburns.mp4" checked> Cat Kenburns</label>
+                <label><input type="checkbox" class="mp4-layer" value="dog_kenburns.mp4"> Dog Kenburns</label>
+                <label><input type="checkbox" class="mp4-layer" value="event_kenburns.mp4"> Event Kenburns</label>
+            </div>
+            <div id="video-layers" style="position:relative; width:640px; height:360px; margin:24px auto;">
+                <video class="ar-video" width="640" height="360"
+                    style="position:absolute; top:0; left:0; display:block;" controls loop>
+                    <source src="./video/123.mp4" type="video/mp4">
+                </video>
+                <video class="ar-video" width="640" height="360" style="position:absolute; top:0; left:0; display:none;"
+                    controls loop>
+                    <source src="./video/123.mp4" type="video/mp4">
+                </video>
+                <video class="ar-video" width="640" height="360" style="position:absolute; top:0; left:0; display:none;"
+                    controls loop>
+                    <source src="./video/123.mp4" type="video/mp4">
+                </video>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Camera AR 3D Overlay</h2>
+            <a-scene embedded vr-mode-ui="enabled: false"
+                arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+                <a-scene embedded arjs="trackingMethod: best; sourceType: webcam;debugUIEnabled: false">
+                    <a-marker preset="hiro">
+                        <a-video src="./video/123.mp4" width="1.5" height="0.85" position="0 0 0" rotation="-90 0 0"
+                            play-on-click>
+
+                        </a-video>
+                    </a-marker>
+                    <p style="text-align:center;">(Live camera with 3D overlay demo)</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
+
+    <script>
+        const checkboxes = document.querySelectorAll('.mp4-layer');
+        const videos = document.querySelectorAll('.ar-video');
+
+        AFRAME.registerComponent('play-on-click', {
+            init: function () {
+                const video = document.querySelector('#myVid');
+                this.el.addEventListener('click', () => {
+                    if (video.paused) video.play();
+                });
+            }
+        });
+
+        checkboxes.forEach((cb, i) => {
+            cb.addEventListener('change', () => {
+                videos[i].style.display = cb.checked ? 'block' : 'none';
+                if (cb.checked) {
+                    videos[i].play();
+                } else {
+                    videos[i].pause();
+                }
+            });
+        });
+
+        const webcam = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            webcam.srcObject = stream;
+            webcam.onloadedmetadata = () => webcam.play();
+        });
+
+        function drawWebcam() {
+            ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(drawWebcam);
+        }
+        webcam.addEventListener('play', drawWebcam);
+
+        // --- Simple 3D Overlay with Three.js ---
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+        renderer.setSize(640, 480);
+        renderer.setClearColor(0x000000, 0);
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(70, 640 / 480, 0.01, 10);
+        camera.position.z = 2;
+        const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+        const material = new THREE.MeshNormalMaterial();
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        function animate3D() {
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate3D);
+        }
+        animate3D();
+    </script>
+</body>
+
+</html>
