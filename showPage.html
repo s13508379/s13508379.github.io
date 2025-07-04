@@ -3,7 +3,7 @@
 <head>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <style>
     #qr-container {
       position: fixed;
@@ -72,7 +72,6 @@
     <a-assets>
       <video 
         id="video" 
-        src="/video/123.mp4" 
         preload="auto" 
         loop 
         muted
@@ -80,16 +79,22 @@
         crossorigin="anonymous" 
         webkit-playsinline 
         playsinline>
+        <source src="./video/123.mp4" type="video/mp4">
+        <source src="./video/456.mp4" type="video/mp4">
+        <source src="./video/123.mp4" type="video/mp4">
+        Your browser does not support the video tag.
       </video>
     </a-assets>
     
     <a-marker type='barcode' value='1'>
       <a-plane 
-        material="src: #video; transparent: true;" 
+        material="color: #FF6B6B; opacity: 0.8;" 
         position='0 0 0' 
         rotation="-90 0 0" 
         width="2" 
-        height="2">
+        height="2"
+        animation="property: rotation; to: -90 360 0; loop: true; dur: 5000">
+        <a-text value="AR Working!" position="0 0 0.01" align="center" color="#FFFFFF"></a-text>
       </a-plane>
       <a-light type="directional" intensity="1" position="0 10 0"></a-light>
     </a-marker>
@@ -106,18 +111,36 @@
       const qrContainer = document.getElementById('qr-container');
       const toggleBtn = document.getElementById('toggle-qr');
       
-      // Generate QR code with value "1"
-      QRCode.toCanvas(qrCanvas, '1', {
-        width: 150,
-        height: 150,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
+      // Generate QR code with value "1" using qrcode-generator
+      const qr = qrcode(4, 'M');
+      qr.addData('1');
+      qr.make();
+      
+      // Create QR code as image and add to canvas
+      const qrSize = 150;
+      const canvas = qrCanvas;
+      const ctx = canvas.getContext('2d');
+      canvas.width = qrSize;
+      canvas.height = qrSize;
+      
+      const moduleCount = qr.getModuleCount();
+      const cellSize = qrSize / moduleCount;
+      
+      // Draw white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, qrSize, qrSize);
+      
+      // Draw QR code modules
+      ctx.fillStyle = '#000000';
+      for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+          if (qr.isDark(row, col)) {
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+          }
         }
-      }, function(error) {
-        if (error) console.error('QR Code generation failed:', error);
-        else console.log('QR Code generated successfully!');
-      });
+      }
+      
+      console.log('QR Code generated successfully!');
       
       // Toggle QR code display
       let qrVisible = true;
@@ -135,20 +158,41 @@
       // Handle video playback for mobile devices
       marker.addEventListener('markerFound', function() {
         console.log('QR Code detected!');
-        video.play().catch(function(error) {
-          console.log('Video play failed:', error);
-        });
+        // Check if video can play
+        if (video.readyState >= 2) {
+          video.play().catch(function(error) {
+            console.log('Video play failed:', error);
+            // Try to reload video source
+            video.load();
+          });
+        } else {
+          console.log('Video not ready, loading...');
+          video.load();
+        }
       });
       
       marker.addEventListener('markerLost', function() {
-        video.pause();
+        if (!video.paused) {
+          video.pause();
+        }
+      });
+      
+      // Handle video load events
+      video.addEventListener('loadeddata', function() {
+        console.log('Video loaded successfully!');
+      });
+      
+      video.addEventListener('error', function(e) {
+        console.log('Video error:', e);
       });
       
       // Handle user interaction requirement
       document.addEventListener('click', function() {
-        video.play().catch(function(error) {
-          console.log('Video play failed:', error);
-        });
+        if (video.readyState >= 2) {
+          video.play().catch(function(error) {
+            console.log('Video play failed:', error);
+          });
+        }
       });
     });
   </script>
