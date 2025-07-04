@@ -1,53 +1,466 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Video Layer Composer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    #container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+    }
+
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 100;
+      max-width: 300px;
+    }
+
+    .control-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #layersList {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    .layer-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 5px;
+      margin-bottom: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .layer-item.selected {
+      background: rgba(76, 175, 80, 0.3);
+    }
+
+    #info {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+  </style>
 </head>
 
-<body style='margin: 0px; overflow: hidden;'>
-  <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false;'>
-    <a-assets>
-      <video id="video" src="/video/123.mp4" preload="auto" loop muted autoplay crossorigin="anonymous"
-        webkit-playsinline playsinline>
-      </video>
-    </a-assets>
+<body>
+  <div id="container">
+    <div id="controls">
+      <h3>3D Video Layer Composer</h3>
 
-    <a-marker type='pattern' url='pattern-marker.patt'>
-      <a-plane material="src: #video; transparent: true;" position='0 0 0' rotation="-90 0 0" width="2" height="2">
-      </a-plane>
-      <a-light type="directional" intensity="1" position="0 10 0"></a-light>
-    </a-marker>
+      <div class="control-group">
+        <label>Add Video Layer:</label>
+        <input type="file" id="videoFile" accept="video/*">
+        <button onclick="addVideoLayer()">Add Layer</button>
+      </div>
 
-    <a-entity camera></a-entity>
-  </a-scene>
+      <div class="control-group">
+        <label>Position X: <span id="xValue">0</span></label>
+        <input type="range" id="xPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
 
+        <label>Position Y: <span id="yValue">0</span></label>
+        <input type="range" id="yPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+
+        <label>Position Z (Depth): <span id="zValue">0</span></label>
+        <input type="range" id="zPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+      </div>
+
+      <div class="control-group">
+        <label>Transparency: <span id="alphaValue">1.0</span></label>
+        <input type="range" id="alpha" min="0" max="1" step="0.1" value="1" oninput="updateTransparency()">
+
+        <label>Scale: <span id="scaleValue">1.0</span></label>
+        <input type="range" id="scale" min="0.1" max="5" step="0.1" value="1" oninput="updateScale()">
+      </div>
+
+      <div class="control-group">
+        <label>Rotation X: <span id="rotXValue">0</span></label>
+        <input type="range" id="rotX" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+        <label>Rotation Y: <span id="rotYValue">0</span></label>
+        <input type="range" id="rotY" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+        <label>Rotation Z: <span id="rotZValue">0</span></label>
+        <input type="range" id="rotZ" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+      </div>
+
+      <div class="control-group">
+        <button onclick="playAll()">Play All</button>
+        <button onclick="pauseAll()">Pause All</button>
+        <button onclick="resetCamera()">Reset Camera</button>
+        <button onclick="download()">Download</button>
+      </div>
+
+      <div id="layersList">
+        <h4>Layers:</h4>
+        <div id="layers"></div>
+      </div>
+    </div>
+
+    <div id="info">
+      <div>Mouse: Drag to orbit camera</div>
+      <div>Scroll: Zoom in/out</div>
+      <div>Click layer to select and edit</div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
-    // Handle video playback for mobile devices
-    document.addEventListener('DOMContentLoaded', function () {
-      const video = document.getElementById('video');
-      const marker = document.querySelector('a-marker');
+    let scene, camera, renderer, controls;
+    let videoLayers = [];
+    let selectedLayer = null;
+    let layerCounter = 0;
 
-      // Try to play video when marker is found
-      marker.addEventListener('markerFound', function () {
-        video.play().catch(function (error) {
-          console.log('Video play failed:', error);
+    function download() {
+      const exporter = new THREE.GLTFExporter();
+      exporter.parse(
+        scene,
+        function (result) {
+            saveArrayBuffer(result, 'scene.glb')},
+        { binary: true }
+      );
+    }
+
+    function saveArrayBuffer(buffer, filename) {
+      const blob = new Blob([buffer], { type: 'application/octet-stream' });
+      save(blob, filename);
+    }
+
+    function save(blob , filename) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
+
+    // Initialize Three.js scene
+    function initScene() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 0, 5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('container').appendChild(renderer.domElement);
+
+      // Add lights
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(1, 1, 1);
+      scene.add(directionalLight);
+
+      // Add grid helper
+      const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x444444);
+      scene.add(gridHelper);
+
+      // Add axes helper
+      const axesHelper = new THREE.AxesHelper(5);
+      scene.add(axesHelper);
+
+      // Mouse controls
+      addMouseControls();
+
+      animate();
+    }
+
+    // Add mouse controls for camera
+    function addMouseControls() {
+      let mouseDown = false;
+      let mouseX = 0;
+      let mouseY = 0;
+
+      renderer.domElement.addEventListener('mousedown', (event) => {
+        mouseDown = true;
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+      });
+
+      renderer.domElement.addEventListener('mousemove', (event) => {
+        if (!mouseDown) return;
+
+        const deltaX = event.clientX - mouseX;
+        const deltaY = event.clientY - mouseY;
+
+        const spherical = new THREE.Spherical();
+        spherical.setFromVector3(camera.position);
+        spherical.theta -= deltaX * 0.01;
+        spherical.phi += deltaY * 0.01;
+        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+        camera.position.setFromSpherical(spherical);
+        camera.lookAt(0, 0, 0);
+
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+      });
+
+      renderer.domElement.addEventListener('mouseup', () => {
+        mouseDown = false;
+      });
+
+      renderer.domElement.addEventListener('wheel', (event) => {
+        const scale = event.deltaY > 0 ? 1.1 : 0.9;
+        camera.position.multiplyScalar(scale);
+        camera.position.clampLength(1, 50);
+      });
+    }
+
+    // Add video layer
+    function addVideoLayer() {
+      const fileInput = document.getElementById('videoFile');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a video file first');
+        return;
+      }
+
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(file);
+      video.load();
+      video.loop = true;
+      video.muted = true;
+      video.crossOrigin = 'anonymous';
+
+      video.addEventListener('loadeddata', () => {
+        const texture = new THREE.VideoTexture(video);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide
         });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(0, 0, 0);
+
+        const layer = {
+          id: layerCounter++,
+          name: file.name,
+          mesh: mesh,
+          video: video,
+          texture: texture
+        };
+
+        videoLayers.push(layer);
+        scene.add(mesh);
+
+        updateLayersList();
+        selectLayer(layer);
+
+        // Auto-play video
+        video.play().catch(e => console.log('Video play failed:', e));
       });
 
-      // Pause video when marker is lost
-      marker.addEventListener('markerLost', function () {
-        video.pause();
+      fileInput.value = '';
+    }
+
+    // Update layers list
+    function updateLayersList() {
+      const layersDiv = document.getElementById('layers');
+      layersDiv.innerHTML = '';
+
+      videoLayers.forEach(layer => {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'layer-item';
+        layerDiv.textContent = `${layer.id}: ${layer.name}`;
+        layerDiv.onclick = () => selectLayer(layer);
+        layersDiv.appendChild(layerDiv);
+      });
+    }
+
+    // Select layer
+    function selectLayer(layer) {
+      selectedLayer = layer;
+
+      // Update UI
+      document.querySelectorAll('.layer-item').forEach(item => {
+        item.classList.remove('selected');
       });
 
-      // Handle user interaction requirement
-      document.addEventListener('click', function () {
-        video.play().catch(function (error) {
-          console.log('Video play failed:', error);
-        });
+      const layerItems = document.querySelectorAll('.layer-item');
+      if (layerItems[videoLayers.indexOf(layer)]) {
+        layerItems[videoLayers.indexOf(layer)].classList.add('selected');
+      }
+
+      // Update controls to match selected layer
+      const pos = layer.mesh.position;
+      const rot = layer.mesh.rotation;
+      const scale = layer.mesh.scale.x;
+      const alpha = layer.mesh.material.opacity;
+
+      document.getElementById('xPos').value = pos.x;
+      document.getElementById('yPos').value = pos.y;
+      document.getElementById('zPos').value = pos.z;
+      document.getElementById('rotX').value = rot.x * 180 / Math.PI;
+      document.getElementById('rotY').value = rot.y * 180 / Math.PI;
+      document.getElementById('rotZ').value = rot.z * 180 / Math.PI;
+      document.getElementById('scale').value = scale;
+      document.getElementById('alpha').value = alpha;
+
+      updateControlValues();
+    }
+
+    // Update control value displays
+    function updateControlValues() {
+      document.getElementById('xValue').textContent = document.getElementById('xPos').value;
+      document.getElementById('yValue').textContent = document.getElementById('yPos').value;
+      document.getElementById('zValue').textContent = document.getElementById('zPos').value;
+      document.getElementById('rotXValue').textContent = document.getElementById('rotX').value + '°';
+      document.getElementById('rotYValue').textContent = document.getElementById('rotY').value + '°';
+      document.getElementById('rotZValue').textContent = document.getElementById('rotZ').value + '°';
+      document.getElementById('scaleValue').textContent = document.getElementById('scale').value;
+      document.getElementById('alphaValue').textContent = document.getElementById('alpha').value;
+    }
+
+    // Update position
+    function updatePosition() {
+      if (!selectedLayer) return;
+
+      const x = parseFloat(document.getElementById('xPos').value);
+      const y = parseFloat(document.getElementById('yPos').value);
+      const z = parseFloat(document.getElementById('zPos').value);
+
+      selectedLayer.mesh.position.set(x, y, z);
+      updateControlValues();
+    }
+
+    // Update rotation
+    function updateRotation() {
+      if (!selectedLayer) return;
+
+      const x = parseFloat(document.getElementById('rotX').value) * Math.PI / 180;
+      const y = parseFloat(document.getElementById('rotY').value) * Math.PI / 180;
+      const z = parseFloat(document.getElementById('rotZ').value) * Math.PI / 180;
+
+      selectedLayer.mesh.rotation.set(x, y, z);
+      updateControlValues();
+    }
+
+    // Update transparency
+    function updateTransparency() {
+      if (!selectedLayer) return;
+
+      const alpha = parseFloat(document.getElementById('alpha').value);
+      selectedLayer.mesh.material.opacity = alpha;
+      updateControlValues();
+    }
+
+    // Update scale
+    function updateScale() {
+      if (!selectedLayer) return;
+
+      const scale = parseFloat(document.getElementById('scale').value);
+      selectedLayer.mesh.scale.set(scale, scale, scale);
+      updateControlValues();
+    }
+
+    // Play all videos
+    function playAll() {
+      videoLayers.forEach(layer => {
+        layer.video.play().catch(e => console.log('Video play failed:', e));
       });
+    }
+
+    // Pause all videos
+    function pauseAll() {
+      videoLayers.forEach(layer => {
+        layer.video.pause();
+      });
+    }
+
+    // Reset camera
+    function resetCamera() {
+      camera.position.set(0, 0, 5);
+      camera.lookAt(0, 0, 0);
+    }
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Update video textures
+      videoLayers.forEach(layer => {
+        if (layer.video.readyState === layer.video.HAVE_ENOUGH_DATA) {
+          layer.texture.needsUpdate = true;
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // Initialize scene when page loads
+    window.addEventListener('load', initScene);
   </script>
 </body>
 
