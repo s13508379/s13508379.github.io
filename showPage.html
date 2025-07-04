@@ -2,61 +2,52 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>AR.js – Video Texture on glTF Model</title>
+    <title>AR.js – MP4 on Marker (Desktop‑Friendly)</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <!-- A‑Frame & AR.js (Three.js bundled) -->
+    <!-- A‑Frame core + AR.js wrapper (bundles Three.js) -->
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ar.js@3.5.6/aframe/build/aframe-ar.js"></script>
-    <style>
-      body { margin: 0; overflow: hidden; }
-    </style>
+    <style>body{margin:0;overflow:hidden}</style>
   </head>
   <body>
-    <!--  MP4 that will be streamed onto the glTF plane's material -->
-    <video id="srcVid" src="./video/123.mp4" loop muted preload="auto" playsinline webkit-playsinline style="display:none"></video>
+    <!-- Hidden video element.  Muted so autoplay works on desktop browsers. -->
+    <video id="srcVid"
+           src="./video/123.mp4"
+           loop muted
+           preload="auto"
+           playsinline webkit-playsinline
+           crossorigin="anonymous"
+           style="display:none"></video>
 
-    <a-scene
-      embedded
-      arjs="sourceType: webcam; debugUIEnabled: false;"
-      vr-mode-ui="enabled: false"
-      renderer="logarithmicDepthBuffer: true">
+    <a-scene embedded
+             arjs="sourceType: webcam; debugUIEnabled: false;"
+             vr-mode-ui="enabled: false"
+             renderer="logarithmicDepthBuffer: true">
 
-      <!-- Marker that summons the glTF model -->
+      <!-- Pattern marker.  Replace with your own .patt file. -->
       <a-marker type="pattern" url="pattern-marker.patt" emitevents="true">
-        <!-- Load your glTF.  Inside Blender name the mesh you want the video on e.g. "ScreenPlane" -->
-        <a-entity id="model" gltf-model="assets/scene.gltf" scale="1 1 1" rotation="0 0 0" position="0 0 0"></a-entity>
+        <!-- a-video is just a plane with the video texture already set up -->
+        <!-- Width 1 unit; height matches 16:9 (0.5625).  Rotate −90° so it sits flush on the marker. -->
+        <a-video src="#srcVid"
+                 width="1"
+                 height="0.5625"
+                 rotation="-90 0 0">
+        </a-video>
       </a-marker>
 
       <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      // Wait for the GLTF to finish loading, then swap its placeholder material for a VideoTexture
-      const modelEl = document.querySelector('#model');
-      const vid = document.getElementById('srcVid');
+      const vid    = document.getElementById('srcVid');
+      const marker = document.querySelector('a-marker');
 
-      modelEl.addEventListener('model-loaded', () => {
-        // Ensure the video starts and a texture is created
-        vid.play();
-        const texture = new THREE.VideoTexture(vid);
-        texture.encoding = THREE.sRGBEncoding;
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-
-        const mesh = modelEl.getObject3D('mesh');
-        mesh.traverse(node => {
-          if (node.isMesh) {
-            // OPTIONAL: only target a named sub‑mesh
-            // if (node.name !== 'ScreenPlane') return;
-            node.material = new THREE.MeshBasicMaterial({ map: texture });
-            node.material.needsUpdate = true;
-          }
-        });
+      // start playback once user grants camera permission (first markerFound)
+      marker.addEventListener('markerFound', () => {
+        if (vid.paused) vid.play();
       });
 
-      // Pause when the marker disappears to save battery / CPU
-      const marker = document.querySelector('a-marker');
-      marker.addEventListener('markerFound', () => vid.play());
+      // pause when marker out of view to save CPU
       marker.addEventListener('markerLost', () => vid.pause());
     </script>
   </body>
