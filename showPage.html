@@ -3,13 +3,76 @@
 <head>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+  <style>
+    #qr-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 1000;
+      text-align: center;
+    }
+    #qr-container h3 {
+      margin: 0 0 10px 0;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+    #toggle-qr {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1001;
+      font-family: Arial, sans-serif;
+    }
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 15px;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      max-width: 300px;
+      z-index: 1000;
+    }
+  </style>
 </head>
 <body style='margin: 0px; overflow: hidden;'>
+  <!-- QR Code Display -->
+  <div id="qr-container">
+    <h3>Scan this QR code</h3>
+    <canvas id="qr-code"></canvas>
+    <p style="margin: 10px 0 0 0; font-size: 12px;">Print or display on another device</p>
+  </div>
+  
+  <!-- Toggle Button -->
+  <button id="toggle-qr">Hide QR</button>
+  
+  <!-- Instructions -->
+  <div id="instructions">
+    <strong>Instructions:</strong><br>
+    1. Print the QR code or display it on another device<br>
+    2. Point your camera at the QR code<br>
+    3. Tap screen to start video if needed
+  </div>
+
   <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false;'>
     <a-assets>
       <video 
         id="video" 
-        src="./video/123.mp4" 
+        src="assets/video.mp4" 
         preload="auto" 
         loop 
         muted
@@ -20,7 +83,7 @@
       </video>
     </a-assets>
     
-    <a-marker type='pattern' url='pattern-marker.patt'>
+    <a-marker type='barcode' value='1'>
       <a-plane 
         material="src: #video; transparent: true;" 
         position='0 0 0' 
@@ -35,19 +98,48 @@
   </a-scene>
 
   <script>
-    // Handle video playback for mobile devices
+    // Generate QR Code automatically
     document.addEventListener('DOMContentLoaded', function() {
+      const qrCanvas = document.getElementById('qr-code');
       const video = document.getElementById('video');
       const marker = document.querySelector('a-marker');
+      const qrContainer = document.getElementById('qr-container');
+      const toggleBtn = document.getElementById('toggle-qr');
       
-      // Try to play video when marker is found
+      // Generate QR code with value "1"
+      QRCode.toCanvas(qrCanvas, '1', {
+        width: 150,
+        height: 150,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      }, function(error) {
+        if (error) console.error('QR Code generation failed:', error);
+        else console.log('QR Code generated successfully!');
+      });
+      
+      // Toggle QR code display
+      let qrVisible = true;
+      toggleBtn.addEventListener('click', function() {
+        if (qrVisible) {
+          qrContainer.style.display = 'none';
+          toggleBtn.textContent = 'Show QR';
+        } else {
+          qrContainer.style.display = 'block';
+          toggleBtn.textContent = 'Hide QR';
+        }
+        qrVisible = !qrVisible;
+      });
+      
+      // Handle video playback for mobile devices
       marker.addEventListener('markerFound', function() {
+        console.log('QR Code detected!');
         video.play().catch(function(error) {
           console.log('Video play failed:', error);
         });
       });
       
-      // Pause video when marker is lost
       marker.addEventListener('markerLost', function() {
         video.pause();
       });
