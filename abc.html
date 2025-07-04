@@ -1,78 +1,95 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <title>MindAR 3-D Animation Demo</title>
 
   <!-- Core engines (latest as of July 2025) -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.0.0/dist/aframe.min.js"></script> <!-- A-Frame 1.0.0 -->
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>          <!-- MindAR 1.2.5 -->   <!-- :contentReference[oaicite:1]{index=1}-->
-  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.0/dist/aframe-extras.min.js"></script>           <!-- animation-mixer --> <!-- :contentReference[oaicite:2]{index=2}-->
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.3.0/dist/aframe.min.js"></script> <!-- A-Frame 1.3.0 -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <!-- MindAR 1.2.5 --> <!-- :contentReference[oaicite:1]{index=1}-->
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.0/dist/aframe-extras.min.js"></script>
+  <!-- animation-mixer --> <!-- :contentReference[oaicite:2]{index=2}-->
 
   <style>
-    body{margin:0;overflow:hidden;font-family:sans-serif}
-    #status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-            background:#000;color:#fff;z-index:10}
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif
+    }
+
+    #status {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #fff;
+      z-index: 10
+    }
   </style>
 </head>
 
 <body>
-<div id="status">Loading AR…</div>
+  <div id="status">Loading AR…</div>
 
-<a-scene
-    mindar-image="imageTargetSrc: marker.mind; maxTrack: 1; autoStart: true"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: true"
-    embedded>
+  <a-scene mindar-image="imageTargetSrc: marker.mind; maxTrack: 1; autoStart: true" vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: true" embedded>
 
-  <!-- Camera -->
-  <a-camera position="0 0 0"></a-camera>
+    <!-- Camera -->
+    <a-camera position="0 0 0"></a-camera>
 
-  <!-- Assets -->
-  <a-assets>
-    <a-asset-item id="dino"  src="models/dino.glb"></a-asset-item>
-    <a-asset-item id="robot" src="models/robot.glb"></a-asset-item>
-  </a-assets>
+    <!-- Assets -->
+    <a-assets>
+      <a-asset-item id="dino" src="models/dino.glb"></a-asset-item>
+      <a-asset-item id="robot" src="models/robot.glb"></a-asset-item>
+    </a-assets>
 
-  <!-- One marker (#0) that will hold BOTH animated models -->
-  <a-entity mindar-image-target="targetIndex:0" id="layer">
+    <!-- One marker (#0) that will hold BOTH animated models -->
+    <a-entity mindar-image-target="targetIndex:0" id="layer">
 
-    <!-- Model 1 : Dinosaur – plays its default clip once, then freezes -->
-    <a-gltf-model src="./ply/allimg.ply"
-                  position="-0.6 0 0"
-                  rotation="-90 0 0"
-                  scale="0.3 0.3 0.3"
-                  animation-mixer="loop: once; clampWhenFinished: true">
-    </a-gltf-model>
+      <!-- Model 1 : Dinosaur – plays its default clip once, then freezes -->
+      <a-gltf-model src="./ply/allimg.ply" position="-0.6 0 0" rotation="-90 0 0" scale="0.3 0.3 0.3"
+        animation-mixer="loop: once; clampWhenFinished: true">
+      </a-gltf-model>
 
-    <!-- Model 2 : Robot – starts paused (Idle). Tap to trigger ‘Dance’ once -->
-    <a-gltf-model id="robotModel"
-                  src="./ply/Asset 10.ply"
-                  position="0.6 0 0"
-                  rotation="-90 0 0"
-                  scale="0.35 0.35 0.35"
-                  animation-mixer="clip: Idle; timeScale: 0; clampWhenFinished: true">
-    </a-gltf-model>
+      <!-- Model 2 : Robot – starts paused (Idle). Tap to trigger ‘Dance’ once -->
+      <a-gltf-model id="robotModel" src="./ply/Asset 10.ply" position="0.6 0 0" rotation="-90 0 0"
+        scale="0.35 0.35 0.35" animation-mixer="clip: Idle; timeScale: 0; clampWhenFinished: true">
+      </a-gltf-model>
 
-  </a-entity>
-</a-scene>
+    </a-entity>
+  </a-scene>
 
-<script>
-    /* Hide loading overlay once MindAR is ready */
-document.querySelector('a-scene').addEventListener('renderstart', () =>
-  document.getElementById('status').remove()
-);
+  <script>
+    // Wait for A-Frame to be defined before running AR logic
+    function runWhenAFrameReady(fn) {
+      if (window.AFRAME) {
+        fn();
+      } else {
+        setTimeout(() => runWhenAFrameReady(fn), 50);
+      }
+    }
+    runWhenAFrameReady(() => {
+      /* Hide loading overlay once MindAR is ready */
+      document.querySelector('a-scene').addEventListener('renderstart', () =>
+        document.getElementById('status').remove()
+      )
+    });
 
-/* Tap anywhere to let the robot play its “Dance” clip once */
-const bot = document.getElementById('robotModel');
-document.body.addEventListener('click', () => {
-  bot.setAttribute('animation-mixer', {
-    clip: 'Dance',
-    loop: 'once',
-    timeScale: 1,
-    clampWhenFinished: true
-  });
-});
-</script>
+    /* Tap anywhere to let the robot play its “Dance” clip once */
+    const bot = document.getElementById('robotModel');
+    document.body.addEventListener('click', () => {
+      bot.setAttribute('animation-mixer', {
+        clip: 'Dance',
+        loop: 'once',
+        timeScale: 1,
+        clampWhenFinished: true
+      });
+    });
+  </script>
 </body>
+
 </html>
