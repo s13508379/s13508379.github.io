@@ -161,21 +161,48 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.min.js"></script>
   <script>
     let scene, camera, renderer, controls;
     let videoLayers = [];
     let selectedLayer = null;
     let layerCounter = 0;
 
-    function download() {
-      const exporter = new THREE.GLTFExporter();
-      exporter.parse(
-        scene,
-        function (result) {
-            saveArrayBuffer(result, 'scene.glb')},
-        { binary: true }
-      );
-    }
+
+function download() {
+  // Replace video textures with static image snapshots for export
+  const originalTextures = [];
+  videoLayers.forEach(layer => {
+    // Save original texture
+    originalTextures.push(layer.mesh.material.map);
+    // Create a canvas snapshot of the current video frame
+    const video = layer.video;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 512;
+    canvas.height = video.videoHeight || 512;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageTexture = new THREE.CanvasTexture(canvas);
+    imageTexture.minFilter = THREE.LinearFilter;
+    imageTexture.magFilter = THREE.LinearFilter;
+    layer.mesh.material.map = imageTexture;
+    layer.mesh.material.needsUpdate = true;
+  });
+
+  const exporter = new THREE.GLTFExporter();
+  exporter.parse(
+    scene,
+    function (result) {
+      // Restore original video textures
+      videoLayers.forEach((layer, i) => {
+        layer.mesh.material.map = originalTextures[i];
+        layer.mesh.material.needsUpdate = true;
+      });
+      saveArrayBuffer(result, 'scene.glb');
+    },
+    { binary: true }
+  );
+}
 
     function saveArrayBuffer(buffer, filename) {
       const blob = new Blob([buffer], { type: 'application/octet-stream' });
