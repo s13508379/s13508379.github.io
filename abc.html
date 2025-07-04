@@ -1,53 +1,81 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>AR Demo</title>
-    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
-    <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <script>
-        // We're going to register a custom event listener through a-frame that will fire
-        // whenever a marker has entered the camera view and is found through ar.js
-        AFRAME.registerComponent('registerevents', {
-            init: function() {
-                var marker = this.el;
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>AR Video Projection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #overlay { position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; background: transparent; }
+    </style>
+  </head>
+  <body>
+    <!-- Hidden video element that will be used as a texture -->
+    <video id="srcVideo" src="./video/123.mp4" loop playsinline style="display:none"></video>
 
-                // Element emits events when found and lost
-                marker.setAttribute('emitevents', 'true');
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+      import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
 
-                marker.addEventListener('markerFound', function() {
-                    // Alright, a marker has been found. Let's get the video element
-                    var vid = document.getElementById('waterVideo');
+      // Set up renderer with alpha so the real‑world camera view shows through.
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true;
+      document.body.appendChild(renderer.domElement);
 
-                    // Make sure that the video a-frame object is visible
-                    document.querySelector('#water').setAttribute('visible', true);
+      // Create an "Enter AR" button and request hit‑test capability so we can place the plane on real‑world surfaces.
+      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
-                    // Reset the video to the beginning and play it through
-                    vid.currentTime = 0;                    
-                    vid.play();
-                    
-                    // Once the video has completed, we're going to hide the a-video element
-                    // which will display the a-image element with the watch behind it
-                    vid.addEventListener('ended', function(e) {
-                        document.querySelector('#water').setAttribute('visible', false);
-                    });
-                });
-            }
-        });
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera();
+
+      // Wait for the video metadata so we know its dimensions.
+      const video = document.getElementById('srcVideo');
+      await video.play();
+
+      const texture = new THREE.VideoTexture(video);
+      texture.encoding = THREE.sRGBEncoding;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+
+      // Make a plane that matches the video's aspect ratio (width = 1 unit).
+      const aspect = video.videoHeight / video.videoWidth;
+      const geometry = new THREE.PlaneGeometry(1, aspect);
+      const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+      const videoPlane = new THREE.Mesh(geometry, material);
+      videoPlane.visible = false;   // only show after first hit‑test
+      scene.add(videoPlane);
+
+      // WebXR hit‑testing setup so we can place the video where the user taps.
+      let hitTestSource = null;
+      let localReferenceSpace = null;
+      renderer.xr.addEventListener('sessionstart', async () => {
+        const session = renderer.xr.getSession();
+        const viewerSpace = await session.requestReferenceSpace('viewer');
+        hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+        localReferenceSpace = await session.requestReferenceSpace('local');
+      });
+
+      // Each frame: look for a real‑world surface underneath the reticle, then stick the plane to it.
+      renderer.setAnimationLoop((timestamp, frame) => {
+        if (frame && hitTestSource) {
+          const hits = frame.getHitTestResults(hitTestSource);
+          if (hits.length) {
+            const hit = hits[0];
+            const pose = hit.getPose(localReferenceSpace);
+            if (!videoPlane.visible) videoPlane.visible = true;
+            videoPlane.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+            videoPlane.quaternion.set(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w);
+          }
+        }
+        renderer.render(scene, camera);
+      });
+
+      // Keep full‑screen canvas in sync when the phone rotates.
+      window.addEventListener('resize', () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
     </script>
-</head>
-<body style="margin:0; overflow:hidden;">
-    <a-scene embedded arjs="" artoolkit="">
-        <a-assets timeout="10000">
-            <img id="watchImage" src="/image/Asset 10_depth.png">
-            <video id="waterVideo" loop="false" autoplay="false" src="/video/123.mp4" preload="auto"></video>
-        </a-assets>
-        <a-marker preset="hiro" registerevents>
-            <a-image id="watch" src="/image/Asset 10_depth.png" height="2" width="1" position="0 1 0"></a-image>
-            <a-video id="water" src="/video/123.mp4" height="2" width="1" position="0 1 0" autoplay="false"></a-video>
-        </a-marker>
-        <a-entity camera></a-entity>
-    </a-scene>
-</body>
+  </body>
 </html>
