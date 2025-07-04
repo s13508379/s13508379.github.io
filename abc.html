@@ -1,121 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>WebXR true-AR MP4 demo</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    body{margin:0;overflow:hidden;font:16px/1.4 system-ui, sans-serif}
-    #fallback{padding:2em;text-align:center}
-    a{color:#06f}
-  </style>
+<meta charset="utf-8"/>
+<title>MiDaS ➜ 3-D Ken Burns ➜ MP4 (client-side)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+ body{margin:0;font:14px/1.4 system-ui;background:#111;color:#eee;display:flex;flex-direction:column;height:100vh}
+ #ui{padding:8px;background:#222;display:flex;gap:8px;align-items:center}
+ #gl{flex:1}
+ button,input{font:inherit}
+ a{color:#0af}
+</style>
 </head>
 <body>
-
-<div id="fallback" hidden>
-  <p><strong>This experience needs an AR-capable browser.</strong></p>
-  <p>Try Chrome 124 + on Android, or a PC with an XR headset (Quest 3/Pro in Link, Vive XR Elite, Varjo, etc.).</p>
-  <p><a href="https://immersiveweb.dev/" target="_blank">More about WebXR »</a></p>
+<div id="ui">
+  <input type="file" id="picker" accept="image/*">
+  <button id="makeVid" disabled>Render MP4</button>
+  <a id="download" hidden>⬇︎ download</a>
+  <span id="log"></span>
 </div>
+<canvas id="gl"></canvas>
+
+<!-- ── deps ─────────────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@2.0.1/dist/mp4-muxer.min.js"></script>
 
 <script type="module">
-import * as THREE   from 'https://unpkg.com/three@0.155.0/build/three.module.js';
-import { ARButton } from 'https://unpkg.com/three@0.155.0/examples/jsm/webxr/ARButton.js';
+const log = msg => document.getElementById('log').textContent = msg;
 
-/* ── 0 · Test AR support ────────────────────────────── */
-const supported = await navigator.xr?.isSessionSupported?.('immersive-ar');
-if (!supported) {
-  document.getElementById('fallback').hidden = false;
-  throw new Error('immersive-ar not supported');
+const ORT = globalThis.ort;                      // onnxruntime-web namespace
+ORT.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
+ORT.env.logLevel = 'warning';
+
+const modelURL = 'midas_v21_small_256.onnx';
+let session;
+log('loading MiDaS…');
+session = await ORT.InferenceSession.create(modelURL, {executionProviders:['wasm']});
+log('MiDaS ready');
+
+const inTensor  = new ORT.Tensor('float32', new Float32Array(1*3*256*256), [1,3,256,256]);
+
+/* ─────────── Three.js scene ─────────── */
+const canvas   = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+const scene    = new THREE.Scene();
+const camera   = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
+camera.position.z = 1;
+
+let plane, depthTexture;
+
+function resize() {
+  const {clientWidth:w, clientHeight:h} = canvas;
+  renderer.setSize(w, h, false);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
 }
+window.addEventListener('resize', resize); resize();
 
-/* ── 1 · Renderer / scene / camera ───────────────────── */
-const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-renderer.xr.enabled = true;
-renderer.setSize(innerWidth, innerHeight);
-document.body.appendChild(renderer.domElement);
+/* ─────────── UI: load image ─────────── */
+let imgTex;
+document.getElementById('picker').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  log('reading '+file.name);
+  const img = new Image;
+  img.src = URL.createObjectURL(file);
+  await img.decode();
 
-const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera();
-
-/* ── 2 · WebXR entry button ─────────────────────────── */
-document.body.appendChild(
-  ARButton.createButton(renderer, { requiredFeatures:['hit-test','anchors'] })
-);
-
-/* ── 3 · Video element & texture (starts on first tap) ─ */
-const video = Object.assign(document.createElement('video'), {
-  src:'/video/123.mp4',
-  loop:true,
-  muted:true,
-  playsInline:true
-});
-let videoTexture; // created after first play()
-
-/* ── 4 · Reticle (cursor) ───────────────────────────── */
-const reticle = new THREE.Mesh(
-  new THREE.RingGeometry(0.05,0.06,32).rotateX(-Math.PI/2),
-  new THREE.MeshBasicMaterial({ color:0xffffff })
-);
-reticle.matrixAutoUpdate = false;
-reticle.visible = false;
-scene.add(reticle);
-
-/* ── 5 · Hit-test & anchor plumbing ─────────────────── */
-let hitTestSource = null, viewerSpace = null;
-
-renderer.xr.addEventListener('sessionstart', async () => {
-  const session = renderer.xr.getSession();
-  viewerSpace   = await session.requestReferenceSpace('viewer');
-  hitTestSource = await session.requestHitTestSource({ space:viewerSpace });
-
-  session.addEventListener('end', () => { hitTestSource = viewerSpace = null; });
-});
-
-/* ── 6 · Controller: tap to place video ─────────────── */
-const controller = renderer.xr.getController(0);
-controller.addEventListener('select', place);
-scene.add(controller);
-
-async function place() {
-  if (!reticle.visible) return;
-
-  /* First tap: start playback & make the texture */
-  if (video.paused) {
-    await video.play();
-    videoTexture = new THREE.VideoTexture(video);
-    videoTexture.encoding = THREE.sRGBEncoding;
-    videoTexture.generateMipmaps = false;
+  /* preprocess to 256×256 RGB & feed MiDaS */
+  const canvas256 = Object.assign(document.createElement('canvas'), {width:256,height:256});
+  canvas256.getContext('2d').drawImage(img,0,0,256,256);
+  const {data} = canvas256.getContext('2d').getImageData(0,0,256,256);
+  for (let i=0;i<data.length;i+=4){
+    const r=data[i]/255,g=data[i+1]/255,b=data[i+2]/255;
+    const j=i>>2;
+    inTensor.data[j          ] = r;
+    inTensor.data[256*256+j ] = g;
+    inTensor.data[2*256*256+j] = b;
   }
+  log('running depth inference…');
+  const output = await session.run({input:inTensor});
+  const depth  = output[session.outputNames[0]].data;   // Float32Array 1×1×256×256
+  /* normalize to [0,1] */
+  const min = Math.min(...depth), max = Math.max(...depth);
+  const depthPixels = new Uint8Array(256*256);
+  for (let i=0;i<depth.length;i++) depthPixels[i] = 255*(depth[i]-min)/(max-min);
 
-  const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1,0.6),              // 1 m × 0.6 m
-    new THREE.MeshBasicMaterial({ map:videoTexture, side:THREE.DoubleSide })
-  );
-  plane.position.setFromMatrixPosition(reticle.matrix);
-  plane.quaternion.setFromRotationMatrix(reticle.matrix);
+  depthTexture = new THREE.DataTexture(depthPixels,256,256,THREE.LuminanceFormat);
+  depthTexture.needsUpdate = true;
+
+  /* texture for color */
+  imgTex = new THREE.Texture(img);
+  imgTex.needsUpdate = true;
+
+  /* build / replace plane */
+  if (plane) scene.remove(plane);
+  const mat = new THREE.MeshStandardMaterial({
+    map: imgTex,
+    displacementMap: depthTexture,
+    displacementScale: 0.2
+  });
+  plane = new THREE.Mesh(new THREE.PlaneGeometry(1, img.height/img.width), mat);
   scene.add(plane);
 
-  /* Anchor makes the pose stick as SLAM refines */
-  const anchor = await renderer.xr.getSession()
-    .createAnchor(reticle.matrix, renderer.xr.getReferenceSpace());
-  anchor.context = plane;      // (optional bookkeeping)
-}
+  /* lighting so displacement gets shading */
+  scene.add(new THREE.AmbientLight(0xffffff,0.8));
+  const dir = new THREE.DirectionalLight(0xffffff,0.4); dir.position.set(0,0,1);
+  scene.add(dir);
 
-/* ── 7 · Main loop ──────────────────────────────────── */
-renderer.setAnimationLoop((t, frame) => {
-  if (frame && hitTestSource) {
-    const hits = frame.getHitTestResults(hitTestSource);
-    if (hits.length) {
-      const pose = hits[0].getPose(renderer.xr.getReferenceSpace());
-      reticle.matrix.fromArray(pose.transform.matrix);
-      reticle.visible = true;
-    } else {
-      reticle.visible = false;
-    }
+  document.getElementById('makeVid').disabled=false;
+  log('preview ready – click “Render MP4”');
+  render();                           // first preview frame
+};
+
+function render(){ renderer.render(scene,camera); }
+
+/* ─────────── Render 150 frames & encode ─────────── */
+document.getElementById('makeVid').onclick = async ()=>{
+  const FPS=30, SECS=5, total=FPS*SECS;
+  const stream   = canvas.captureStream(FPS);
+  const track    = stream.getVideoTracks()[0];
+  const encoder  = new VideoEncoder({
+    output: (chunk)=>muxer.addVideoChunk(chunk),
+    error: (e)=>console.error(e)
+  });
+  encoder.configure({
+    codec:'avc1.42E01E',   // baseline H264
+    width:canvas.width,
+    height:canvas.height,
+    framerate:FPS,
+    bitrate:2_000_000
+  });
+  const muxer = new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget()});
+
+  log('encoding…');
+  for(let f=0;f<total;f++){
+    const t=f/total;
+    camera.position.z = 1 - 0.3*t;    // simple push-in
+    camera.position.x = 0.05*Math.sin(t*Math.PI*2); // slight orbit
+    camera.lookAt(0,0,0);
+    render();
+
+    const frame = new VideoFrame(canvas, {timestamp: f*1e6/FPS});
+    encoder.encode(frame);
+    frame.close();
+    await new Promise(r=>requestAnimationFrame(r));
   }
-  renderer.render(scene, camera);
-});
+  await encoder.flush();
+  const mp4buf = muxer.finalize();
+  const url = URL.createObjectURL(new Blob([mp4buf],{type:'video/mp4'}));
+  const a = document.getElementById('download');
+  a.href=url; a.download='result.mp4'; a.hidden=false;
+  log('done ✔︎');
+};
 </script>
 </body>
 </html>

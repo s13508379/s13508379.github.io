@@ -1,222 +1,638 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Webcam + multiple AR overlays</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Video Mixer - MP4 Layering with Webcam</title>
     <style>
-        :root {
-            --overlay-w: 320px;
-        }
-
-        html,
-        body {
+        * {
             margin: 0;
-            height: 100%;
-            overflow: hidden;
-            font-family: sans-serif
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        #stage {
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .video-container {
             position: relative;
             width: 100%;
-            height: 100%;
+            height: 500px;
             background: #000;
-            overflow: hidden
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
         }
 
-        #cam {
+        #webcamVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover
+            object-fit: cover;
         }
 
-        .overlay {
+        .video-layer {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: var(--overlay-w);
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
             mix-blend-mode: screen;
-
         }
 
-        #controls {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, .6);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 12px;
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-group h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        .file-input input[type="file"] {
+            display: none;
+        }
+
+        .file-input label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .file-input label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider-container {
+            margin: 15px 0;
+        }
+
+        .slider-container label {
+            display: block;
+            color: white;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .video-list {
+            margin-top: 15px;
+        }
+
+        .video-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .video-item .filename {
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .video-item .controls {
             display: flex;
             gap: 10px;
             align-items: center;
-            font-size: 14px
         }
 
-        #controls label {
-            cursor: pointer
+        .video-item input[type="range"] {
+            width: 80px;
         }
 
-        #posEditor {
-            background: rgba(0, 0, 0, .6);
-            color: #fff;
-            border-radius: 10px;
-            padding: 6px 10px;
+        .ar-effects {
             display: flex;
-            gap: 6px;
-            align-items: center;
-            font-size: 13px
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        #posEditor input {
-            width: 60px;
-            font-size: 13px;
-            padding: 2px;
-            border-radius: 4px;
-            border: 1px solid #888;
-            background: #222;
-            color: #fff
+        .effect-btn {
+            padding: 8px 16px;
+            background: linear-gradient(45deg, #00b894, #00a085);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
         }
-    </style>
+
+        .effect-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .effect-btn.active {
+            background: linear-gradient(45deg, #e17055, #d63031);
+        }
+
+        .status {
+            color: white;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .video-container {
+                height: 300px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
     </style>
 </head>
-
 <body>
-
-    <div id="stage">
-        <video id="cam" playsinline autoplay muted></video>
-    </div>
-
-    <div id="controls">
-        <label>+ Add overlay
-            <input type="file" id="filePicker" accept="video/mp4,video/webm" hidden>
-        </label>
-
-        <button id="listBtn">List overlays</button>
-        <label id="ovList">Overlays:
-            <ul style="list-style: none; margin: 0; padding: 0"></ul>
-        </label>
-
-        <div id="item">
-            <strong></strong>
-            <ul style="list-style: none; margin: 0; padding: 0"></ul>
-            <script>
-
-                (async () => {
-                    try { cam.srcObject = await navigator.mediaDevices.getUserMedia({ video: true }) }
-                    catch (e) { alert('Cam error: ' + e.message) }
-                })();
-
-
-                const stage = document.getElementById('stage');
-                const filePicker = document.getElementById('filePicker');
-                const topInp = document.getElementById('topInp');
-                const leftInp = document.getElementById('leftInp');
-                const txInp = document.getElementById('txInp');
-                const tyInp = document.getElementById('tyInp');
-
-
-                function showPosEditor(ov) {
-                    topInp.value = ov.style.top || '50%';
-                    leftInp.value = ov.style.left || '50%';
-                    const m = /translate\(([^,]+),\s*([^)]+)\)/.exec(ov.style.transform) || ['', '-50%', '-50%'];
-                    txInp.value = m[1];
-                    tyInp.value = m[2];
-                    posBox.hidden = false;
-                    ov.style.zIndex = 9999;
-                }
-
-
-                function createOverlay(src) {
-                    const vid = document.createElement('video');
-                    Object.assign(vid, { src, loop: true, muted: true, playsInline: true, autoplay: true, className: 'overlay' });
-                    stage.appendChild(vid);
-                    showPosEditor(vid);             // auto-select when first added
-
-                    let ox = 0, oy = 0;
-                    vid.addEventListener('pointerdown', e => {
-                        ox = e.offsetX; oy = e.offsetY;
-                        const move = m => {
-                            vid.style.left = m.pageX - ox + 'px';
-                            vid.style.top = m.pageY - oy + 'px';
-                        };
-                        document.addEventListener('pointermove', move);
-                        document.addEventListener('pointerup', () => {
-                            document.removeEventListener('pointermove', move);
-                            showPosEditor(vid);         // update inputs after drag
-                        }, { once: true });
-                    });
-
-
-                    vid.addEventListener('click', e => { e.stopPropagation(); showPosEditor(vid) });
-                    return vid;
-                }
-
-                filePicker.onchange = e => {
-                    const f = e.target.files[0];
-                    if (f) createOverlay(URL.createObjectURL(f));
-                    e.target.value = '';
-                };
-
-                document.querySelectorAll('#filePickers').forEach(btn => {
-                    let ov = null;
-                    btn.onclick = () => {
-                        ov = createOverlay(btn.dataset.src);
-                        btn.classList.add('active');
-                    };
-                });
-
-                document.getElementById('listBtn').onclick = () => {
-                    rebuildList();
-                };
-
-                function rebuildList() {
-                    const list = document.getElementById('ovList');
-                    list.innerHTML = '';
-
-                    [...document.querySelectorAll('.overlay')].forEach((ov, i) => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-      #${i}
-      <input class="top"  value="${ov.style.top || '50%'}" size="5">
-      <input class="left" value="${ov.style.left || '50%'}" size="5">
-      <input class="tx" value="${ov.style.transform.match(/translate\(([^,]+),\s*([^)]+)\)/)?.[1] || '-50%'}" size="5">
-      <input class="ty" value="${ov.style.transform.match(/translate\(([^,]+),\s*([^)]+)\)/)?.[2] || '-50%'}" size="5">
-      <input class ="zIndex" value="${ov.style.zIndex || 9999}" size="5">
-      <button class="edit">edit</button>
-      <button class="delete">delete</button>
-    `;
-
-                        li.querySelector('.edit').onclick = () => {
-                            ov.style.top = li.querySelector('.top').value;
-                            ov.style.left = li.querySelector('.left').value;
-                            ov.style.transform = `translate(${li.querySelector('.tx').value},${li.querySelector('.ty').value})`;
-                            ov.style.zIndex = 9999; // bring to front
-                        };
-                        list.appendChild(li);
-                    });
-                }
-
-
-                applyBtn.onclick = () => {
-                    if (!currentOV) return;
-                    currentOV.style.top = topInp.value || '0';
-                    currentOV.style.left = leftInp.value || '0';
-                    currentOV.style.transform = `translate(${txInp.value || '0'},${tyInp.value || '0'})`;
-                };
-            </script>
-
+    <div class="container">
+        <h1>AR Video Mixer</h1>
+        
+        <div class="video-container">
+            <video id="webcamVideo" autoplay muted></video>
+            <canvas id="arCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
         </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3>📹 Webcam Control</h3>
+                <button id="startWebcam" class="btn">Start Webcam</button>
+                <button id="stopWebcam" class="btn" disabled>Stop Webcam</button>
+                
+                <div class="slider-container">
+                    <label for="webcamOpacity">Webcam Opacity:</label>
+                    <input type="range" id="webcamOpacity" class="slider" min="0" max="1" step="0.1" value="1">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>🎬 Video Layers</h3>
+                <div class="file-input">
+                    <input type="file" id="videoInput" accept="video/mp4,video/webm,video/ogg" multiple>
+                    <label for="videoInput">Add MP4 Videos</label>
+                </div>
+                
+                <div id="videoList" class="video-list"></div>
+            </div>
+            
+            <div class="control-group">
+                <h3>✨ AR Effects</h3>
+                <div class="ar-effects">
+                    <button class="effect-btn" data-effect="none">None</button>
+                    <button class="effect-btn" data-effect="particles">Particles</button>
+                    <button class="effect-btn" data-effect="glow">Glow</button>
+                    <button class="effect-btn" data-effect="mirror">Mirror</button>
+                    <button class="effect-btn" data-effect="wave">Wave</button>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="effectIntensity">Effect Intensity:</label>
+                    <input type="range" id="effectIntensity" class="slider" min="0" max="1" step="0.1" value="0.5">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>🎛️ Mix Settings</h3>
+                <div class="slider-container">
+                    <label for="globalOpacity">Global Mix Opacity:</label>
+                    <input type="range" id="globalOpacity" class="slider" min="0" max="1" step="0.1" value="0.8">
+                </div>
+                
+                <div class="slider-container">
+                    <label for="blendMode">Blend Mode:</label>
+                    <select id="blendMode" style="width: 100%; padding: 8px; border-radius: 5px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                        <option value="normal">Normal</option>
+                        <option value="screen" selected>Screen</option>
+                        <option value="overlay">Overlay</option>
+                        <option value="multiply">Multiply</option>
+                        <option value="soft-light">Soft Light</option>
+                        <option value="hard-light">Hard Light</option>
+                        <option value="difference">Difference</option>
+                        <option value="exclusion">Exclusion</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Ready to start mixing! 🎬</div>
     </div>
 
-
-
+    <script>
+        class ARVideoMixer {
+            constructor() {
+                this.webcamStream = null;
+                this.videoLayers = [];
+                this.currentEffect = 'none';
+                this.effectIntensity = 0.5;
+                this.arCanvas = document.getElementById('arCanvas');
+                this.arCtx = this.arCanvas.getContext('2d');
+                this.animationId = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.setupCanvas();
+                this.startARLoop();
+            }
+            
+            setupEventListeners() {
+                // Webcam controls
+                document.getElementById('startWebcam').addEventListener('click', () => this.startWebcam());
+                document.getElementById('stopWebcam').addEventListener('click', () => this.stopWebcam());
+                
+                // Video input
+                document.getElementById('videoInput').addEventListener('change', (e) => this.handleVideoInput(e));
+                
+                // Effect controls
+                document.querySelectorAll('.effect-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.setEffect(e.target.dataset.effect));
+                });
+                
+                // Sliders
+                document.getElementById('webcamOpacity').addEventListener('input', (e) => this.setWebcamOpacity(e.target.value));
+                document.getElementById('effectIntensity').addEventListener('input', (e) => this.effectIntensity = parseFloat(e.target.value));
+                document.getElementById('globalOpacity').addEventListener('input', (e) => this.setGlobalOpacity(e.target.value));
+                document.getElementById('blendMode').addEventListener('change', (e) => this.setBlendMode(e.target.value));
+            }
+            
+            setupCanvas() {
+                const container = document.querySelector('.video-container');
+                this.arCanvas.width = container.offsetWidth;
+                this.arCanvas.height = container.offsetHeight;
+                
+                window.addEventListener('resize', () => {
+                    this.arCanvas.width = container.offsetWidth;
+                    this.arCanvas.height = container.offsetHeight;
+                });
+            }
+            
+            async startWebcam() {
+                try {
+                    this.webcamStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 1280, height: 720 },
+                        audio: false
+                    });
+                    
+                    const webcamVideo = document.getElementById('webcamVideo');
+                    webcamVideo.srcObject = this.webcamStream;
+                    
+                    document.getElementById('startWebcam').disabled = true;
+                    document.getElementById('stopWebcam').disabled = false;
+                    
+                    this.updateStatus('Webcam started! 📹');
+                } catch (error) {
+                    this.updateStatus('Error starting webcam: ' + error.message);
+                }
+            }
+            
+            stopWebcam() {
+                if (this.webcamStream) {
+                    this.webcamStream.getTracks().forEach(track => track.stop());
+                    this.webcamStream = null;
+                    
+                    const webcamVideo = document.getElementById('webcamVideo');
+                    webcamVideo.srcObject = null;
+                    
+                    document.getElementById('startWebcam').disabled = false;
+                    document.getElementById('stopWebcam').disabled = true;
+                    
+                    this.updateStatus('Webcam stopped');
+                }
+            }
+            
+            handleVideoInput(event) {
+                const files = Array.from(event.target.files);
+                
+                files.forEach(file => {
+                    if (file.type.startsWith('video/')) {
+                        this.addVideoLayer(file);
+                    }
+                });
+            }
+            
+            addVideoLayer(file) {
+                const video = document.createElement('video');
+                video.src = URL.createObjectURL(file);
+                video.loop = true;
+                video.muted = true;
+                video.style.display = 'none';
+                document.body.appendChild(video);
+                
+                const layer = {
+                    id: Date.now() + Math.random(),
+                    video: video,
+                    filename: file.name,
+                    opacity: 0.8,
+                    visible: true,
+                    playing: false
+                };
+                
+                this.videoLayers.push(layer);
+                this.updateVideoList();
+                
+                video.addEventListener('loadeddata', () => {
+                    this.updateStatus(`Added video layer: ${file.name}`);
+                });
+            }
+            
+            updateVideoList() {
+                const videoList = document.getElementById('videoList');
+                videoList.innerHTML = '';
+                
+                this.videoLayers.forEach(layer => {
+                    const item = document.createElement('div');
+                    item.className = 'video-item';
+                    
+                    item.innerHTML = `
+                        <span class="filename">${layer.filename}</span>
+                        <div class="controls">
+                            <input type="range" min="0" max="1" step="0.1" value="${layer.opacity}" 
+                                   onchange="arMixer.setLayerOpacity('${layer.id}', this.value)">
+                            <button class="btn" onclick="arMixer.toggleLayer('${layer.id}')" 
+                                    style="padding: 5px 10px; font-size: 0.8em;">
+                                ${layer.playing ? 'Pause' : 'Play'}
+                            </button>
+                            <button class="btn" onclick="arMixer.removeLayer('${layer.id}')" 
+                                    style="padding: 5px 10px; font-size: 0.8em; background: linear-gradient(45deg, #e17055, #d63031);">
+                                Remove
+                            </button>
+                        </div>
+                    `;
+                    
+                    videoList.appendChild(item);
+                });
+            }
+            
+            setLayerOpacity(layerId, opacity) {
+                const layer = this.videoLayers.find(l => l.id == layerId);
+                if (layer) {
+                    layer.opacity = parseFloat(opacity);
+                }
+            }
+            
+            toggleLayer(layerId) {
+                const layer = this.videoLayers.find(l => l.id == layerId);
+                if (layer) {
+                    if (layer.playing) {
+                        layer.video.pause();
+                        layer.playing = false;
+                    } else {
+                        layer.video.play();
+                        layer.playing = true;
+                    }
+                    this.updateVideoList();
+                }
+            }
+            
+            removeLayer(layerId) {
+                const index = this.videoLayers.findIndex(l => l.id == layerId);
+                if (index !== -1) {
+                    const layer = this.videoLayers[index];
+                    layer.video.pause();
+                    document.body.removeChild(layer.video);
+                    this.videoLayers.splice(index, 1);
+                    this.updateVideoList();
+                }
+            }
+            
+            setEffect(effect) {
+                this.currentEffect = effect;
+                document.querySelectorAll('.effect-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.effect === effect);
+                });
+            }
+            
+            setWebcamOpacity(opacity) {
+                document.getElementById('webcamVideo').style.opacity = opacity;
+            }
+            
+            setGlobalOpacity(opacity) {
+                this.globalOpacity = parseFloat(opacity);
+            }
+            
+            setBlendMode(mode) {
+                this.blendMode = mode;
+            }
+            
+            startARLoop() {
+                const animate = () => {
+                    this.renderARFrame();
+                    this.animationId = requestAnimationFrame(animate);
+                };
+                animate();
+            }
+            
+            renderARFrame() {
+                const ctx = this.arCtx;
+                const canvas = this.arCanvas;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Render video layers
+                this.videoLayers.forEach(layer => {
+                    if (layer.visible && layer.playing && layer.video.readyState >= 2) {
+                        ctx.globalAlpha = layer.opacity * (this.globalOpacity || 1);
+                        ctx.globalCompositeOperation = this.blendMode || 'screen';
+                        ctx.drawImage(layer.video, 0, 0, canvas.width, canvas.height);
+                    }
+                });
+                
+                // Apply AR effects
+                this.applyAREffects(ctx, canvas);
+                
+                // Reset composite operation
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1;
+            }
+            
+            applyAREffects(ctx, canvas) {
+                const time = Date.now() * 0.001;
+                const intensity = this.effectIntensity;
+                
+                switch (this.currentEffect) {
+                    case 'particles':
+                        this.drawParticles(ctx, canvas, time, intensity);
+                        break;
+                    case 'glow':
+                        this.applyGlow(ctx, canvas, intensity);
+                        break;
+                    case 'mirror':
+                        this.applyMirror(ctx, canvas);
+                        break;
+                    case 'wave':
+                        this.applyWave(ctx, canvas, time, intensity);
+                        break;
+                }
+            }
+            
+            drawParticles(ctx, canvas, time, intensity) {
+                const particleCount = Math.floor(50 * intensity);
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * intensity})`;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const x = (Math.sin(time + i * 0.1) + 1) * canvas.width * 0.5;
+                    const y = (Math.cos(time * 0.8 + i * 0.15) + 1) * canvas.height * 0.5;
+                    const size = 2 + Math.sin(time + i) * 2;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            applyGlow(ctx, canvas, intensity) {
+                ctx.shadowBlur = 20 * intensity;
+                ctx.shadowColor = `rgba(255, 255, 255, ${intensity})`;
+                ctx.fillStyle = 'transparent';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            applyMirror(ctx, canvas) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.putImageData(imageData, -canvas.width, 0);
+                ctx.restore();
+            }
+            
+            applyWave(ctx, canvas, time, intensity) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                for (let y = 0; y < canvas.height; y++) {
+                    const wave = Math.sin(time + y * 0.01) * 20 * intensity;
+                    ctx.putImageData(imageData, wave, y, 0, y, canvas.width, 1);
+                }
+            }
+            
+            updateStatus(message) {
+                document.getElementById('status').textContent = message;
+            }
+        }
+        
+        // Initialize the AR Video Mixer
+        const arMixer = new ARVideoMixer();
+        
+        // Global functions for button callbacks
+        window.arMixer = arMixer;
+    </script>
 </body>
-
 </html>
