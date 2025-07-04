@@ -1,95 +1,53 @@
-<!doctype html>
-<html lang="en">
-
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>MindAR 3-D Animation Demo</title>
+    <title>AR Demo</title>
+    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+    <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <script>
+        // We're going to register a custom event listener through a-frame that will fire
+        // whenever a marker has entered the camera view and is found through ar.js
+        AFRAME.registerComponent('registerevents', {
+            init: function() {
+                var marker = this.el;
 
-  <!-- Core engines (latest as of July 2025) -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.3.0/dist/aframe.min.js"></script> <!-- A-Frame 1.3.0 -->
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <!-- MindAR 1.2.5 --> <!-- :contentReference[oaicite:1]{index=1}-->
-  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.0/dist/aframe-extras.min.js"></script>
-  <!-- animation-mixer --> <!-- :contentReference[oaicite:2]{index=2}-->
+                // Element emits events when found and lost
+                marker.setAttribute('emitevents', 'true');
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif
-    }
+                marker.addEventListener('markerFound', function() {
+                    // Alright, a marker has been found. Let's get the video element
+                    var vid = document.getElementById('waterVideo');
 
-    #status {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #000;
-      color: #fff;
-      z-index: 10
-    }
-  </style>
+                    // Make sure that the video a-frame object is visible
+                    document.querySelector('#water').setAttribute('visible', true);
+
+                    // Reset the video to the beginning and play it through
+                    vid.currentTime = 0;                    
+                    vid.play();
+                    
+                    // Once the video has completed, we're going to hide the a-video element
+                    // which will display the a-image element with the watch behind it
+                    vid.addEventListener('ended', function(e) {
+                        document.querySelector('#water').setAttribute('visible', false);
+                    });
+                });
+            }
+        });
+    </script>
 </head>
-
-<body>
-  <div id="status">Loading AR…</div>
-
-  <a-scene mindar-image="imageTargetSrc: marker.mind; maxTrack: 1; autoStart: true" vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: true" embedded>
-
-    <!-- Camera -->
-    <a-camera position="0 0 0"></a-camera>
-
-    <!-- Assets -->
-    <a-assets>
-      <a-asset-item id="dino" src="models/dino.glb"></a-asset-item>
-      <a-asset-item id="robot" src="models/robot.glb"></a-asset-item>
-    </a-assets>
-
-    <!-- One marker (#0) that will hold BOTH animated models -->
-    <a-entity mindar-image-target="targetIndex:0" id="layer">
-
-      <!-- Model 1 : Dinosaur – plays its default clip once, then freezes -->
-      <a-gltf-model src="./ply/allimg.ply" position="-0.6 0 0" rotation="-90 0 0" scale="0.3 0.3 0.3"
-        animation-mixer="loop: once; clampWhenFinished: true">
-      </a-gltf-model>
-
-      <!-- Model 2 : Robot – starts paused (Idle). Tap to trigger ‘Dance’ once -->
-      <a-gltf-model id="robotModel" src="./ply/Asset 10.ply" position="0.6 0 0" rotation="-90 0 0"
-        scale="0.35 0.35 0.35" animation-mixer="clip: Idle; timeScale: 0; clampWhenFinished: true">
-      </a-gltf-model>
-
-    </a-entity>
-  </a-scene>
-
-  <script>
-    // Wait for A-Frame to be defined before running AR logic
-    function runWhenAFrameReady(fn) {
-      if (window.AFRAME) {
-        fn();
-      } else {
-        setTimeout(() => runWhenAFrameReady(fn), 50);
-      }
-    }
-    runWhenAFrameReady(() => {
-      /* Hide loading overlay once MindAR is ready */
-      document.querySelector('a-scene').addEventListener('renderstart', () =>
-        document.getElementById('status').remove()
-      )
-    });
-
-    /* Tap anywhere to let the robot play its “Dance” clip once */
-    const bot = document.getElementById('robotModel');
-    document.body.addEventListener('click', () => {
-      bot.setAttribute('animation-mixer', {
-        clip: 'Dance',
-        loop: 'once',
-        timeScale: 1,
-        clampWhenFinished: true
-      });
-    });
-  </script>
+<body style="margin:0; overflow:hidden;">
+    <a-scene embedded arjs="" artoolkit="">
+        <a-assets timeout="10000">
+            <img id="watchImage" src="/image/Asset 10_depth.png">
+            <video id="waterVideo" loop="false" autoplay="false" src="/video/123.mp4" preload="auto"></video>
+        </a-assets>
+        <a-marker preset="hiro" registerevents>
+            <a-image id="watch" src="/image/Asset 10_depth.png" height="2" width="1" position="0 1 0"></a-image>
+            <a-video id="water" src="/video/123.mp4" height="2" width="1" position="0 1 0" autoplay="false"></a-video>
+        </a-marker>
+        <a-entity camera></a-entity>
+    </a-scene>
 </body>
-
 </html>
