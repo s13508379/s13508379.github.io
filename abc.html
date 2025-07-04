@@ -1,80 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <title>AR Video Projection</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <title>AR.js Video on QR Marker</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- A-Frame + AR.js bundle (≈145 kB, uses Three.js under the hood) -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.5.6/aframe/build/aframe-ar.js"></script>
     <style>
       body { margin: 0; overflow: hidden; }
-      #overlay { position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; background: transparent; }
     </style>
   </head>
   <body>
-    <!-- Hidden video element that will be used as a texture -->
-    <video id="srcVideo" src="./video/123.mp4" loop playsinline style="display:none"></video>
+    <!--  Hidden <video> provides the texture; "playsinline" avoids switching to full-screen on iOS  -->
+    <video
+      id="srcVid"
+      src="sample.mp4"
+      loop
+      preload="auto"
+      crossOrigin="anonymous"
+      playsinline
+      webkit-playsinline
+      style="display:none"
+    ></video>
 
-    <script type="module">
-      import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-      import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
+    <!--  AR scene.  "embedded" prevents A-Frame from taking fullscreen, leaving the page chrome visible if you want.  -->
+    <a-scene
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false;"  
+      vr-mode-ui="enabled: false"
+      renderer="logarithmicDepthBuffer: true">
 
-      // Set up renderer with alpha so the real‑world camera view shows through.
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      document.body.appendChild(renderer.domElement);
+      <!--  Custom pattern marker generated from your QR-code image  →  pattern-qr.patt  -->
+      <!--  See notes below for how to create this file  -->
+      <a-marker
+        type="pattern"
+        url="pattern-marker.patt"
+        emitevents="true">
 
-      // Create an "Enter AR" button and request hit‑test capability so we can place the plane on real‑world surfaces.
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+        <!--  a-video = a-plane with the video texture already wired up  -->
+        <!--  Width is 1 "world unit"; height is adjusted for 16:9 (0.5625).  Rotate -90° to lie flush on the marker.  -->
+        <a-video
+          src="/video/123.mp4"
+          width="1"
+          height="0.5625"
+          rotation="-90 0 0"
+        ></a-video>
+      </a-marker>
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera();
+      <!--  Required camera entity  -->
+      <a-entity camera></a-entity>
+    </a-scene>
 
-      // Wait for the video metadata so we know its dimensions.
-      const video = document.getElementById('srcVideo');
-      await video.play();
+    <!--  Start/stop playback when the marker enters/leaves view  -->
+    <script>
+      const marker = document.querySelector('a-marker');
+      const vid = document.getElementById('srcVid');
 
-      const texture = new THREE.VideoTexture(video);
-      texture.encoding = THREE.sRGBEncoding;
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-
-      // Make a plane that matches the video's aspect ratio (width = 1 unit).
-      const aspect = video.videoHeight / video.videoWidth;
-      const geometry = new THREE.PlaneGeometry(1, aspect);
-      const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-      const videoPlane = new THREE.Mesh(geometry, material);
-      videoPlane.visible = false;   // only show after first hit‑test
-      scene.add(videoPlane);
-
-      // WebXR hit‑testing setup so we can place the video where the user taps.
-      let hitTestSource = null;
-      let localReferenceSpace = null;
-      renderer.xr.addEventListener('sessionstart', async () => {
-        const session = renderer.xr.getSession();
-        const viewerSpace = await session.requestReferenceSpace('viewer');
-        hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-        localReferenceSpace = await session.requestReferenceSpace('local');
+      marker.addEventListener('markerFound', () => {
+        if (vid.paused) vid.play();
       });
-
-      // Each frame: look for a real‑world surface underneath the reticle, then stick the plane to it.
-      renderer.setAnimationLoop((timestamp, frame) => {
-        if (frame && hitTestSource) {
-          const hits = frame.getHitTestResults(hitTestSource);
-          if (hits.length) {
-            const hit = hits[0];
-            const pose = hit.getPose(localReferenceSpace);
-            if (!videoPlane.visible) videoPlane.visible = true;
-            videoPlane.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-            videoPlane.quaternion.set(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w);
-          }
-        }
-        renderer.render(scene, camera);
-      });
-
-      // Keep full‑screen canvas in sync when the phone rotates.
-      window.addEventListener('resize', () => {
-        renderer.setSize(window.innerWidth, window.innerHeight);
+      marker.addEventListener('markerLost', () => {
+        vid.pause();
       });
     </script>
   </body>
