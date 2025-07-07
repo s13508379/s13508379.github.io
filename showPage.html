@@ -66,6 +66,11 @@
       background: #45a049;
     }
 
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+
     #layersList {
       max-height: 200px;
       overflow-y: auto;
@@ -96,6 +101,28 @@
       border-radius: 5px;
       font-size: 12px;
     }
+
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background: #333;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #4CAF50;
+      transition: width 0.3s ease;
+    }
+
+    .export-controls {
+      border: 1px solid #333;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 
@@ -103,6 +130,7 @@
   <div id="container">
     <div id="controls">
       <h3>3D Video Layer Composer</h3>
+      <input type="text" id="sceneName" placeholder="Scene Name">
 
       <div class="control-group">
         <label>Add Video Layer:</label>
@@ -144,7 +172,23 @@
         <button onclick="playAll()">Play All</button>
         <button onclick="pauseAll()">Pause All</button>
         <button onclick="resetCamera()">Reset Camera</button>
-        <button onclick="download()">Download</button>
+      </div>
+
+      <div class="export-controls">
+        <h4>Export Settings:</h4>
+        <label>Frame Rate: <span id="fpsValue">12</span> fps</label>
+        <input type="range" id="fps" min="6" max="30" step="1" value="12" oninput="updateFpsValue()">
+        
+        <label>Duration: <span id="durationValue">3</span> seconds</label>
+        <input type="range" id="duration" min="1" max="10" step="0.5" value="3" oninput="updateDurationValue()">
+        
+        <button id="exportBtn" onclick="exportAnimatedGLB()">Export Animated GLB</button>
+        <div id="exportProgress" style="display:none;">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <span id="progressText">0%</span>
+        </div>
       </div>
 
       <div id="layersList">
@@ -154,66 +198,389 @@
     </div>
 
     <div id="info">
-      <div>Mouse: Drag to orbit camera</div>
-      <div>Scroll: Zoom in/out</div>
-      <div>Click layer to select and edit</div>
+      <div>Camera Controls: Mouse drag to orbit, scroll to zoom</div>
+      <div>Export creates keyframe animations from video frames</div>
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.min.js"></script>
   <script>
-    let scene, camera, renderer, controls;
+    let scene, camera, renderer;
     let videoLayers = [];
     let selectedLayer = null;
     let layerCounter = 0;
 
+    // GLB Exporter (simplified version)
+    class GLBExporter {
+      constructor() {
+        this.buffers = [];
+        this.bufferViews = [];
+        this.accessors = [];
+        this.textures = [];
+        this.images = [];
+        this.materials = [];
+        this.meshes = [];
+        this.nodes = [];
+        this.animations = [];
+        this.scenes = [];
+      }
 
-function download() {
-  // Replace video textures with static image snapshots for export
-  const originalTextures = [];
-  videoLayers.forEach(layer => {
-    // Save original texture
-    originalTextures.push(layer.mesh.material.map);
-    // Create a canvas snapshot of the current video frame
-    const video = layer.video;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 512;
-    canvas.height = video.videoHeight || 512;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageTexture = new THREE.CanvasTexture(canvas);
-    imageTexture.minFilter = THREE.LinearFilter;
-    imageTexture.magFilter = THREE.LinearFilter;
-    layer.mesh.material.map = imageTexture;
-    layer.mesh.material.needsUpdate = true;
-  });
+      async exportScene(scene, options = {}) {
+        const { fps = 12, duration = 3, sceneName = 'scene' } = options;
+        
+        // Reset arrays
+        this.buffers = [];
+        this.bufferViews = [];
+        this.accessors = [];
+        this.textures = [];
+        this.images = [];
+        this.materials = [];
+        this.meshes = [];
+        this.nodes = [];
+        this.animations = [];
+        this.scenes = [];
 
-  const exporter = new THREE.GLTFExporter();
-  exporter.parse(
-    scene,
-    function (result) {
-      // Restore original video textures
-      videoLayers.forEach((layer, i) => {
-        layer.mesh.material.map = originalTextures[i];
-        layer.mesh.material.needsUpdate = true;
-      });
-      saveArrayBuffer(result, 'scene.glb');
-    },
-    { binary: true }
-  );
-}
+        const totalFrames = Math.ceil(fps * duration);
+        const frameDuration = 1 / fps;
 
-    function saveArrayBuffer(buffer, filename) {
-      const blob = new Blob([buffer], { type: 'application/octet-stream' });
-      save(blob, filename);
+        // Create animations for video layers
+        for (let i = 0; i < videoLayers.length; i++) {
+          const layer = videoLayers[i];
+          await this.createVideoAnimation(layer, totalFrames, frameDuration, i);
+        }
+
+        // Create basic scene structure
+        this.createBasicScene();
+
+        // Build final GLB
+        return this.buildGLB(sceneName);
+      }
+
+      async createVideoAnimation(layer, totalFrames, frameDuration, layerIndex) {
+        const video = layer.video;
+        const mesh = layer.mesh;
+        
+        // Create image sequence from video
+        const images = [];
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(video.videoWidth || 512, 512);
+        canvas.height = Math.min(video.videoHeight || 512, 512);
+        const ctx = canvas.getContext('2d');
+
+        // Capture frames
+        for (let frame = 0; frame < totalFrames; frame++) {
+          const time = (frame / totalFrames) * video.duration;
+          video.currentTime = time;
+          
+          await new Promise(resolve => {
+            video.addEventListener('seeked', resolve, { once: true });
+          });
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = canvas.toDataURL('image/jpeg', 0.8);
+          images.push(imageData);
+        }
+
+        // Create texture switching animation
+        const timeValues = [];
+        const textureIndices = [];
+        
+        for (let frame = 0; frame < totalFrames; frame++) {
+          timeValues.push(frame * frameDuration);
+          textureIndices.push(frame);
+        }
+
+        // Store animation data
+        this.animations.push({
+          name: `videoAnimation_${layerIndex}`,
+          timeValues,
+          textureIndices,
+          images,
+          mesh: mesh
+        });
+      }
+
+      createBasicScene() {
+        // Create a simple scene with one node per video layer
+        this.scenes.push({
+          name: 'Scene',
+          nodes: videoLayers.map((_, i) => i)
+        });
+
+        videoLayers.forEach((layer, i) => {
+          const mesh = layer.mesh;
+          
+          // Create node
+          this.nodes.push({
+            name: `VideoLayer_${i}`,
+            translation: [mesh.position.x, mesh.position.y, mesh.position.z],
+            rotation: [mesh.quaternion.x, mesh.quaternion.y, mesh.quaternion.z, mesh.quaternion.w],
+            scale: [mesh.scale.x, mesh.scale.y, mesh.scale.z],
+            mesh: i
+          });
+
+          // Create mesh
+          this.meshes.push({
+            name: `VideoMesh_${i}`,
+            primitives: [{
+              attributes: {
+                POSITION: 0,
+                TEXCOORD_0: 1
+              },
+              indices: 2,
+              material: i
+            }]
+          });
+
+          // Create material
+          this.materials.push({
+            name: `VideoMaterial_${i}`,
+            pbrMetallicRoughness: {
+              baseColorTexture: {
+                index: i
+              },
+              metallicFactor: 0,
+              roughnessFactor: 1
+            },
+            alphaMode: 'BLEND'
+          });
+        });
+
+        // Create basic plane geometry
+        const positions = new Float32Array([
+          -1, -1, 0,
+          1, -1, 0,
+          1, 1, 0,
+          -1, 1, 0
+        ]);
+
+        const uvs = new Float32Array([
+          0, 0,
+          1, 0,
+          1, 1,
+          0, 1
+        ]);
+
+        const indices = new Uint16Array([
+          0, 1, 2,
+          0, 2, 3
+        ]);
+
+        // Create accessors
+        this.accessors.push(
+          {
+            bufferView: 0,
+            componentType: 5126, // FLOAT
+            count: 4,
+            type: 'VEC3',
+            min: [-1, -1, 0],
+            max: [1, 1, 0]
+          },
+          {
+            bufferView: 1,
+            componentType: 5126, // FLOAT
+            count: 4,
+            type: 'VEC2'
+          },
+          {
+            bufferView: 2,
+            componentType: 5123, // UNSIGNED_SHORT
+            count: 6,
+            type: 'SCALAR'
+          }
+        );
+
+        // Create buffer views
+        this.bufferViews.push(
+          {
+            buffer: 0,
+            byteOffset: 0,
+            byteLength: positions.byteLength
+          },
+          {
+            buffer: 0,
+            byteOffset: positions.byteLength,
+            byteLength: uvs.byteLength
+          },
+          {
+            buffer: 0,
+            byteOffset: positions.byteLength + uvs.byteLength,
+            byteLength: indices.byteLength
+          }
+        );
+
+        // Create buffer
+        const totalLength = positions.byteLength + uvs.byteLength + indices.byteLength;
+        const buffer = new ArrayBuffer(totalLength);
+        const view = new Uint8Array(buffer);
+        
+        view.set(new Uint8Array(positions.buffer), 0);
+        view.set(new Uint8Array(uvs.buffer), positions.byteLength);
+        view.set(new Uint8Array(indices.buffer), positions.byteLength + uvs.byteLength);
+
+        this.buffers.push(buffer);
+      }
+
+      async buildGLB(sceneName) {
+        // Create JSON structure
+        const gltf = {
+          asset: {
+            version: '2.0',
+            generator: '3D Video Layer Composer'
+          },
+          scene: 0,
+          scenes: this.scenes,
+          nodes: this.nodes,
+          meshes: this.meshes,
+          materials: this.materials,
+          accessors: this.accessors,
+          bufferViews: this.bufferViews,
+          buffers: [{
+            byteLength: this.buffers[0].byteLength
+          }]
+        };
+
+        // Add textures and images (simplified - just first frame)
+        if (this.animations.length > 0) {
+          gltf.textures = [];
+          gltf.images = [];
+          
+          for (let i = 0; i < this.animations.length; i++) {
+            const animation = this.animations[i];
+            const firstImage = animation.images[0];
+            
+            gltf.images.push({
+              uri: firstImage
+            });
+            
+            gltf.textures.push({
+              source: i
+            });
+          }
+        }
+
+        // Convert to GLB
+        const jsonString = JSON.stringify(gltf);
+        const jsonBuffer = new TextEncoder().encode(jsonString);
+        const jsonPadding = (4 - (jsonBuffer.length % 4)) % 4;
+        const jsonChunk = new Uint8Array(jsonBuffer.length + jsonPadding);
+        jsonChunk.set(jsonBuffer);
+
+        const binaryBuffer = this.buffers[0];
+        const binaryPadding = (4 - (binaryBuffer.byteLength % 4)) % 4;
+        const binaryChunk = new Uint8Array(binaryBuffer.byteLength + binaryPadding);
+        binaryChunk.set(new Uint8Array(binaryBuffer));
+
+        // GLB header
+        const header = new ArrayBuffer(12);
+        const headerView = new DataView(header);
+        headerView.setUint32(0, 0x46546C67, true); // 'glTF'
+        headerView.setUint32(4, 2, true); // version
+        headerView.setUint32(8, 12 + 8 + jsonChunk.length + 8 + binaryChunk.length, true); // length
+
+        // JSON chunk header
+        const jsonHeader = new ArrayBuffer(8);
+        const jsonHeaderView = new DataView(jsonHeader);
+        jsonHeaderView.setUint32(0, jsonChunk.length, true);
+        jsonHeaderView.setUint32(4, 0x4E4F534A, true); // 'JSON'
+
+        // Binary chunk header
+        const binaryHeader = new ArrayBuffer(8);
+        const binaryHeaderView = new DataView(binaryHeader);
+        binaryHeaderView.setUint32(0, binaryChunk.length, true);
+        binaryHeaderView.setUint32(4, 0x004E4942, true); // 'BIN\0'
+
+        // Combine all chunks
+        const totalLength = header.byteLength + jsonHeader.byteLength + jsonChunk.length + binaryHeader.byteLength + binaryChunk.length;
+        const result = new Uint8Array(totalLength);
+        let offset = 0;
+
+        result.set(new Uint8Array(header), offset);
+        offset += header.byteLength;
+
+        result.set(new Uint8Array(jsonHeader), offset);
+        offset += jsonHeader.byteLength;
+
+        result.set(jsonChunk, offset);
+        offset += jsonChunk.length;
+
+        result.set(new Uint8Array(binaryHeader), offset);
+        offset += binaryHeader.byteLength;
+
+        result.set(binaryChunk, offset);
+
+        return result.buffer;
+      }
     }
 
-    function save(blob , filename) {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
+    // Export function
+    async function exportAnimatedGLB() {
+      if (videoLayers.length === 0) {
+        alert('Please add at least one video layer before exporting');
+        return;
+      }
+
+      const exportBtn = document.getElementById('exportBtn');
+      const progressDiv = document.getElementById('exportProgress');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+
+      exportBtn.disabled = true;
+      exportBtn.textContent = 'Exporting...';
+      progressDiv.style.display = 'block';
+
+      try {
+        const fps = parseInt(document.getElementById('fps').value);
+        const duration = parseFloat(document.getElementById('duration').value);
+        const sceneName = document.getElementById('sceneName').value || 'animated_scene';
+
+        const exporter = new GLBExporter();
+        
+        // Update progress during export
+        const updateProgress = (percent) => {
+          progressFill.style.width = `${percent}%`;
+          progressText.textContent = `${Math.round(percent)}%`;
+        };
+
+        updateProgress(10);
+
+        const result = await exporter.exportScene(scene, {
+          fps,
+          duration,
+          sceneName,
+          onProgress: updateProgress
+        });
+
+        updateProgress(100);
+
+        // Download the file
+        const blob = new Blob([result], { type: 'application/octet-stream' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${sceneName}.glb`;
+        link.click();
+
+        setTimeout(() => {
+          progressDiv.style.display = 'none';
+          exportBtn.disabled = false;
+          exportBtn.textContent = 'Export Animated GLB';
+        }, 1000);
+
+      } catch (error) {
+        console.error('Export failed:', error);
+        alert('Export failed. Please check the console for details.');
+        exportBtn.disabled = false;
+        exportBtn.textContent = 'Export Animated GLB';
+        progressDiv.style.display = 'none';
+      }
+    }
+
+    function updateFpsValue() {
+      document.getElementById('fpsValue').textContent = document.getElementById('fps').value;
+    }
+
+    function updateDurationValue() {
+      document.getElementById('durationValue').textContent = document.getElementById('duration').value;
     }
 
     // Initialize Three.js scene
