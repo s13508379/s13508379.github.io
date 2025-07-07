@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AR GLB Viewer</title>
+    <meta name="description" content="A-Frame AR GLB Viewer">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        
+        #controls {
+            margin-top: 10px;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 12px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+        }
+        
+        .status.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+        }
+        
+        .status.info {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+        }
+        
+        #markerStatus {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui">
+        <h3>AR GLB Viewer</h3>
+        <div class="status info" id="status">
+            Point camera at marker to view 3D model
+        </div>
+        
+        <div id="controls">
+            <div class="control-group">
+                <label>Load GLB Model:</label>
+                <input type="file" id="gltfFile" accept=".gltf,.glb">
+                <button onclick="loadModel()">Load Model</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Scale: <span id="scaleValue">1.0</span></label>
+                <input type="range" id="scaleSlider" min="0.1" max="3.0" step="0.1" value="1.0" oninput="updateScale()">
+            </div>
+            
+            <div class="control-group">
+                <label>Rotation Y: <span id="rotationValue">0°</span></label>
+                <input type="range" id="rotationSlider" min="0" max="360" step="5" value="0" oninput="updateRotation()">
+            </div>
+            
+            <div class="control-group">
+                <label>Height: <span id="heightValue">0</span></label>
+                <input type="range" id="heightSlider" min="-2" max="2" step="0.1" value="0" oninput="updateHeight()">
+            </div>
+            
+            <div class="control-group">
+                <button onclick="toggleAnimation()">Toggle Animation</button>
+                <button onclick="resetTransform()">Reset</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="markerStatus">
+        <div id="markerText">Searching for marker...</div>
+    </div>
+
+    <a-scene 
+        embedded 
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+        vr-mode-ui="enabled: false"
+        gesture-detector>
+        
+        <!-- Marker -->
+        <a-marker 
+            type="pattern" 
+            url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/patt.hiro"
+            id="marker"
+            markerhandler>
+            
+            <!-- 3D Model Container -->
+            <a-entity 
+                id="model-container"
+                position="0 0 0"
+                rotation="0 0 0"
+                scale="1 1 1"
+                animation-mixer>
+            </a-entity>
+            
+            <!-- Lighting -->
+            <a-light type="ambient" intensity="0.5" color="#ffffff"></a-light>
+            <a-light type="directional" intensity="1" position="0 2 1" color="#ffffff"></a-light>
+            <a-light type="point" intensity="0.8" position="0 1 0" color="#ffffff"></a-light>
+            
+            <!-- Ground plane for better visualization -->
+            <a-plane 
+                position="0 -0.1 0" 
+                rotation="-90 0 0" 
+                width="2" 
+                height="2" 
+                color="#7BC8A4" 
+                opacity="0.3"
+                transparent="true">
+            </a-plane>
+            
+        </a-marker>
+        
+        <!-- Camera -->
+        <a-entity camera look-controls-enabled="false" arjs-look-controls="smoothingFactor: 0.1"></a-entity>
+    </a-scene>
+
+    <script>
+        let currentModel = null;
+        let animationMixer = null;
+        let isAnimationPlaying = false;
+        let modelContainer = null;
+        let marker = null;
+        let markerVisible = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            modelContainer = document.getElementById('model-container');
+            marker = document.getElementById('marker');
+            
+            // Load default model
+            loadDefaultModel();
+            
+            // Setup marker events
+            setupMarkerEvents();
+        });
+
+        function setupMarkerEvents() {
+            // Marker found
+            marker.addEventListener('markerFound', function() {
+                markerVisible = true;
+                updateMarkerStatus('Marker detected!', 'success');
+                
+                // Start animations if available
+                if (animationMixer && !isAnimationPlaying) {
+                    startAnimations();
+                }
+            });
+
+            // Marker lost
+            marker.addEventListener('markerLost', function() {
+                markerVisible = false;
+                updateMarkerStatus('Marker lost - searching...', 'error');
+                
+                // Pause animations
+                if (animationMixer && isAnimationPlaying) {
+                    pauseAnimations();
+                }
+            });
+        }
+
+        function updateMarkerStatus(message, type = 'info') {
+            const statusEl = document.getElementById('markerText');
+            const markerStatusEl = document.getElementById('markerStatus');
+            
+            statusEl.textContent = message;
+            markerStatusEl.className = type;
+        }
+
+        function loadDefaultModel() {
+            // Create a default cube if no model is loaded
+            const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0x4CAF50,
+                transparent: true,
+                opacity: 0.8
+            });
+            const cube = new THREE.Mesh(geometry, material);
+            
+            // Add to A-Frame scene
+            const entity = document.createElement('a-box');
+            entity.setAttribute('position', '0 0.25 0');
+            entity.setAttribute('color', '#4CAF50');
+            entity.setAttribute('opacity', '0.8');
+            entity.setAttribute('animation', {
+                property: 'rotation',
+                to: '0 360 0',
+                loop: true,
+                dur: 4000
+            });
+            
+            modelContainer.appendChild(entity);
+            updateStatus('Default cube loaded. Load a GLB file to replace.', 'info');
+        }
+
+        function loadModel() {
+            const fileInput = document.getElementById('gltfFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                updateStatus('Please select a GLB/GLTF file', 'error');
+                return;
+            }
+            
+            updateStatus('Loading model...', 'info');
+            
+            // Clear existing model
+            while (modelContainer.firstChild) {
+                modelContainer.removeChild(modelContainer.firstChild);
+            }
+            
+            const url = URL.createObjectURL(file);
+            
+            // Create A-Frame entity with GLTF model
+            const entity = document.createElement('a-entity');
+            entity.setAttribute('gltf-model', url);
+            entity.setAttribute('position', '0 0 0');
+            entity.setAttribute('rotation', '0 0 0');
+            entity.setAttribute('scale', '1 1 1');
+            
+            // Add model loaded event listener
+            entity.addEventListener('model-loaded', function() {
+                currentModel = entity;
+                updateStatus('Model loaded successfully!', 'success');
+                
+                // Setup animation mixer for GLB animations
+                setupAnimationMixer(entity);
+                
+                // Auto-scale based on model size
+                autoScaleModel(entity);
+            });
+            
+            entity.addEventListener('model-error', function() {
+                updateStatus('Failed to load model. Check file format.', 'error');
+            });
+            
+            modelContainer.appendChild(entity);
+            fileInput.value = '';
+        }
+
+        function setupAnimationMixer(entity) {
+            // Get the Three.js object
+            const object3D = entity.getObject3D('mesh');
+            if (!object3D) return;
+            
+            // Check for animations
+            const animations = object3D.animations;
+            if (animations && animations.length > 0) {
+                // Create animation mixer
+                animationMixer = new THREE.AnimationMixer(object3D);
+                
+                // Add all animations
+                animations.forEach(clip => {
+                    const action = animationMixer.clipAction(clip);
+                    action.play();
+                });
+                
+                isAnimationPlaying = true;
+                updateStatus(`Model loaded with ${animations.length} animation(s)`, 'success');
+                
+                // Update animation mixer in render loop
+                const scene = document.querySelector('a-scene');
+                scene.addEventListener('render', function() {
+                    if (animationMixer && markerVisible) {
+                        animationMixer.update(0.016); // ~60fps
+                    }
+                });
+            }
+        }
+
+        function autoScaleModel(entity) {
+            // Get bounding box and auto-scale
+            setTimeout(() => {
+                const object3D = entity.getObject3D('mesh');
+                if (object3D) {
+                    const box = new THREE.Box3().setFromObject(object3D);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    
+                    if (maxDim > 2) {
+                        const scale = 1.5 / maxDim;
+                        entity.setAttribute('scale', `${scale} ${scale} ${scale}`);
+                        document.getElementById('scaleSlider').value = scale;
+                        document.getElementById('scaleValue').textContent = scale.toFixed(1);
+                    }
+                }
+            }, 100);
+        }
+
+        function startAnimations() {
+            if (animationMixer && !isAnimationPlaying) {
+                animationMixer.timeScale = 1;
+                isAnimationPlaying = true;
+            }
+        }
+
+        function pauseAnimations() {
+            if (animationMixer && isAnimationPlaying) {
+                animationMixer.timeScale = 0;
+                isAnimationPlaying = false;
+            }
+        }
+
+        function toggleAnimation() {
+            if (animationMixer) {
+                if (isAnimationPlaying) {
+                    pauseAnimations();
+                    updateStatus('Animation paused', 'info');
+                } else {
+                    startAnimations();
+                    updateStatus('Animation resumed', 'info');
+                }
+            } else {
+                updateStatus('No animations available', 'error');
+            }
+        }
+
+        function updateScale() {
+            const scale = document.getElementById('scaleSlider').value;
+            document.getElementById('scaleValue').textContent = scale;
+            
+            if (modelContainer) {
+                modelContainer.setAttribute('scale', `${scale} ${scale} ${scale}`);
+            }
+        }
+
+        function updateRotation() {
+            const rotation = document.getElementById('rotationSlider').value;
+            document.getElementById('rotationValue').textContent = rotation + '°';
+            
+            if (modelContainer) {
+                modelContainer.setAttribute('rotation', `0 ${rotation} 0`);
+            }
+        }
+
+        function updateHeight() {
+            const height = document.getElementById('heightSlider').value;
+            document.getElementById('heightValue').textContent = height;
+            
+            if (modelContainer) {
+                modelContainer.setAttribute('position', `0 ${height} 0`);
+            }
+        }
+
+        function resetTransform() {
+            document.getElementById('scaleSlider').value = 1.0;
+            document.getElementById('rotationSlider').value = 0;
+            document.getElementById('heightSlider').value = 0;
+            
+            updateScale();
+            updateRotation();
+            updateHeight();
+            
+            updateStatus('Transform reset', 'info');
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        // Register custom component for marker handling
+        AFRAME.registerComponent('markerhandler', {
+            init: function() {
+                this.el.addEventListener('markerFound', function() {
+                    console.log('Marker found');
+                });
+                
+                this.el.addEventListener('markerLost', function() {
+                    console.log('Marker lost');
+                });
+            }
+        });
+
+        // Handle camera permissions
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                updateStatus('Camera access granted', 'success');
+            })
+            .catch(function(err) {
+                updateStatus('Camera access denied. Please allow camera access.', 'error');
+            });
+    </script>
+</body>
+</html>
