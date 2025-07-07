@@ -862,4 +862,14 @@
         // 初始化
         window.addEventListener('load', () => {
             initThreeJS();
-            updateStatus('應用程式已就
+            updateStatus('應用程式已就緒，請開啟攝像頭並載入視頻');
+        });
+        
+        // 清理資源
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+            videoObjects.forEach(videoObj => {
+                videoObj.element.pause();
+                videoObj.element.src = '';
+            });
+        });
