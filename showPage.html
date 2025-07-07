@@ -28,7 +28,7 @@
       padding: 20px;
       border-radius: 10px;
       z-index: 100;
-      max-width: 320px;
+      max-width: 300px;
     }
 
     .control-group {
@@ -66,14 +66,6 @@
       background: #45a049;
     }
 
-    button.danger {
-      background: #f44336;
-    }
-
-    button.danger:hover {
-      background: #da190b;
-    }
-
     #layersList {
       max-height: 200px;
       overflow-y: auto;
@@ -89,23 +81,10 @@
       margin-bottom: 5px;
       border-radius: 3px;
       cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     .layer-item.selected {
       background: rgba(76, 175, 80, 0.3);
-    }
-
-    .layer-delete {
-      background: #f44336;
-      color: white;
-      border: none;
-      padding: 2px 6px;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 10px;
     }
 
     #info {
@@ -116,22 +95,6 @@
       padding: 10px;
       border-radius: 5px;
       font-size: 12px;
-    }
-
-    .export-options {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 10px;
-    }
-
-    .export-options h4 {
-      margin-top: 0;
-      margin-bottom: 10px;
-    }
-
-    input[type="checkbox"] {
-      margin-right: 5px;
     }
   </style>
 </head>
@@ -181,20 +144,9 @@
         <button onclick="playAll()">Play All</button>
         <button onclick="pauseAll()">Pause All</button>
         <button onclick="resetCamera()">Reset Camera</button>
-      </div>
-
-      <div class="export-options">
-        <h4>Export Options:</h4>
-        <div>
-          <input type="checkbox" id="exportPlaceholder" checked>
-          <label for="exportPlaceholder">Use placeholder textures (recommended)</label>
-        </div>
-        <div>
-          <input type="checkbox" id="exportSnapshot">
-          <label for="exportSnapshot">Use current frame snapshots</label>
-        </div>
-        <button onclick="exportScene()">Export GLB</button>
-        <button onclick="exportConfig()">Export Config</button>
+        <button onclick="downloadOBJ()">Download OBJ</button>
+        <button onclick="downloadWithTextures()">Download with Textures</button>
+        <button onclick="downloadAnimated()">Download Animated (GLTF)</button>
       </div>
 
       <div id="layersList">
@@ -203,183 +155,283 @@
       </div>
     </div>
 
-    <div id="info">
-      <div>Mouse: Drag to orbit | Scroll to zoom</div>
-      <div>Export with placeholders for runtime texture loading</div>
-    </div>
-  </div>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.min.js"></script>
   <script>
-    let scene, camera, renderer;
+    let scene, camera, renderer, controls;
     let videoLayers = [];
     let selectedLayer = null;
     let layerCounter = 0;
 
-    // Create a 1x1 pixel placeholder texture
-    function createPlaceholderTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#808080'; // Gray placeholder
-      ctx.fillRect(0, 0, 1, 1);
+    function downloadOBJ() {
+      const exporter = new THREE.OBJExporter();
+      const result = exporter.parse(scene);
       
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      return texture;
-    }
-
-    // Export scene configuration
-    function exportConfig() {
-      const config = {
-        layers: videoLayers.map(layer => ({
-          id: layer.id,
-          name: layer.name,
-          position: {
-            x: layer.mesh.position.x,
-            y: layer.mesh.position.y,
-            z: layer.mesh.position.z
-          },
-          rotation: {
-            x: layer.mesh.rotation.x,
-            y: layer.mesh.rotation.y,
-            z: layer.mesh.rotation.z
-          },
-          scale: {
-            x: layer.mesh.scale.x,
-            y: layer.mesh.scale.y,
-            z: layer.mesh.scale.z
-          },
-          opacity: layer.mesh.material.opacity,
-          videoSrc: layer.name // Store original filename
-        })),
-        camera: {
-          position: {
-            x: camera.position.x,
-            y: camera.position.y,
-            z: camera.position.z
-          }
-        }
-      };
-
-      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+      const blob = new Blob([result], { type: 'text/plain' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'scene-config.json';
+      link.download = 'scene.obj';
       link.click();
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(link.href);
     }
 
-    // Export scene with different texture options
-    function exportScene() {
-      const usePlaceholder = document.getElementById('exportPlaceholder').checked;
-      const useSnapshot = document.getElementById('exportSnapshot').checked;
-
-      if (!usePlaceholder && !useSnapshot) {
-        alert('Please select at least one export option');
-        return;
-      }
-
-      // Store original textures
-      const originalTextures = [];
+    function captureVideoFrame(video) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       
-      videoLayers.forEach((layer, index) => {
-        originalTextures.push(layer.mesh.material.map);
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/png');
+      });
+    }
+
+    async function downloadWithTextures() {
+      try {
+        // Create OBJ content with material references
+        let objContent = `# 3D Video Layer Composer Export\n`;
+        objContent += `mtllib scene.mtl\n\n`;
         
-        if (usePlaceholder) {
-          // Use placeholder texture
-          layer.mesh.material.map = createPlaceholderTexture();
-          // Store material name for runtime identification
-          layer.mesh.material.name = `videoMaterial_${layer.id}`;
-        } else if (useSnapshot) {
-          // Create snapshot from current video frame
-          const video = layer.video;
+        let mtlContent = `# Material file for 3D Video Layer Composer\n\n`;
+        
+        const texturePromises = [];
+        const textureNames = [];
+        
+        videoLayers.forEach((layer, index) => {
+          const materialName = `video_material_${index}`;
+          const textureName = `video_texture_${index}.png`;
+          
+          textureNames.push(textureName);
+          texturePromises.push(captureVideoFrame(layer.video));
+          
+          // Add material definition
+          mtlContent += `newmtl ${materialName}\n`;
+          mtlContent += `Ka 1.0 1.0 1.0\n`;
+          mtlContent += `Kd 1.0 1.0 1.0\n`;
+          mtlContent += `Ks 0.0 0.0 0.0\n`;
+          mtlContent += `d ${layer.mesh.material.opacity}\n`;
+          mtlContent += `map_Kd ${textureName}\n\n`;
+        });
+        
+        // Generate OBJ geometry
+        let vertexIndex = 1;
+        videoLayers.forEach((layer, index) => {
+          const materialName = `video_material_${index}`;
+          const mesh = layer.mesh;
+          
+          // Apply transformations
+          mesh.updateMatrixWorld();
+          const geometry = mesh.geometry.clone();
+          geometry.applyMatrix4(mesh.matrixWorld);
+          
+          objContent += `\n# Layer ${index}: ${layer.name}\n`;
+          objContent += `usemtl ${materialName}\n`;
+          
+          // Add vertices
+          const positions = geometry.attributes.position;
+          for (let i = 0; i < positions.count; i++) {
+            const x = positions.getX(i);
+            const y = positions.getY(i);
+            const z = positions.getZ(i);
+            objContent += `v ${x.toFixed(6)} ${y.toFixed(6)} ${z.toFixed(6)}\n`;
+          }
+          
+          // Add texture coordinates
+          const uvs = geometry.attributes.uv;
+          if (uvs) {
+            for (let i = 0; i < uvs.count; i++) {
+              const u = uvs.getX(i);
+              const v = 1.0 - uvs.getY(i); // Flip V coordinate for OBJ format
+              objContent += `vt ${u.toFixed(6)} ${v.toFixed(6)}\n`;
+            }
+          }
+          
+          // Add faces
+          if (geometry.index) {
+            const indices = geometry.index;
+            for (let i = 0; i < indices.count; i += 3) {
+              const a = indices.getX(i) + vertexIndex;
+              const b = indices.getX(i + 1) + vertexIndex;
+              const c = indices.getX(i + 2) + vertexIndex;
+              objContent += `f ${a}/${a} ${b}/${b} ${c}/${c}\n`;
+            }
+          } else {
+            // Non-indexed geometry
+            for (let i = 0; i < positions.count; i += 3) {
+              const a = vertexIndex + i;
+              const b = vertexIndex + i + 1;
+              const c = vertexIndex + i + 2;
+              objContent += `f ${a}/${a} ${b}/${b} ${c}/${c}\n`;
+            }
+          }
+          
+          vertexIndex += positions.count;
+        });
+        
+        // Wait for all texture captures to complete
+        const textureBlobs = await Promise.all(texturePromises);
+        
+        // Create download links for all files
+        const downloads = [
+          { name: 'scene.obj', blob: new Blob([objContent], { type: 'text/plain' }) },
+          { name: 'scene.mtl', blob: new Blob([mtlContent], { type: 'text/plain' }) }
+        ];
+        
+        textureBlobs.forEach((blob, index) => {
+          downloads.push({ name: textureNames[index], blob: blob });
+        });
+        
+        // Download all files
+        downloads.forEach(({ name, blob }) => {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = name;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        });
+        
+        alert(`Downloaded ${downloads.length} files: OBJ, MTL, and ${textureBlobs.length} texture(s)`);
+        
+      } catch (error) {
+        console.error('Export failed:', error);
+        alert('Export failed. Please try again.');
+      }
+    }
+
+    async function downloadAnimated() {
+      try {
+        // Create a scene copy for export with video data embedded
+        const exportScene = new THREE.Scene();
+        const videosToEmbed = [];
+        
+        // Clone meshes and prepare video data for embedding
+        for (let i = 0; i < videoLayers.length; i++) {
+          const layer = videoLayers[i];
+          
+          // Create canvas to capture video data
           const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth || 512;
-          canvas.height = video.videoHeight || 512;
           const ctx = canvas.getContext('2d');
+          const video = layer.video;
+          
+          canvas.width = video.videoWidth || 640;
+          canvas.height = video.videoHeight || 480;
+          
+          // Capture current frame
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           
-          const snapshotTexture = new THREE.CanvasTexture(canvas);
-          snapshotTexture.minFilter = THREE.LinearFilter;
-          snapshotTexture.magFilter = THREE.LinearFilter;
-          layer.mesh.material.map = snapshotTexture;
+          // Create texture from canvas
+          const canvasTexture = new THREE.CanvasTexture(canvas);
+          canvasTexture.flipY = false;
+          
+          // Clone geometry and create new material with canvas texture
+          const geometry = layer.mesh.geometry.clone();
+          const material = new THREE.MeshBasicMaterial({
+            map: canvasTexture,
+            transparent: true,
+            opacity: layer.mesh.material.opacity,
+            side: THREE.DoubleSide
+          });
+          
+          const mesh = new THREE.Mesh(geometry, material);
+          
+          // Apply transformations
+          mesh.position.copy(layer.mesh.position);
+          mesh.rotation.copy(layer.mesh.rotation);
+          mesh.scale.copy(layer.mesh.scale);
+          mesh.name = `video_layer_${i}_${layer.name}`;
+          
+          exportScene.add(mesh);
+          
+          // Store video info for potential embedding
+          videosToEmbed.push({
+            name: layer.name,
+            video: video,
+            canvas: canvas,
+            ctx: ctx
+          });
         }
         
-        layer.mesh.material.needsUpdate = true;
-      });
-
-      // Export using a simple JSON format instead of GLTF for better control
-      const exportData = {
-        metadata: {
-          version: '1.0',
-          generator: '3D Video Layer Composer',
-          timestamp: new Date().toISOString()
-        },
-        scene: {
-          background: scene.background.getHex(),
-          layers: videoLayers.map(layer => ({
-            id: layer.id,
-            name: layer.name,
-            geometry: {
-              type: 'PlaneGeometry',
-              width: 2,
-              height: 2
-            },
-            material: {
-              type: 'MeshBasicMaterial',
-              transparent: true,
-              opacity: layer.mesh.material.opacity,
-              side: 'DoubleSide',
-              materialName: layer.mesh.material.name || `videoMaterial_${layer.id}`
-            },
-            transform: {
-              position: {
-                x: layer.mesh.position.x,
-                y: layer.mesh.position.y,
-                z: layer.mesh.position.z
-              },
-              rotation: {
-                x: layer.mesh.rotation.x,
-                y: layer.mesh.rotation.y,
-                z: layer.mesh.rotation.z
-              },
-              scale: {
-                x: layer.mesh.scale.x,
-                y: layer.mesh.scale.y,
-                z: layer.mesh.scale.z
-              }
-            }
-          }))
-        },
-        camera: {
-          type: 'PerspectiveCamera',
-          fov: 75,
-          near: 0.1,
-          far: 1000,
-          position: {
-            x: camera.position.x,
-            y: camera.position.y,
-            z: camera.position.z
-          }
+        // Export as GLTF
+        const exporter = new THREE.GLTFExporter();
+        exporter.parse(
+          exportScene,
+          function (result) {
+            const blob = new Blob([result], { type: 'application/octet-stream' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'animated_scene.glb';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            // Also export video files separately
+            exportVideoFiles(videosToEmbed);
+          },
+          { binary: true, animations: [], embedImages: true }
+        );
+        
+      } catch (error) {
+        console.error('Animated export failed:', error);
+        alert('Animated export failed. Please try again.');
+      }
+    }
+    
+    function exportVideoFiles(videosToEmbed) {
+      // Export each video as a separate file for manual import
+      videosToEmbed.forEach((videoData, index) => {
+        const video = videoData.video;
+        
+        // Create a link to download the original video file
+        if (video.src && video.src.startsWith('blob:')) {
+          // For blob URLs, we'll capture a longer sequence
+          captureVideoSequence(video, `video_${index}_${videoData.name}`);
         }
-      };
-
-      // Create downloadable file
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'scene-export.json';
-      link.click();
-
-      // Restore original textures
-      videoLayers.forEach((layer, index) => {
-        layer.mesh.material.map = originalTextures[index];
-        layer.mesh.material.needsUpdate = true;
       });
-
-      console.log('Scene exported with placeholder textures. Use the exported JSON to recreate the scene and replace placeholder textures with video textures at runtime.');
+      
+      alert(`Exported GLTF file and ${videosToEmbed.length} video references. Note: GLTF contains static textures. For true animation, manually replace textures with video files in your 3D application.`);
+    }
+    
+    function captureVideoSequence(video, baseName) {
+      // Capture multiple frames to create a basic animation sequence
+      const frameCount = 30; // Capture 30 frames
+      const interval = 100; // 100ms between captures
+      const frames = [];
+      let currentFrame = 0;
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      const captureFrame = () => {
+        if (currentFrame >= frameCount) {
+          // Create a zip-like structure or individual files
+          frames.forEach((frameBlob, i) => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(frameBlob);
+            link.download = `${baseName}_frame_${String(i).padStart(3, '0')}.png`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+          });
+          return;
+        }
+        
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          frames.push(blob);
+          currentFrame++;
+          setTimeout(captureFrame, interval);
+        }, 'image/png');
+      };
+      
+      captureFrame();
     }
 
     // Initialize Three.js scene
@@ -511,30 +563,6 @@
       fileInput.value = '';
     }
 
-    // Delete layer
-    function deleteLayer(layer) {
-      const index = videoLayers.indexOf(layer);
-      if (index > -1) {
-        // Remove from scene
-        scene.remove(layer.mesh);
-        
-        // Clean up video resources
-        layer.video.pause();
-        layer.video.src = '';
-        layer.video.load();
-        
-        // Remove from array
-        videoLayers.splice(index, 1);
-        
-        // Clear selection if this was selected
-        if (selectedLayer === layer) {
-          selectedLayer = null;
-        }
-        
-        updateLayersList();
-      }
-    }
-
     // Update layers list
     function updateLayersList() {
       const layersDiv = document.getElementById('layers');
@@ -543,21 +571,8 @@
       videoLayers.forEach(layer => {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = `${layer.id}: ${layer.name}`;
-        nameSpan.onclick = () => selectLayer(layer);
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'layer-delete';
-        deleteBtn.textContent = '×';
-        deleteBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteLayer(layer);
-        };
-        
-        layerDiv.appendChild(nameSpan);
-        layerDiv.appendChild(deleteBtn);
+        layerDiv.textContent = `${layer.id}: ${layer.name}`;
+        layerDiv.onclick = () => selectLayer(layer);
         layersDiv.appendChild(layerDiv);
       });
     }
