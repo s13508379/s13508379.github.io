@@ -101,15 +101,15 @@
     background="color: #000000; transparent: true">
     
     <a-assets>
-    <video id="video-0" src="./video/allimg_kenburns.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>
+    <video id="video-0" src="./video/Asset 3_kenburns.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>
     </a-assets>
 
-    <a-marker type='pattern' url='./assets/ar-project.patt' id="mainMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+    <a-marker type='pattern' url='./assets/pattern-marker.patt' id="mainMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
       <!-- 3D Video Layer Container -->
       <a-entity id="videoContainer" position="0 0 0">
       <a-video 
         src="#video-0" 
-        position="1.00 0.00 0.00" 
+        position="1.00 0.00 1.40" 
         rotation="0.0 0.0 0.0" 
         scale="1.00 1.00 1.00" 
         opacity="1.00" 
@@ -130,42 +130,6 @@
   </a-scene>
 
   <script>
-    let scene, camera, renderer;
-    let videoLayers = [];
-    const layersData = [
-  {
-    "name": "allimg_kenburns.mp4",
-    "videoSrc": "./video/allimg_kenburns.mp4",
-    "position": {
-      "x": 3.2,
-      "y": 0,
-      "z": 0
-    },
-    "rotation": {
-      "x": 0,
-      "y": 0,
-      "z": 0
-    },
-    "scale": 1,
-    "alpha": 1
-  },
-  {
-    "name": "Asset 7_kenburns.mp4",
-    "videoSrc": "./video/Asset 7_kenburns.mp4",
-    "position": {
-      "x": 0,
-      "y": 2.1,
-      "z": -1.7
-    },
-    "rotation": {
-      "x": 0,
-      "y": 0,
-      "z": 0
-    },
-    "scale": 1,
-    "alpha": 1
-  }
-];
     let debugMode = false;
     let markerFound = false;
     let playingVideos = 0;
