@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AR Video Scene - ar-project</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+  <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       overflow: hidden;
     }
-    
+
     .controls {
       position: absolute;
       top: 10px;
@@ -24,7 +26,7 @@
       z-index: 1000;
       max-width: 250px;
     }
-    
+
     .controls button {
       background: #4CAF50;
       color: white;
@@ -35,19 +37,19 @@
       margin: 2px;
       font-size: 12px;
     }
-    
+
     .controls button:hover {
       background: #45a049;
     }
-    
+
     .controls button.pause {
       background: #f44336;
     }
-    
+
     .controls button.pause:hover {
       background: #da190b;
     }
-    
+
     .info {
       position: absolute;
       bottom: 10px;
@@ -60,7 +62,7 @@
       z-index: 1000;
       max-width: 300px;
     }
-    
+
     .stats {
       position: absolute;
       top: 10px;
@@ -74,6 +76,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="controls">
     <h4>AR Video Controls</h4>
@@ -85,13 +88,13 @@
       Videos: 1 loaded
     </div>
   </div>
-  
+
   <div class="stats" id="stats">
     <div>QR Marker: Not Found</div>
     <div>Videos: 0 playing</div>
     <div>FPS: --</div>
   </div>
-  
+
   <div class="info">
     <strong>Instructions:</strong><br>
     1. Allow camera access when prompted<br>
@@ -101,42 +104,28 @@
     <strong>Status:</strong> <span id="arStatus">Starting AR...</span>
   </div>
 
-  <a-scene
-    vr-mode-ui="enabled: false"
-    embedded
+  <a-scene vr-mode-ui="enabled: false" embedded
     arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
     renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
     background="color: #000000; transparent: true">
-    
+
     <a-assets>
-        <video id="video-0" src="./video/456.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>
+      <video id="video-0" src="./video/456.mp4" preload="auto" response-type="arraybuffer" loop crossorigin
+        webkit-playsinline playsinline controls></video>
     </a-assets>
 
-   <a-marker
-  type="pattern"                       
-  url="ar-project-qr-code.patt"           
-  id="qrMarker"
-  emitevents
-  smooth="true" smoothCount="10"
-  smoothTolerance="0.01" smoothThreshold="5">
+    <a-marker type="pattern" url="ar-project-qr-code.patt" id="qrMarker" emitevents smooth="true" smoothCount="10"
+      smoothTolerance="0.01" smoothThreshold="5">
       <a-entity id="videoContainer" position='0 0 0' scale="1">
-            <a-video 
-        src="#video-0" 
-        position="1.00 0.00 0.00" 
-        rotation="0.0 0.0 0.0" 
-        scale="1.00 1.00 1.00" 
-        opacity="1.00" 
-        width="2" 
-        height="2"
-        material="transparent: true"
-        geometry="primitive: plane"
-        look-at="[camera]"
-        class="video-layer"></a-video>
+        <a-video src="#video-0" position="1.00 0.00 0.00" rotation="0.0 0.0 0.0" scale="1.00 1.00 1.00" opacity="1.00"
+          width="2" height="2" material="transparent: true" geometry="primitive: plane" look-at="[camera]"
+          class="video-layer"></a-video>
       </a-entity>
-      
+
       <!-- Reference objects for scale -->
       <a-box position="0 -1 0" scale="0.1 0.1 0.1" color="#444" opacity="0.5" class="reference-object"></a-box>
-      <a-ring position="0 0 -0.1" radius-inner="0.8" radius-outer="1" color="#333" opacity="0.3" class="reference-object"></a-ring>
+      <a-ring position="0 0 -0.1" radius-inner="0.8" radius-outer="1" color="#333" opacity="0.3"
+        class="reference-object"></a-ring>
     </a-marker>
 
     <a-entity camera look-controls-enabled="false" arjs-look-controls="smoothingFactor: 0.1"></a-entity>
@@ -149,51 +138,51 @@
     let frameCount = 0;
     let lastTime = Date.now();
     let videosPlaying = false;
-    
+
     // Initialize AR scene
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       console.log('AR Video Scene initialized with 1 video layers');
-      
+
       const marker = document.querySelector('#qrMarker');
       const scene = document.querySelector('a-scene');
-      
+
       // Start videos immediately and keep them playing
       setTimeout(() => {
         playAllVideos();
         document.getElementById('arStatus').textContent = 'Ready - Point at surface';
       }, 2000);
-      
+
       // Marker detection events
-      marker.addEventListener('markerFound', function() {
+      marker.addEventListener('markerFound', function () {
         console.log('QR Marker detected - Videos visible');
         markerFound = true;
         document.getElementById('arStatus').textContent = 'AR Active ✓';
-        
+
         // Ensure videos are playing
         if (!videosPlaying) {
           playAllVideos();
         }
-        
+
         // Show reference objects
         document.querySelectorAll('.reference-object').forEach(obj => {
           obj.setAttribute('visible', true);
         });
       });
-      
-      marker.addEventListener('markerLost', function() {
+
+      marker.addEventListener('markerLost', function () {
         console.log('QR Marker lost - Videos hidden but still playing');
         markerFound = false;
         document.getElementById('arStatus').textContent = 'Searching...';
-        
+
         // Keep videos playing, just hide reference objects
         document.querySelectorAll('.reference-object').forEach(obj => {
           obj.setAttribute('visible', false);
         });
       });
-      
+
       // Performance monitoring
       setInterval(updateStats, 1000);
-      
+
       // Keep videos playing continuously
       setInterval(() => {
         if (videosPlaying) {
@@ -201,12 +190,12 @@
         }
       }, 5000);
     });
-    
+
     function playAllVideos() {
       const videos = document.querySelectorAll('video');
       playingVideos = 0;
       videosPlaying = true;
-      
+
       videos.forEach(video => {
         video.play().then(() => {
           playingVideos++;
@@ -216,7 +205,7 @@
         });
       });
     }
-    
+
     function pauseAllVideos() {
       const videos = document.querySelectorAll('video');
       videos.forEach(video => {
@@ -225,7 +214,7 @@
       playingVideos = 0;
       videosPlaying = false;
     }
-    
+
     function ensureVideosPlaying() {
       const videos = document.querySelectorAll('video');
       videos.forEach(video => {
@@ -234,7 +223,7 @@
         }
       });
     }
-    
+
     function resetVideos() {
       const videos = document.querySelectorAll('video');
       videos.forEach(video => {
@@ -244,60 +233,60 @@
         }
       });
     }
-    
+
     function toggleDebug() {
       debugMode = !debugMode;
       const scene = document.querySelector('a-scene');
       scene.setAttribute('arjs', `sourceType: webcam; debugUIEnabled: ${debugMode}; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60;`);
-      
+
       // Toggle reference objects visibility
       document.querySelectorAll('.reference-object').forEach(obj => {
         obj.setAttribute('visible', debugMode || markerFound);
       });
     }
-    
+
     function updateStats() {
       const now = Date.now();
       const fps = Math.round(1000 / (now - lastTime));
       lastTime = now;
-      
+
       const videos = document.querySelectorAll('video');
       let activeVideos = 0;
       videos.forEach(video => {
         if (!video.paused) activeVideos++;
       });
-      
+
       document.getElementById('stats').innerHTML = `
         <div>QR Marker: ${markerFound ? 'Found ✓' : 'Searching...'}</div>
         <div>Videos: ${activeVideos}/${videos.length} playing</div>
         <div>FPS: ${fps}</div>
       `;
     }
-    
+
     // Handle mobile device orientation
-    window.addEventListener('orientationchange', function() {
+    window.addEventListener('orientationchange', function () {
       setTimeout(() => {
         const scene = document.querySelector('a-scene');
         scene.resize();
       }, 500);
     });
-    
+
     // Auto-play on user interaction (required for mobile)
-    document.addEventListener('touchstart', function() {
+    document.addEventListener('touchstart', function () {
       if (!videosPlaying) {
         playAllVideos();
       }
     }, { once: true });
-    
-    document.addEventListener('click', function() {
+
+    document.addEventListener('click', function () {
       if (!videosPlaying) {
         playAllVideos();
       }
     }, { once: true });
-    
+
     // Prevent accidental pausing
     document.querySelectorAll('video').forEach(video => {
-      video.addEventListener('pause', function() {
+      video.addEventListener('pause', function () {
         if (videosPlaying) {
           setTimeout(() => {
             this.play().catch(e => console.log('Video auto-resume failed:', e));
@@ -307,4 +296,5 @@
     });
   </script>
 </body>
+
 </html>
