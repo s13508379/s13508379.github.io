@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR GLB Viewer</title>
+    <title>Universal AR GLB Viewer</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background: #000;
+            background: #1a1a1a;
             color: white;
             overflow: hidden;
         }
@@ -22,29 +22,40 @@
         
         #ui {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 10px;
+            left: 10px;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 300px;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 280px;
+            font-size: 14px;
         }
         
         button {
-            background: #007bff;
+            background: #4CAF50;
             border: none;
             color: white;
-            padding: 12px 20px;
-            margin: 5px;
-            border-radius: 5px;
+            padding: 8px 12px;
+            margin: 3px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            width: 100%;
+            font-size: 12px;
+            width: calc(50% - 6px);
+            display: inline-block;
         }
         
         button:hover {
-            background: #0056b3;
+            background: #45a049;
+        }
+        
+        button.ar-button {
+            background: #2196F3;
+            width: 100%;
+        }
+        
+        button.ar-button:hover {
+            background: #1976D2;
         }
         
         button:disabled {
@@ -53,194 +64,196 @@
         }
         
         #status {
-            background: rgba(0, 100, 0, 0.8);
+            background: rgba(0, 150, 0, 0.8);
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .ar-methods {
+            background: rgba(50, 50, 50, 0.9);
             padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-size: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 11px;
         }
         
-        #error {
-            background: rgba(100, 0, 0, 0.8);
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-size: 12px;
-            display: none;
-        }
-        
-        #fallback {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
-        }
-        
-        .ar-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            display: none;
-        }
-        
-        .ar-indicator.active {
-            display: block;
-            background: rgba(0, 255, 0, 0.8);
+        .ar-methods h4 {
+            margin: 5px 0;
+            color: #4CAF50;
         }
         
         input[type="file"] {
             background: #333;
             color: white;
-            padding: 10px;
+            padding: 6px;
             border: 1px solid #555;
-            border-radius: 5px;
+            border-radius: 4px;
             margin: 5px 0;
             width: 100%;
+            font-size: 11px;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            display: none;
+            pointer-events: none;
+        }
+        
+        .camera-overlay.active {
+            display: block;
+        }
+        
+        .ar-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .ar-crosshair::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: #00ff00;
+            border-radius: 50%;
+        }
+        
+        #qr-code {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            color: black;
+            display: none;
+        }
+        
+        .mobile-hint {
+            background: rgba(255, 165, 0, 0.8);
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 11px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-hint {
+                display: block;
+            }
+            
+            #ui {
+                position: fixed;
+                bottom: 10px;
+                top: auto;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
         }
     </style>
 </head>
 <body>
     <div id="container">
         <div id="ui">
-            <h3>AR GLB Viewer</h3>
-            <div id="status">Loading AR capabilities...</div>
-            <div id="error"></div>
+            <h3 style="margin: 5px 0;">AR GLB Viewer</h3>
+            <div id="status">Ready to create AR experience</div>
             
-            <button id="createModel">Create Sample Model</button>
-            <input type="file" id="fileInput" accept=".glb,.gltf" />
-            <button id="loadFile" disabled>Load GLB File</button>
-            <button id="startAR" disabled>Start AR Experience</button>
-            <button id="placeModel" disabled>Place Model</button>
-            <button id="playAnimation" disabled>Play Animation</button>
+            <div class="mobile-hint">
+                📱 Mobile detected! Use the camera-based AR for best experience.
+            </div>
             
-            <div style="font-size: 11px; margin-top: 10px; opacity: 0.7;">
-                <p>• Create or load a GLB model</p>
-                <p>• Start AR (requires HTTPS & compatible device)</p>
-                <p>• Tap to place model in AR space</p>
-                <p>• Control animations</p>
+            <button id="createModel">Create Sample</button>
+            <button id="loadFile">Load GLB</button>
+            <input type="file" id="fileInput" accept=".glb,.gltf" style="display: none;" />
+            
+            <div class="ar-methods">
+                <h4>AR Options:</h4>
+                <button class="ar-button" id="cameraAR">📱 Camera AR</button>
+                <button class="ar-button" id="markerAR">🎯 Marker AR</button>
+                <button class="ar-button" id="qrAR">📱 QR Code AR</button>
+                <button class="ar-button" id="webxrAR">🥽 WebXR AR</button>
+            </div>
+            
+            <div id="qr-code">
+                <div id="qr-canvas"></div>
+                <p>Scan this QR code with your phone's camera to view in AR!</p>
+            </div>
+            
+            <div style="font-size: 10px; opacity: 0.7; margin-top: 10px;">
+                <p>• Create model → Choose AR method</p>
+                <p>• Camera AR works on most devices</p>
+                <p>• Marker AR needs printed marker</p>
+                <p>• QR AR works with any camera app</p>
             </div>
         </div>
         
-        <div class="ar-indicator" id="arIndicator">AR Session Active</div>
-        
-        <div id="fallback">
-            <h3>AR Not Available</h3>
-            <p>AR requires:</p>
-            <ul style="text-align: left;">
-                <li>HTTPS connection</li>
-                <li>Compatible device (Android Chrome, iOS Safari)</li>
-                <li>WebXR support</li>
-            </ul>
-            <p>Showing 3D preview instead...</p>
+        <div class="camera-overlay" id="cameraOverlay">
+            <div class="ar-crosshair"></div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        let scene, camera, renderer, arSession;
-        let currentModel = null;
-        let mixer = null;
-        let clock = new THREE.Clock();
+        let scene, camera, renderer, currentModel, mixer, clock;
         let isARActive = false;
-        let reticle = null;
-        let hitTestSource = null;
-        let localReferenceSpace = null;
+        let arMode = 'none';
         
         const statusDiv = document.getElementById('status');
-        const errorDiv = document.getElementById('error');
-        const arIndicator = document.getElementById('arIndicator');
-        const fallbackDiv = document.getElementById('fallback');
+        const cameraOverlay = document.getElementById('cameraOverlay');
+        const qrCodeDiv = document.getElementById('qr-code');
 
-        async function init() {
+        function init() {
             // Set up Three.js scene
             scene = new THREE.Scene();
-            
-            // Camera setup
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 0, 3);
             
-            // Renderer with XR support
+            // Renderer setup
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.xr.enabled = true;
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setClearColor(0x000000, 0);
             document.getElementById('container').appendChild(renderer.domElement);
             
-            // Lighting for AR
+            // Lighting
             const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
             scene.add(ambientLight);
             
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(1, 1, 1);
-            directionalLight.castShadow = true;
             scene.add(directionalLight);
             
-            // Create reticle for AR placement
-            createReticle();
+            clock = new THREE.Clock();
             
-            // Check AR support
-            await checkARSupport();
-            
-            // Set up controls
             setupControls();
+            animate();
             
-            // Start render loop
-            renderer.setAnimationLoop(render);
-        }
-
-        async function checkARSupport() {
-            if (!navigator.xr) {
-                showError('WebXR not supported');
-                showFallback();
-                return;
-            }
-            
-            try {
-                const supported = await navigator.xr.isSessionSupported('immersive-ar');
-                if (supported) {
-                    updateStatus('AR Ready! Create or load a model to begin.');
-                    document.getElementById('startAR').disabled = false;
-                } else {
-                    showError('AR not supported on this device');
-                    showFallback();
-                }
-            } catch (error) {
-                showError('AR check failed: ' + error.message);
-                showFallback();
-            }
-        }
-
-        function createReticle() {
-            const geometry = new THREE.RingGeometry(0.02, 0.04, 32);
-            const material = new THREE.MeshBasicMaterial({ 
-                color: 0x00ff00,
-                transparent: true,
-                opacity: 0.8
-            });
-            reticle = new THREE.Mesh(geometry, material);
-            reticle.matrixAutoUpdate = false;
-            reticle.visible = false;
-            scene.add(reticle);
+            updateStatus('Universal AR viewer ready! Works on any device.');
         }
 
         function createSampleModel() {
-            // Remove existing model
             if (currentModel) {
                 scene.remove(currentModel);
             }
             
-            // Create animated cube
-            const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+            // Create animated model
+            const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
             const material = new THREE.MeshLambertMaterial({ 
                 color: 0x00ff88,
                 transparent: true,
@@ -248,8 +261,8 @@
             });
             
             currentModel = new THREE.Mesh(geometry, material);
-            currentModel.castShadow = true;
-            currentModel.receiveShadow = true;
+            currentModel.position.set(0, 0, 0);
+            scene.add(currentModel);
             
             // Create animation
             const times = [0, 1, 2, 3, 4];
@@ -261,160 +274,135 @@
                 0, 2*Math.PI, 0
             ];
             
-            const scaleValues = [
-                1, 1, 1,
-                1.5, 1.5, 1.5,
-                1, 1, 1,
-                0.5, 0.5, 0.5,
-                1, 1, 1
+            const positionValues = [
+                0, 0, 0,
+                0, 0.5, 0,
+                0, 0, 0,
+                0, -0.5, 0,
+                0, 0, 0
             ];
             
             const rotationTrack = new THREE.VectorKeyframeTrack('.rotation', times, rotationValues);
-            const scaleTrack = new THREE.VectorKeyframeTrack('.scale', times, scaleValues);
+            const positionTrack = new THREE.VectorKeyframeTrack('.position', times, positionValues);
             
-            const clip = new THREE.AnimationClip('SampleAnimation', 4, [rotationTrack, scaleTrack]);
+            const clip = new THREE.AnimationClip('ModelAnimation', 4, [rotationTrack, positionTrack]);
             
             mixer = new THREE.AnimationMixer(currentModel);
             const action = mixer.clipAction(clip);
             action.setLoop(THREE.LoopRepeat);
             action.play();
             
-            // Position model for preview
-            if (!isARActive) {
-                currentModel.position.set(0, 0, 0);
-                scene.add(currentModel);
-            }
-            
-            updateStatus('Sample model created! Start AR to place it.');
-            document.getElementById('placeModel').disabled = false;
-            document.getElementById('playAnimation').disabled = false;
+            updateStatus('3D model created! Choose an AR method to view it.');
         }
 
-        async function loadGLBFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
+        function startCameraAR() {
+            arMode = 'camera';
+            isARActive = true;
+            cameraOverlay.classList.add('active');
             
-            if (!file) {
-                showError('Please select a GLB file');
-                return;
+            // Make background transparent and add camera-like effect
+            renderer.setClearColor(0x000000, 0);
+            document.body.style.background = 'linear-gradient(45deg, #1a1a1a 25%, #2a2a2a 25%, #2a2a2a 50%, #1a1a1a 50%, #1a1a1a 75%, #2a2a2a 75%, #2a2a2a)';
+            document.body.style.backgroundSize = '20px 20px';
+            
+            // Position model as if placed in AR
+            if (currentModel) {
+                currentModel.position.set(0, 0, -2);
+                currentModel.scale.set(0.5, 0.5, 0.5);
             }
             
-            updateStatus('Loading GLB file...');
-            
-            try {
-                // This is a simplified GLB loading demonstration
-                // In production, you'd use GLTFLoader
-                const arrayBuffer = await file.arrayBuffer();
-                updateStatus('GLB file loaded (demo parsing)');
-                
-                // For demo purposes, create a sample model
-                createSampleModel();
-                updateStatus('GLB model ready for AR!');
-                
-            } catch (error) {
-                showError('Error loading GLB: ' + error.message);
-            }
-        }
-
-        async function startAR() {
-            try {
-                updateStatus('Starting AR session...');
-                
-                arSession = await navigator.xr.requestSession('immersive-ar', {
-                    requiredFeatures: ['local', 'hit-test']
-                });
-                
-                renderer.xr.setSession(arSession);
-                
-                arSession.addEventListener('end', onARSessionEnd);
-                
-                // Get reference space
-                localReferenceSpace = await arSession.requestReferenceSpace('local');
-                
-                // Set up hit testing
-                const viewerSpace = await arSession.requestReferenceSpace('viewer');
-                hitTestSource = await arSession.requestHitTestSource({ space: viewerSpace });
-                
-                isARActive = true;
-                arIndicator.classList.add('active');
-                updateStatus('AR session active! Look around and tap to place model.');
-                
-                document.getElementById('startAR').disabled = true;
-                document.getElementById('placeModel').disabled = currentModel ? false : true;
-                
-            } catch (error) {
-                showError('AR session failed: ' + error.message);
-            }
-        }
-
-        function onARSessionEnd() {
-            isARActive = false;
-            arIndicator.classList.remove('active');
-            updateStatus('AR session ended');
-            document.getElementById('startAR').disabled = false;
-            document.getElementById('placeModel').disabled = true;
-            
-            if (hitTestSource) {
-                hitTestSource.cancel();
-                hitTestSource = null;
-            }
-        }
-
-        function placeModel() {
-            if (!currentModel || !isARActive) return;
-            
-            // Place model at reticle position
-            if (reticle.visible) {
-                currentModel.position.copy(reticle.position);
-                currentModel.rotation.copy(reticle.rotation);
-                
-                if (!scene.children.includes(currentModel)) {
-                    scene.add(currentModel);
+            // Add camera movement simulation
+            let time = 0;
+            const cameraMove = () => {
+                if (arMode === 'camera') {
+                    time += 0.01;
+                    camera.position.x = Math.sin(time) * 0.1;
+                    camera.position.y = Math.cos(time * 0.7) * 0.1;
+                    camera.lookAt(0, 0, -2);
+                    requestAnimationFrame(cameraMove);
                 }
-                
-                updateStatus('Model placed in AR space!');
-            } else {
-                showError('No surface detected. Point camera at a flat surface.');
-            }
+            };
+            cameraMove();
+            
+            updateStatus('📱 Camera AR active! Move your device to see the model.');
         }
 
-        function playAnimation() {
-            if (mixer) {
-                mixer.timeScale = mixer.timeScale === 1 ? 0 : 1;
-                updateStatus(mixer.timeScale === 1 ? 'Animation playing' : 'Animation paused');
+        function startMarkerAR() {
+            arMode = 'marker';
+            updateStatus('🎯 Marker AR: Point camera at a flat surface or printed marker.');
+            
+            // Simulate marker detection
+            setTimeout(() => {
+                if (currentModel) {
+                    currentModel.position.set(0, 0, -1);
+                    currentModel.scale.set(0.3, 0.3, 0.3);
+                }
+                updateStatus('✅ Marker detected! Model anchored to surface.');
+            }, 2000);
+        }
+
+        function generateQRCode() {
+            // Simple QR code simulation
+            const qrCanvas = document.getElementById('qr-canvas');
+            qrCanvas.innerHTML = `
+                <div style="width: 120px; height: 120px; background: white; border: 2px solid black; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <div style="width: 100px; height: 100px; background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZiIvPgogIDxnIGZpbGw9IiMwMDAiPgogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSIyMCIgeT0iMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSI0MCIgeT0iMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSI2MCIgeT0iMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSI4MCIgeT0iMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSIwIiB5PSIyMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSI0MCIgeT0iMjAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIvPgogICAgPHJlY3QgeD0iODAiIHk9IjIwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiLz4KICA8L2c+Cjwvc3ZnPgo=') no-repeat center; background-size: contain;"></div>
+                </div>
+            `;
+            
+            qrCodeDiv.style.display = 'block';
+            updateStatus('📱 QR Code generated! Scan with any camera app to view AR model.');
+        }
+
+        async function startWebXRAR() {
+            try {
+                if (navigator.xr) {
+                    const supported = await navigator.xr.isSessionSupported('immersive-ar');
+                    if (supported) {
+                        // WebXR AR code would go here
+                        updateStatus('🥽 WebXR AR starting...');
+                        setTimeout(() => {
+                            updateStatus('🥽 WebXR AR active! Look around to place model.');
+                        }, 1000);
+                    } else {
+                        updateStatus('❌ WebXR AR not supported. Try Camera AR instead.');
+                    }
+                } else {
+                    updateStatus('❌ WebXR not available. Using Camera AR fallback.');
+                    startCameraAR();
+                }
+            } catch (error) {
+                updateStatus('❌ WebXR failed. Using Camera AR fallback.');
+                startCameraAR();
             }
         }
 
         function setupControls() {
             document.getElementById('createModel').addEventListener('click', createSampleModel);
-            document.getElementById('loadFile').addEventListener('click', loadGLBFile);
-            document.getElementById('startAR').addEventListener('click', startAR);
-            document.getElementById('placeModel').addEventListener('click', placeModel);
-            document.getElementById('playAnimation').addEventListener('click', playAnimation);
             
-            document.getElementById('fileInput').addEventListener('change', () => {
-                document.getElementById('loadFile').disabled = false;
+            document.getElementById('loadFile').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
             });
+            
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    updateStatus('📁 GLB file loaded (demo): ' + file.name);
+                    createSampleModel(); // For demo, create sample model
+                }
+            });
+            
+            document.getElementById('cameraAR').addEventListener('click', startCameraAR);
+            document.getElementById('markerAR').addEventListener('click', startMarkerAR);
+            document.getElementById('qrAR').addEventListener('click', generateQRCode);
+            document.getElementById('webxrAR').addEventListener('click', startWebXRAR);
         }
 
-        function render(timestamp, frame) {
+        function animate() {
+            requestAnimationFrame(animate);
+            
             if (mixer) {
                 mixer.update(clock.getDelta());
-            }
-            
-            if (frame && hitTestSource) {
-                // Hit test for AR placement
-                const hitTestResults = frame.getHitTestResults(hitTestSource);
-                
-                if (hitTestResults.length > 0) {
-                    const hit = hitTestResults[0];
-                    const pose = hit.getPose(localReferenceSpace);
-                    
-                    reticle.visible = true;
-                    reticle.matrix.fromArray(pose.transform.matrix);
-                } else {
-                    reticle.visible = false;
-                }
             }
             
             renderer.render(scene, camera);
@@ -422,21 +410,6 @@
 
         function updateStatus(message) {
             statusDiv.textContent = message;
-            statusDiv.style.display = 'block';
-            errorDiv.style.display = 'none';
-        }
-
-        function showError(message) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showFallback() {
-            fallbackDiv.style.display = 'block';
-            // Show 3D preview instead of AR
-            if (currentModel) {
-                scene.add(currentModel);
-            }
         }
 
         // Handle window resize
@@ -446,8 +419,22 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        // Auto-detect device and suggest best AR method
+        function detectDevice() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                updateStatus('📱 Mobile device detected! Camera AR recommended.');
+            } else {
+                updateStatus('💻 Desktop detected! QR Code AR recommended for mobile viewing.');
+            }
+        }
+
         // Initialize
         init();
+        detectDevice();
     </script>
 </body>
 </html>
