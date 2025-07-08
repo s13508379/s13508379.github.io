@@ -217,35 +217,47 @@
                 <div class="control-group" id="customAnimationControls" style="display: none;">
                     <h5>Start Position:</h5>
                     <label>Start X: <span id="startXValue">0</span></label>
-                    <input type="range" id="startX" min="-15" max="15" step="0.1" value="0" oninput="updateCustomValues()">
+                    <input type="range" id="startX" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
                     <label>Start Y: <span id="startYValue">0</span></label>
-                    <input type="range" id="startY" min="-15" max="15" step="0.1" value="0" oninput="updateCustomValues()">
+                    <input type="range" id="startY" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
                     <label>Start Z: <span id="startZValue">0</span></label>
-                    <input type="range" id="startZ" min="-15" max="15" step="0.1" value="0" oninput="updateCustomValues()">
-                    
+                    <input type="range" id="startZ" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+
                     <h5>End Position:</h5>
                     <label>End X: <span id="endXValue">0</span></label>
-                    <input type="range" id="endX" min="-15" max="15" step="0.1" value="0" oninput="updateCustomValues()">
+                    <input type="range" id="endX" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
                     <label>End Y: <span id="endYValue">0</span></label>
-                    <input type="range" id="endY" min="-15" max="15" step="0.1" value="0" oninput="updateCustomValues()">
+                    <input type="range" id="endY" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
                     <label>End Z: <span id="endZValue">0</span></label>
-                    <input type="range" id="endZ" min="-15" max="15" step="0.1" value="0" oninput="updateCustomValues()">
+                    <input type="range" id="endZ" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
 
                     <h5>Start Properties:</h5>
                     <label>Start Scale: <span id="startScaleValue">1.0</span></label>
-                    <input type="range" id="startScale" min="0.1" max="5" step="0.1" value="1" oninput="updateCustomValues()">
+                    <input type="range" id="startScale" min="0.1" max="5" step="0.1" value="1"
+                        oninput="updateCustomValues()">
                     <label>Start Opacity: <span id="startOpacityValue">1.0</span></label>
-                    <input type="range" id="startOpacity" min="0" max="1" step="0.1" value="1" oninput="updateCustomValues()">
+                    <input type="range" id="startOpacity" min="0" max="1" step="0.1" value="1"
+                        oninput="updateCustomValues()">
                     <label>Start Rotation: <span id="startRotationValue">0</span>°</label>
-                    <input type="range" id="startRotation" min="-360" max="360" step="1" value="0" oninput="updateCustomValues()">
+                    <input type="range" id="startRotation" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
 
                     <h5>End Properties:</h5>
                     <label>End Scale: <span id="endScaleValue">1.0</span></label>
-                    <input type="range" id="endScale" min="0.1" max="5" step="0.1" value="1" oninput="updateCustomValues()">
+                    <input type="range" id="endScale" min="0.1" max="5" step="0.1" value="1"
+                        oninput="updateCustomValues()">
                     <label>End Opacity: <span id="endOpacityValue">1.0</span></label>
-                    <input type="range" id="endOpacity" min="0" max="1" step="0.1" value="1" oninput="updateCustomValues()">
+                    <input type="range" id="endOpacity" min="0" max="1" step="0.1" value="1"
+                        oninput="updateCustomValues()">
                     <label>End Rotation: <span id="endRotationValue">0</span>°</label>
-                    <input type="range" id="endRotation" min="-360" max="360" step="1" value="0" oninput="updateCustomValues()">
+                    <input type="range" id="endRotation" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
 
                     <div class="control-group">
                         <button onclick="setCurrentAsStart()">Set Current as Start</button>
@@ -255,12 +267,14 @@
 
                 <div class="control-group">
                     <label>Animation Speed: <span id="speedValue">1.0</span></label>
-                    <input type="range" id="animationSpeed" min="0.1" max="3" step="0.1" value="1" oninput="updateAnimationSpeed()">
+                    <input type="range" id="animationSpeed" min="0.1" max="3" step="0.1" value="1"
+                        oninput="updateAnimationSpeed()">
                 </div>
 
                 <div class="control-group">
                     <label>Animation Duration: <span id="durationValue">2.0</span>s</label>
-                    <input type="range" id="animationDuration" min="0.5" max="5" step="0.1" value="2" oninput="updateAnimationDuration()">
+                    <input type="range" id="animationDuration" min="0.5" max="5" step="0.1" value="2"
+                        oninput="updateAnimationDuration()">
                 </div>
 
                 <div class="control-group">
@@ -299,6 +313,8 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- your main script here -->
     <script>
         let scene, camera, renderer;
         let imageLayers = [];
@@ -404,7 +420,7 @@
 
             Array.from(files).forEach(file => {
                 const img = new Image();
-                img.onload = function() {
+                img.onload = function () {
                     const texture = new THREE.Texture(img);
                     texture.needsUpdate = true;
                     texture.minFilter = THREE.LinearFilter;
@@ -530,7 +546,7 @@
             document.getElementById('startScale').value = custom.start.scale;
             document.getElementById('startOpacity').value = custom.start.opacity;
             document.getElementById('startRotation').value = custom.start.rotation;
-            
+
             document.getElementById('endX').value = custom.end.x;
             document.getElementById('endY').value = custom.end.y;
             document.getElementById('endZ').value = custom.end.z;
@@ -557,7 +573,7 @@
             document.getElementById('alphaValue').textContent = document.getElementById('alpha').value;
             document.getElementById('speedValue').textContent = document.getElementById('animationSpeed').value;
             document.getElementById('durationValue').textContent = document.getElementById('animationDuration').value;
-            
+
             // Update custom animation values
             updateCustomValues();
         }
@@ -570,14 +586,14 @@
             document.getElementById('startScaleValue').textContent = document.getElementById('startScale').value;
             document.getElementById('startOpacityValue').textContent = document.getElementById('startOpacity').value;
             document.getElementById('startRotationValue').textContent = document.getElementById('startRotation').value;
-            
+
             document.getElementById('endXValue').textContent = document.getElementById('endX').value;
             document.getElementById('endYValue').textContent = document.getElementById('endY').value;
             document.getElementById('endZValue').textContent = document.getElementById('endZ').value;
             document.getElementById('endScaleValue').textContent = document.getElementById('endScale').value;
             document.getElementById('endOpacityValue').textContent = document.getElementById('endOpacity').value;
             document.getElementById('endRotationValue').textContent = document.getElementById('endRotation').value;
-            
+
             // Update selected layer's custom animation data
             if (selectedLayer) {
                 selectedLayer.customAnimation = {
@@ -604,7 +620,7 @@
         // Set current position/properties as start
         function setCurrentAsStart() {
             if (!selectedLayer) return;
-            
+
             const mesh = selectedLayer.mesh;
             document.getElementById('startX').value = mesh.position.x;
             document.getElementById('startY').value = mesh.position.y;
@@ -612,14 +628,14 @@
             document.getElementById('startScale').value = mesh.scale.x;
             document.getElementById('startOpacity').value = mesh.material.opacity;
             document.getElementById('startRotation').value = mesh.rotation.z * 180 / Math.PI;
-            
+
             updateCustomValues();
         }
 
         // Set current position/properties as end
         function setCurrentAsEnd() {
             if (!selectedLayer) return;
-            
+
             const mesh = selectedLayer.mesh;
             document.getElementById('endX').value = mesh.position.x;
             document.getElementById('endY').value = mesh.position.y;
@@ -627,7 +643,7 @@
             document.getElementById('endScale').value = mesh.scale.x;
             document.getElementById('endOpacity').value = mesh.material.opacity;
             document.getElementById('endRotation').value = mesh.rotation.z * 180 / Math.PI;
-            
+
             updateCustomValues();
         }
 
@@ -724,7 +740,7 @@
                 update: (currentTime) => {
                     const elapsed = (currentTime - startTime) / 1000 * speed;
                     let progress = (elapsed % duration) / duration;
-                    
+
                     if (!loop && elapsed > duration) {
                         progress = 1;
                     }
@@ -736,23 +752,23 @@
                     if (animationType === 'custom') {
                         const start = selectedLayer.customAnimation.start;
                         const end = selectedLayer.customAnimation.end;
-                        
+
                         // Interpolate position
                         mesh.position.x = start.x + (end.x - start.x) * easedProgress;
                         mesh.position.y = start.y + (end.y - start.y) * easedProgress;
                         mesh.position.z = start.z + (end.z - start.z) * easedProgress;
-                        
+
                         // Interpolate scale
                         const scale = start.scale + (end.scale - start.scale) * easedProgress;
                         mesh.scale.set(scale, scale, scale);
-                        
+
                         // Interpolate opacity
                         mesh.material.opacity = start.opacity + (end.opacity - start.opacity) * easedProgress;
-                        
+
                         // Interpolate rotation
                         const rotation = (start.rotation + (end.rotation - start.rotation) * easedProgress) * Math.PI / 180;
                         mesh.rotation.z = rotation;
-                        
+
                     } else {
                         // Reset to original state first
                         mesh.position.copy(selectedLayer.originalPosition);
@@ -803,12 +819,12 @@
         // Preview animation (single run)
         function previewAnimation() {
             if (!selectedLayer) return;
-            
+
             const originalLoop = document.getElementById('loopAnimation').checked;
             document.getElementById('loopAnimation').checked = false;
-            
+
             applyAnimation();
-            
+
             // Restore original loop setting after animation
             setTimeout(() => {
                 document.getElementById('loopAnimation').checked = originalLoop;
@@ -848,7 +864,7 @@
                     layer.animation.stop();
                 }
                 layer.animationType = 'none';
-                
+
                 // Reset to original state
                 const mesh = layer.mesh;
                 mesh.position.copy(layer.originalPosition);
@@ -948,7 +964,7 @@
         function exportAsHTML() {
             const projectName = document.getElementById('projectName').value || 'project';
             const backgroundColor = document.getElementById('bgColor').value;
-            
+
             const layersData = imageLayers.map(layer => ({
                 id: layer.id,
                 name: layer.name,
@@ -1207,7 +1223,7 @@
         function exportAsGLTF() {
             // Create a temporary scene for export
             const exportScene = new THREE.Scene();
-            
+
             imageLayers.forEach(layer => {
                 const clonedMesh = layer.mesh.clone();
                 clonedMesh.material = layer.mesh.material.clone();
@@ -1217,7 +1233,7 @@
             // Note: GLTF export requires additional setup for animations
             // For now, we'll export static models
             const gltfExporter = new THREE.GLTFExporter();
-            
+
             gltfExporter.parse(
                 exportScene,
                 function (result) {
@@ -1237,7 +1253,7 @@
         function exportAsAR() {
             const projectName = document.getElementById('projectName').value || 'project';
             const backgroundColor = document.getElementById('bgColor').value;
-            
+
             const layersData = imageLayers.map(layer => ({
                 id: layer.id,
                 name: layer.name,
@@ -1630,7 +1646,7 @@
 
         function captureScreenshot() {
             const canvas = renderer.domElement;
-            canvas.toBlob(function(blob) {
+            canvas.toBlob(function (blob) {
                 const projectName = document.getElementById('projectName').value || 'project';
                 saveAs(blob, `${projectName}_screenshot.png`);
             });
@@ -1639,25 +1655,25 @@
         // Load project from JSON
         function loadProject(file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const projectData = JSON.parse(e.target.result);
-                    
+
                     // Clear existing layers
                     imageLayers.forEach(layer => {
                         scene.remove(layer.mesh);
                     });
                     imageLayers = [];
-                    
+
                     // Set project settings
                     document.getElementById('projectName').value = projectData.name;
                     document.getElementById('bgColor').value = projectData.backgroundColor;
                     updateBackgroundColor();
-                    
+
                     // Load layers
                     projectData.layers.forEach(layerData => {
                         const img = new Image();
-                        img.onload = function() {
+                        img.onload = function () {
                             const texture = new THREE.Texture(img);
                             texture.needsUpdate = true;
                             texture.minFilter = THREE.LinearFilter;
@@ -1700,7 +1716,7 @@
                         };
                         img.src = layerData.imageData;
                     });
-                    
+
                     // Set camera position
                     if (projectData.camera) {
                         camera.position.set(
@@ -1709,7 +1725,7 @@
                             projectData.camera.position.z
                         );
                     }
-                    
+
                 } catch (error) {
                     alert('Error loading project: ' + error.message);
                 }
