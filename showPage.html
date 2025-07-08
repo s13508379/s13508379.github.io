@@ -46,7 +46,9 @@
       margin-bottom: 5px;
     }
 
-    input[type="file"], input[type="text"], input[type="url"] {
+    input[type="file"],
+    input[type="text"],
+    input[type="url"] {
       width: 100%;
       margin-bottom: 10px;
       padding: 5px;
@@ -119,7 +121,8 @@
       font-size: 12px;
     }
 
-    #htmlOutput, #qrOutput {
+    #htmlOutput,
+    #qrOutput {
       position: fixed;
       top: 0;
       left: 0;
@@ -143,12 +146,14 @@
       font-size: 12px;
     }
 
-    #htmlOutput .controls, #qrOutput .controls {
+    #htmlOutput .controls,
+    #qrOutput .controls {
       text-align: center;
       margin-top: 10px;
     }
 
-    #htmlOutput button, #qrOutput button {
+    #htmlOutput button,
+    #qrOutput button {
       margin: 0 10px;
     }
 
@@ -243,17 +248,6 @@
       </div>
     </div>
 
-    <!-- HTML Output Modal -->
-    <div id="htmlOutput">
-      <h3>Generated AR HTML Code</h3>
-      <textarea id="htmlCode" readonly></textarea>
-      <div class="controls">
-        <button onclick="copyToClipboard()">Copy to Clipboard</button>
-        <button onclick="downloadHTMLFile()">Download as HTML File</button>
-        <button onclick="closeHTMLOutput()">Close</button>
-      </div>
-    </div>
-
     <!-- QR Code Output Modal -->
     <div id="qrOutput">
       <h3>QR Code for AR Experience</h3>
@@ -281,6 +275,7 @@
     let videoLayers = [];
     let selectedLayer = null;
     let layerCounter = 0;
+    let generatedQRCanvas = null;
 
     function showQRCode() {
       const url = document.getElementById('websiteUrl').value.trim();
@@ -299,28 +294,28 @@
 
       const canvas = document.getElementById('qrCanvas');
       const urlDisplay = document.getElementById('qrUrlDisplay');
-      
+
       urlDisplay.textContent = url;
-      
+
       // Generate QR code using qrcode-generator library
       try {
         const qr = qrcode(0, 'M');
         qr.addData(url);
         qr.make();
-        
+
         // Create canvas and draw QR code
         const ctx = canvas.getContext('2d');
         const size = 300;
         canvas.width = size;
         canvas.height = size;
-        
+
         const moduleCount = qr.getModuleCount();
         const moduleSize = size / moduleCount;
-        
+
         // Fill white background
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, size, size);
-        
+
         // Draw black modules
         ctx.fillStyle = '#000000';
         for (let row = 0; row < moduleCount; row++) {
@@ -335,7 +330,7 @@
             }
           }
         }
-        
+
         document.getElementById('qrOutput').style.display = 'block';
       } catch (error) {
         console.error('QR Code generation failed:', error);
@@ -355,7 +350,7 @@
       const canvas = document.getElementById('qrCanvas');
       const url = document.getElementById('websiteUrl').value;
       const projectName = document.getElementById('projectName').value || 'ar-project';
-      
+
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
         <html>
@@ -437,21 +432,21 @@
           const qr = qrcode(0, 'M');
           qr.addData(url);
           qr.make();
-          
+
           // Create canvas for QR code
           const qrCanvas = document.createElement('canvas');
           const size = 512;
           qrCanvas.width = size;
           qrCanvas.height = size;
-          
+
           const ctx = qrCanvas.getContext('2d');
           const moduleCount = qr.getModuleCount();
           const moduleSize = size / moduleCount;
-          
+
           // Fill white background
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, size, size);
-          
+
           // Draw black modules
           ctx.fillStyle = '#000000';
           for (let row = 0; row < moduleCount; row++) {
@@ -466,15 +461,112 @@
               }
             }
           }
-          
+
+          // Store for download
+          generatedQRCanvas = qrCanvas;
+
+          // Auto-convert QR code to pattern
+          convertQRToPattern(qrCanvas)
+          console.log(convertQRToPattern(qrCanvas));
+
           const qrBlob = await new Promise(resolve => {
             qrCanvas.toBlob(resolve, 'image/png');
           });
-          
+
           zip.file(name + '-qr-code.png', qrBlob);
         } catch (error) {
           console.error('Error generating QR code for package:', error);
         }
+      }
+
+      function convertQRToPattern(canvas) {
+        try {
+          // Create a high-resolution pattern image
+          const patternCanvas = document.createElement('canvas');
+          const size = 512;
+          patternCanvas.width = size;
+          patternCanvas.height = size;
+          const ctx = patternCanvas.getContext('2d');
+
+          // Create pattern with border
+          const borderSize = size * 0.125; // 12.5% border
+          const innerSize = size - (borderSize * 2);
+
+          // Fill white background
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, size, size);
+
+          // Draw black border
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, size, borderSize); // top
+          ctx.fillRect(0, size - borderSize, size, borderSize); // bottom
+          ctx.fillRect(0, 0, borderSize, size); // left
+          ctx.fillRect(size - borderSize, 0, borderSize, size); // right
+
+          // Draw QR code in center
+          ctx.drawImage(canvas, borderSize, borderSize, innerSize, innerSize);
+
+          // Convert to pattern data
+          const patternData = canvasToPatternData(patternCanvas);
+          generatedQRPattern = patternData;
+          if (patternData) {
+            zip.file(name + '-pattern.patt', patternData);
+            console.log('Pattern file added to ZIP');
+          }
+          console.log('QR code automatically converted to AR pattern');
+
+          // Return the pattern data
+          return patternData;
+        } catch (error) {
+          console.error('Error converting QR to pattern:', error);
+          return null; // Return null on error
+        }
+      }
+
+      function canvasToPatternData(canvas) {
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Resize to 16x16 for pattern
+        const patternSize = 16;
+        const pattern = [];
+
+        for (let y = 0; y < patternSize; y++) {
+          const row = [];
+          for (let x = 0; x < patternSize; x++) {
+            const srcX = Math.floor((x / patternSize) * canvas.width);
+            const srcY = Math.floor((y / patternSize) * canvas.height);
+            const index = (srcY * canvas.width + srcX) * 4;
+
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+
+            // Convert to grayscale and threshold
+            const gray = (r + g + b) / 3;
+            row.push(gray < 128 ? 0 : 255);
+          }
+          pattern.push(row);
+        }
+
+        // Convert to .patt format (AR.js pattern format)
+        let pattContent = '';
+
+        // Generate the pattern data (simplified version)
+        for (let y = 0; y < 16; y++) {
+          let line = '';
+          for (let x = 0; x < 16; x++) {
+            const val = pattern[y][x];
+            line += (val === 0 ? '  0' : '255') + (x < 15 ? ' ' : '');
+          }
+          pattContent += line + '\n';
+        }
+
+        // Add green and blue channels (same as red for grayscale)
+        pattContent += pattContent + pattContent;
+
+        return pattContent;
       }
 
       // Add video files
@@ -834,26 +926,6 @@
       return html;
     }
 
-    function copyToClipboard() {
-      const textarea = document.getElementById('htmlCode');
-      textarea.select();
-      document.execCommand('copy');
-      alert('AR HTML code copied to clipboard!');
-    }
-
-    function downloadHTMLFile() {
-      const htmlCode = document.getElementById('htmlCode').value;
-      const blob = new Blob([htmlCode], { type: 'text/html' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      const projectName = document.getElementById('projectName').value || 'ar-project';
-      link.download = projectName + '.html';
-      link.click();
-    }
-
-    function closeHTMLOutput() {
-      document.getElementById('htmlOutput').style.display = 'none';
-    }
 
     function deleteLayer(layerId) {
       const layerIndex = videoLayers.findIndex(layer => layer.id === layerId);
