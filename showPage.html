@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Video Layer Composer</title>
+  <title>AR Video Layer Composer</title>
   <style>
     body {
       margin: 0;
@@ -46,9 +46,14 @@
       margin-bottom: 5px;
     }
 
-    input[type="file"] {
+    input[type="file"], input[type="text"], input[type="url"] {
       width: 100%;
       margin-bottom: 10px;
+      padding: 5px;
+      border: 1px solid #666;
+      border-radius: 3px;
+      background: #333;
+      color: white;
     }
 
     button {
@@ -66,6 +71,14 @@
       background: #45a049;
     }
 
+    button.delete {
+      background: #f44336;
+    }
+
+    button.delete:hover {
+      background: #da190b;
+    }
+
     #layersList {
       max-height: 200px;
       overflow-y: auto;
@@ -81,10 +94,19 @@
       margin-bottom: 5px;
       border-radius: 3px;
       cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .layer-item.selected {
       background: rgba(76, 175, 80, 0.3);
+    }
+
+    .layer-item button {
+      padding: 2px 6px;
+      font-size: 10px;
+      margin: 0;
     }
 
     #info {
@@ -96,13 +118,79 @@
       border-radius: 5px;
       font-size: 12px;
     }
+
+    #htmlOutput, #qrOutput {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      display: none;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #htmlOutput textarea {
+      width: 100%;
+      height: 80%;
+      background: #1a1a1a;
+      color: #00ff00;
+      border: 1px solid #333;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    #htmlOutput .controls, #qrOutput .controls {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #htmlOutput button, #qrOutput button {
+      margin: 0 10px;
+    }
+
+    #qrDisplay {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    #qrCanvas {
+      border: 2px solid #fff;
+      background: white;
+      margin: 10px auto;
+      display: block;
+    }
+
+    .url-info {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-size: 11px;
+    }
   </style>
 </head>
 
 <body>
   <div id="container">
     <div id="controls">
-      <h3>3D Video Layer Composer</h3>
+      <h3>AR Video Layer Composer</h3>
+
+      <div class="control-group">
+        <label>Project Name:</label>
+        <input type="text" id="projectName" placeholder="Enter project name" value="ar-project">
+      </div>
+
+      <div class="control-group">
+        <label>Website URL (for QR Code):</label>
+        <input type="url" id="websiteUrl" placeholder="https://your-website.com" value="">
+        <div class="url-info">
+          This URL will be embedded in the QR code. Users can scan it to access your AR experience.
+        </div>
+      </div>
 
       <div class="control-group">
         <label>Add Video Layer:</label>
@@ -112,13 +200,13 @@
 
       <div class="control-group">
         <label>Position X: <span id="xValue">0</span></label>
-        <input type="range" id="xPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+        <input type="range" id="xPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
 
         <label>Position Y: <span id="yValue">0</span></label>
-        <input type="range" id="yPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+        <input type="range" id="yPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
 
         <label>Position Z (Depth): <span id="zValue">0</span></label>
-        <input type="range" id="zPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+        <input type="range" id="zPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
       </div>
 
       <div class="control-group">
@@ -144,9 +232,9 @@
         <button onclick="playAll()">Play All</button>
         <button onclick="pauseAll()">Pause All</button>
         <button onclick="resetCamera()">Reset Camera</button>
-        <button onclick="downloadOBJ()">Download OBJ</button>
-        <button onclick="downloadWithTextures()">Download with Textures</button>
-        <button onclick="downloadAnimated()">Download Animated (GLTF)</button>
+        <button onclick="showQRCode()">Generate QR Code</button>
+        <button onclick="downloadHTML()">Download AR HTML</button>
+        <button onclick="downloadPackage()">Download AR Package</button>
       </div>
 
       <div id="layersList">
@@ -155,283 +243,646 @@
       </div>
     </div>
 
+    <!-- HTML Output Modal -->
+    <div id="htmlOutput">
+      <h3>Generated AR HTML Code</h3>
+      <textarea id="htmlCode" readonly></textarea>
+      <div class="controls">
+        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        <button onclick="downloadHTMLFile()">Download as HTML File</button>
+        <button onclick="closeHTMLOutput()">Close</button>
+      </div>
+    </div>
+
+    <!-- QR Code Output Modal -->
+    <div id="qrOutput">
+      <h3>QR Code for AR Experience</h3>
+      <div id="qrDisplay">
+        <canvas id="qrCanvas"></canvas>
+        <p>Scan this QR code with your phone to access the AR experience!</p>
+        <div style="margin-top: 20px;">
+          <strong>URL:</strong> <span id="qrUrlDisplay"></span>
+        </div>
+      </div>
+      <div class="controls">
+        <button onclick="downloadQR()">Download QR Code</button>
+        <button onclick="printQR()">Print QR Code</button>
+        <button onclick="closeQROutput()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script>
     let scene, camera, renderer, controls;
     let videoLayers = [];
     let selectedLayer = null;
     let layerCounter = 0;
 
-    function downloadOBJ() {
-      const exporter = new THREE.OBJExporter();
-      const result = exporter.parse(scene);
+    function showQRCode() {
+      const url = document.getElementById('websiteUrl').value.trim();
+      if (!url) {
+        alert('Please enter a website URL first!');
+        return;
+      }
+
+      // Validate URL
+      try {
+        new URL(url);
+      } catch (e) {
+        alert('Please enter a valid URL (e.g., https://example.com)');
+        return;
+      }
+
+      const canvas = document.getElementById('qrCanvas');
+      const urlDisplay = document.getElementById('qrUrlDisplay');
       
-      const blob = new Blob([result], { type: 'text/plain' });
+      urlDisplay.textContent = url;
+      
+      // Generate QR code using qrcode-generator library
+      try {
+        const qr = qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        
+        // Create canvas and draw QR code
+        const ctx = canvas.getContext('2d');
+        const size = 300;
+        canvas.width = size;
+        canvas.height = size;
+        
+        const moduleCount = qr.getModuleCount();
+        const moduleSize = size / moduleCount;
+        
+        // Fill white background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Draw black modules
+        ctx.fillStyle = '#000000';
+        for (let row = 0; row < moduleCount; row++) {
+          for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+              ctx.fillRect(
+                col * moduleSize,
+                row * moduleSize,
+                moduleSize,
+                moduleSize
+              );
+            }
+          }
+        }
+        
+        document.getElementById('qrOutput').style.display = 'block';
+      } catch (error) {
+        console.error('QR Code generation failed:', error);
+        alert('Failed to generate QR code: ' + error.message);
+      }
+    }
+
+    function downloadQR() {
+      const canvas = document.getElementById('qrCanvas');
+      const link = document.createElement('a');
+      link.download = (document.getElementById('projectName').value || 'ar-project') + '-qr-code.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    function printQR() {
+      const canvas = document.getElementById('qrCanvas');
+      const url = document.getElementById('websiteUrl').value;
+      const projectName = document.getElementById('projectName').value || 'ar-project';
+      
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>QR Code - ${projectName}</title>
+            <style>
+              body { 
+                text-align: center; 
+                font-family: Arial, sans-serif; 
+                margin: 40px;
+              }
+              .qr-container {
+                border: 2px solid #000;
+                display: inline-block;
+                padding: 20px;
+                margin: 20px;
+              }
+              h1 { margin-bottom: 10px; }
+              .url { 
+                font-size: 12px; 
+                word-break: break-all; 
+                margin-top: 15px;
+                color: #666;
+              }
+              .instructions {
+                margin-top: 20px;
+                font-size: 14px;
+                max-width: 400px;
+                margin-left: auto;
+                margin-right: auto;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>AR Experience QR Code</h1>
+            <h2>${projectName}</h2>
+            <div class="qr-container">
+              <img src="${canvas.toDataURL()}" alt="QR Code" />
+            </div>
+            <div class="url">URL: ${url}</div>
+            <div class="instructions">
+              <strong>Instructions:</strong><br>
+              1. Scan this QR code with your phone camera<br>
+              2. Open the website link<br>
+              3. Allow camera access<br>
+              4. Point camera at a flat surface<br>
+              5. Enjoy the AR video experience!
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+
+    function closeQROutput() {
+      document.getElementById('qrOutput').style.display = 'none';
+    }
+
+    function downloadHTML() {
+      const htmlCode = generateHTMLCode();
+      document.getElementById('htmlCode').value = htmlCode;
+      document.getElementById('htmlOutput').style.display = 'block';
+    }
+
+    async function downloadPackage() {
+      const name = (document.getElementById('projectName').value || 'ar-project').trim();
+      const zip = new JSZip();
+
+      // Add HTML file
+      zip.file(name + '.html', generateHTMLCode());
+
+      // Add QR code if URL is provided
+      const url = document.getElementById('websiteUrl').value.trim();
+      if (url) {
+        try {
+          const qr = qrcode(0, 'M');
+          qr.addData(url);
+          qr.make();
+          
+          // Create canvas for QR code
+          const qrCanvas = document.createElement('canvas');
+          const size = 512;
+          qrCanvas.width = size;
+          qrCanvas.height = size;
+          
+          const ctx = qrCanvas.getContext('2d');
+          const moduleCount = qr.getModuleCount();
+          const moduleSize = size / moduleCount;
+          
+          // Fill white background
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, size, size);
+          
+          // Draw black modules
+          ctx.fillStyle = '#000000';
+          for (let row = 0; row < moduleCount; row++) {
+            for (let col = 0; col < moduleCount; col++) {
+              if (qr.isDark(row, col)) {
+                ctx.fillRect(
+                  col * moduleSize,
+                  row * moduleSize,
+                  moduleSize,
+                  moduleSize
+                );
+              }
+            }
+          }
+          
+          const qrBlob = await new Promise(resolve => {
+            qrCanvas.toBlob(resolve, 'image/png');
+          });
+          
+          zip.file(name + '-qr-code.png', qrBlob);
+        } catch (error) {
+          console.error('Error generating QR code for package:', error);
+        }
+      }
+
+      // Add video files
+      const videoFolder = zip.folder('video');
+      for (const layer of videoLayers) {
+        try {
+          let arrayBuffer;
+          if (layer.file && typeof layer.file.arrayBuffer === 'function') {
+            arrayBuffer = await layer.file.arrayBuffer();
+          } else if (layer.video && layer.video.src) {
+            const response = await fetch(layer.video.src);
+            arrayBuffer = await response.arrayBuffer();
+          } else {
+            console.warn('No file or video src for layer:', layer.name);
+            continue;
+          }
+          const filename = /\.\w+$/.test(layer.name) ? layer.name : layer.name + '.mp4';
+          videoFolder.file(filename, arrayBuffer, { binary: true });
+        } catch (e) {
+          console.error('Error adding layer to ZIP:', layer.name, e);
+        }
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      saveAs(blob, name + '.zip');
+    }
+
+    function generateHTMLCode() {
+      const projectName = document.getElementById('projectName').value || 'ar-project';
+
+      // Generate all video assets and elements with proper 3D positioning
+      const videoAssets = videoLayers.map(layer => {
+        const videoSrc = "./video/" + (layer.file ? layer.file.name : layer.name);
+        const videoId = `video-${layer.id}`;
+
+        return `    <video id="${videoId}" src="${videoSrc}" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>`;
+      }).join('\n');
+
+      const videoElements = videoLayers.map(layer => {
+        const mesh = layer.mesh;
+        const videoId = `video-${layer.id}`;
+
+        // Convert Three.js coordinates to A-Frame coordinates
+        const position = `${mesh.position.x.toFixed(2)} ${mesh.position.y.toFixed(2)} ${mesh.position.z.toFixed(2)}`;
+        const rotation = `${(mesh.rotation.x * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.y * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.z * 180 / Math.PI).toFixed(1)}`;
+        const scale = `${mesh.scale.x.toFixed(2)} ${mesh.scale.y.toFixed(2)} ${mesh.scale.z.toFixed(2)}`;
+        const opacity = mesh.material.opacity.toFixed(2);
+
+        return `      <a-video 
+        src="#${videoId}" 
+        position="${position}" 
+        rotation="${rotation}" 
+        scale="${scale}" 
+        opacity="${opacity}" 
+        width="2" 
+        height="2"
+        material="transparent: true"
+        geometry="primitive: plane"
+        look-at="[camera]"
+        class="video-layer"></a-video>`;
+      }).join('\n');
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Video Scene - ${projectName}</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"><\/script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      z-index: 1000;
+      max-width: 250px;
+    }
+    
+    .controls button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 2px;
+      font-size: 12px;
+    }
+    
+    .controls button:hover {
+      background: #45a049;
+    }
+    
+    .controls button.pause {
+      background: #f44336;
+    }
+    
+    .controls button.pause:hover {
+      background: #da190b;
+    }
+    
+    .info {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      z-index: 1000;
+      max-width: 300px;
+    }
+    
+    .stats {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h4>AR Video Controls</h4>
+    <button onclick="playAllVideos()">▶ Play All</button>
+    <button onclick="pauseAllVideos()" class="pause">⏸ Pause All</button>
+    <button onclick="toggleDebug()">🔧 Debug</button>
+    <button onclick="resetVideos()">🔄 Reset</button>
+    <div style="margin-top: 10px; font-size: 11px;">
+      Videos: ${videoLayers.length} loaded
+    </div>
+  </div>
+  
+  <div class="stats" id="stats">
+    <div>QR Marker: Not Found</div>
+    <div>Videos: 0 playing</div>
+    <div>FPS: --</div>
+  </div>
+  
+  <div class="info">
+    <strong>Instructions:</strong><br>
+    1. Allow camera access when prompted<br>
+    2. Point your camera at any flat surface<br>
+    3. Videos will appear automatically in AR!<br>
+    <br>
+    <strong>Status:</strong> <span id="arStatus">Starting AR...</span>
+  </div>
+
+  <a-scene
+    vr-mode-ui="enabled: false"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+    background="color: #000000; transparent: true">
+    
+    <a-assets>
+    ${videoAssets}
+    </a-assets>
+
+    <a-marker type='barcode' value='1' id="qrMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+      <a-entity id="videoContainer" position='0 0 0' scale="1">
+      ${videoElements}
+      </a-entity>
+      
+      <!-- Reference objects for scale -->
+      <a-box position="0 -1 0" scale="0.1 0.1 0.1" color="#444" opacity="0.5" class="reference-object"></a-box>
+      <a-ring position="0 0 -0.1" radius-inner="0.8" radius-outer="1" color="#333" opacity="0.3" class="reference-object"></a-ring>
+    </a-marker>
+
+    <a-entity camera look-controls-enabled="false" arjs-look-controls="smoothingFactor: 0.1"></a-entity>
+  </a-scene>
+
+  <script>
+    let debugMode = false;
+    let markerFound = false;
+    let playingVideos = 0;
+    let frameCount = 0;
+    let lastTime = Date.now();
+    let videosPlaying = false;
+    
+    // Initialize AR scene
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('AR Video Scene initialized with ${videoLayers.length} video layers');
+      
+      const marker = document.querySelector('#qrMarker');
+      const scene = document.querySelector('a-scene');
+      
+      // Start videos immediately and keep them playing
+      setTimeout(() => {
+        playAllVideos();
+        document.getElementById('arStatus').textContent = 'Ready - Point at surface';
+      }, 2000);
+      
+      // Marker detection events
+      marker.addEventListener('markerFound', function() {
+        console.log('QR Marker detected - Videos visible');
+        markerFound = true;
+        document.getElementById('arStatus').textContent = 'AR Active ✓';
+        
+        // Ensure videos are playing
+        if (!videosPlaying) {
+          playAllVideos();
+        }
+        
+        // Show reference objects
+        document.querySelectorAll('.reference-object').forEach(obj => {
+          obj.setAttribute('visible', true);
+        });
+      });
+      
+      marker.addEventListener('markerLost', function() {
+        console.log('QR Marker lost - Videos hidden but still playing');
+        markerFound = false;
+        document.getElementById('arStatus').textContent = 'Searching...';
+        
+        // Keep videos playing, just hide reference objects
+        document.querySelectorAll('.reference-object').forEach(obj => {
+          obj.setAttribute('visible', false);
+        });
+      });
+      
+      // Performance monitoring
+      setInterval(updateStats, 1000);
+      
+      // Keep videos playing continuously
+      setInterval(() => {
+        if (videosPlaying) {
+          ensureVideosPlaying();
+        }
+      }, 5000);
+    });
+    
+    function playAllVideos() {
+      const videos = document.querySelectorAll('video');
+      playingVideos = 0;
+      videosPlaying = true;
+      
+      videos.forEach(video => {
+        video.play().then(() => {
+          playingVideos++;
+          console.log(\`Video \${video.id} started playing\`);
+        }).catch(e => {
+          console.warn(\`Video \${video.id} play failed:\`, e);
+        });
+      });
+    }
+    
+    function pauseAllVideos() {
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        video.pause();
+      });
+      playingVideos = 0;
+      videosPlaying = false;
+    }
+    
+    function ensureVideosPlaying() {
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        if (video.paused && videosPlaying) {
+          video.play().catch(e => console.log('Video restart failed:', e));
+        }
+      });
+    }
+    
+    function resetVideos() {
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        video.currentTime = 0;
+        if (videosPlaying) {
+          video.play().catch(e => console.log('Video reset play failed:', e));
+        }
+      });
+    }
+    
+    function toggleDebug() {
+      debugMode = !debugMode;
+      const scene = document.querySelector('a-scene');
+      scene.setAttribute('arjs', \`sourceType: webcam; debugUIEnabled: \${debugMode}; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60;\`);
+      
+      // Toggle reference objects visibility
+      document.querySelectorAll('.reference-object').forEach(obj => {
+        obj.setAttribute('visible', debugMode || markerFound);
+      });
+    }
+    
+    function updateStats() {
+      const now = Date.now();
+      const fps = Math.round(1000 / (now - lastTime));
+      lastTime = now;
+      
+      const videos = document.querySelectorAll('video');
+      let activeVideos = 0;
+      videos.forEach(video => {
+        if (!video.paused) activeVideos++;
+      });
+      
+      document.getElementById('stats').innerHTML = \`
+        <div>QR Marker: \${markerFound ? 'Found ✓' : 'Searching...'}</div>
+        <div>Videos: \${activeVideos}/\${videos.length} playing</div>
+        <div>FPS: \${fps}</div>
+      \`;
+    }
+    
+    // Handle mobile device orientation
+    window.addEventListener('orientationchange', function() {
+      setTimeout(() => {
+        const scene = document.querySelector('a-scene');
+        scene.resize();
+      }, 500);
+    });
+    
+    // Auto-play on user interaction (required for mobile)
+    document.addEventListener('touchstart', function() {
+      if (!videosPlaying) {
+        playAllVideos();
+      }
+    }, { once: true });
+    
+    document.addEventListener('click', function() {
+      if (!videosPlaying) {
+        playAllVideos();
+      }
+    }, { once: true });
+    
+    // Prevent accidental pausing
+    document.querySelectorAll('video').forEach(video => {
+      video.addEventListener('pause', function() {
+        if (videosPlaying) {
+          setTimeout(() => {
+            this.play().catch(e => console.log('Video auto-resume failed:', e));
+          }, 100);
+        }
+      });
+    });
+  <\/script>
+</body>
+</html>`;
+
+      return html;
+    }
+
+    function copyToClipboard() {
+      const textarea = document.getElementById('htmlCode');
+      textarea.select();
+      document.execCommand('copy');
+      alert('AR HTML code copied to clipboard!');
+    }
+
+    function downloadHTMLFile() {
+      const htmlCode = document.getElementById('htmlCode').value;
+      const blob = new Blob([htmlCode], { type: 'text/html' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'scene.obj';
+      const projectName = document.getElementById('projectName').value || 'ar-project';
+      link.download = projectName + '.html';
       link.click();
-      
-      // Clean up the URL object
-      URL.revokeObjectURL(link.href);
     }
 
-    function captureVideoFrame(video) {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      return new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-          resolve(blob);
-        }, 'image/png');
-      });
+    function closeHTMLOutput() {
+      document.getElementById('htmlOutput').style.display = 'none';
     }
 
-    async function downloadWithTextures() {
-      try {
-        // Create OBJ content with material references
-        let objContent = `# 3D Video Layer Composer Export\n`;
-        objContent += `mtllib scene.mtl\n\n`;
-        
-        let mtlContent = `# Material file for 3D Video Layer Composer\n\n`;
-        
-        const texturePromises = [];
-        const textureNames = [];
-        
-        videoLayers.forEach((layer, index) => {
-          const materialName = `video_material_${index}`;
-          const textureName = `video_texture_${index}.png`;
-          
-          textureNames.push(textureName);
-          texturePromises.push(captureVideoFrame(layer.video));
-          
-          // Add material definition
-          mtlContent += `newmtl ${materialName}\n`;
-          mtlContent += `Ka 1.0 1.0 1.0\n`;
-          mtlContent += `Kd 1.0 1.0 1.0\n`;
-          mtlContent += `Ks 0.0 0.0 0.0\n`;
-          mtlContent += `d ${layer.mesh.material.opacity}\n`;
-          mtlContent += `map_Kd ${textureName}\n\n`;
-        });
-        
-        // Generate OBJ geometry
-        let vertexIndex = 1;
-        videoLayers.forEach((layer, index) => {
-          const materialName = `video_material_${index}`;
-          const mesh = layer.mesh;
-          
-          // Apply transformations
-          mesh.updateMatrixWorld();
-          const geometry = mesh.geometry.clone();
-          geometry.applyMatrix4(mesh.matrixWorld);
-          
-          objContent += `\n# Layer ${index}: ${layer.name}\n`;
-          objContent += `usemtl ${materialName}\n`;
-          
-          // Add vertices
-          const positions = geometry.attributes.position;
-          for (let i = 0; i < positions.count; i++) {
-            const x = positions.getX(i);
-            const y = positions.getY(i);
-            const z = positions.getZ(i);
-            objContent += `v ${x.toFixed(6)} ${y.toFixed(6)} ${z.toFixed(6)}\n`;
-          }
-          
-          // Add texture coordinates
-          const uvs = geometry.attributes.uv;
-          if (uvs) {
-            for (let i = 0; i < uvs.count; i++) {
-              const u = uvs.getX(i);
-              const v = 1.0 - uvs.getY(i); // Flip V coordinate for OBJ format
-              objContent += `vt ${u.toFixed(6)} ${v.toFixed(6)}\n`;
-            }
-          }
-          
-          // Add faces
-          if (geometry.index) {
-            const indices = geometry.index;
-            for (let i = 0; i < indices.count; i += 3) {
-              const a = indices.getX(i) + vertexIndex;
-              const b = indices.getX(i + 1) + vertexIndex;
-              const c = indices.getX(i + 2) + vertexIndex;
-              objContent += `f ${a}/${a} ${b}/${b} ${c}/${c}\n`;
-            }
-          } else {
-            // Non-indexed geometry
-            for (let i = 0; i < positions.count; i += 3) {
-              const a = vertexIndex + i;
-              const b = vertexIndex + i + 1;
-              const c = vertexIndex + i + 2;
-              objContent += `f ${a}/${a} ${b}/${b} ${c}/${c}\n`;
-            }
-          }
-          
-          vertexIndex += positions.count;
-        });
-        
-        // Wait for all texture captures to complete
-        const textureBlobs = await Promise.all(texturePromises);
-        
-        // Create download links for all files
-        const downloads = [
-          { name: 'scene.obj', blob: new Blob([objContent], { type: 'text/plain' }) },
-          { name: 'scene.mtl', blob: new Blob([mtlContent], { type: 'text/plain' }) }
-        ];
-        
-        textureBlobs.forEach((blob, index) => {
-          downloads.push({ name: textureNames[index], blob: blob });
-        });
-        
-        // Download all files
-        downloads.forEach(({ name, blob }) => {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = name;
-          link.click();
-          URL.revokeObjectURL(link.href);
-        });
-        
-        alert(`Downloaded ${downloads.length} files: OBJ, MTL, and ${textureBlobs.length} texture(s)`);
-        
-      } catch (error) {
-        console.error('Export failed:', error);
-        alert('Export failed. Please try again.');
+    function deleteLayer(layerId) {
+      const layerIndex = videoLayers.findIndex(layer => layer.id === layerId);
+      if (layerIndex === -1) return;
+
+      const layer = videoLayers[layerIndex];
+
+      // Remove from scene
+      scene.remove(layer.mesh);
+
+      // Stop and dispose video
+      layer.video.pause();
+      layer.video.src = '';
+      layer.video.load();
+
+      // Dispose texture and material
+      layer.texture.dispose();
+      layer.mesh.material.dispose();
+      layer.mesh.geometry.dispose();
+
+      // Remove from array
+      videoLayers.splice(layerIndex, 1);
+
+      // Update UI
+      if (selectedLayer === layer) {
+        selectedLayer = null;
       }
-    }
 
-    async function downloadAnimated() {
-      try {
-        // Create a scene copy for export with video data embedded
-        const exportScene = new THREE.Scene();
-        const videosToEmbed = [];
-        
-        // Clone meshes and prepare video data for embedding
-        for (let i = 0; i < videoLayers.length; i++) {
-          const layer = videoLayers[i];
-          
-          // Create canvas to capture video data
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          const video = layer.video;
-          
-          canvas.width = video.videoWidth || 640;
-          canvas.height = video.videoHeight || 480;
-          
-          // Capture current frame
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          // Create texture from canvas
-          const canvasTexture = new THREE.CanvasTexture(canvas);
-          canvasTexture.flipY = false;
-          
-          // Clone geometry and create new material with canvas texture
-          const geometry = layer.mesh.geometry.clone();
-          const material = new THREE.MeshBasicMaterial({
-            map: canvasTexture,
-            transparent: true,
-            opacity: layer.mesh.material.opacity,
-            side: THREE.DoubleSide
-          });
-          
-          const mesh = new THREE.Mesh(geometry, material);
-          
-          // Apply transformations
-          mesh.position.copy(layer.mesh.position);
-          mesh.rotation.copy(layer.mesh.rotation);
-          mesh.scale.copy(layer.mesh.scale);
-          mesh.name = `video_layer_${i}_${layer.name}`;
-          
-          exportScene.add(mesh);
-          
-          // Store video info for potential embedding
-          videosToEmbed.push({
-            name: layer.name,
-            video: video,
-            canvas: canvas,
-            ctx: ctx
-          });
-        }
-        
-        // Export as GLTF
-        const exporter = new THREE.GLTFExporter();
-        exporter.parse(
-          exportScene,
-          function (result) {
-            const blob = new Blob([result], { type: 'application/octet-stream' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'animated_scene.glb';
-            link.click();
-            URL.revokeObjectURL(link.href);
-            
-            // Also export video files separately
-            exportVideoFiles(videosToEmbed);
-          },
-          { binary: true, animations: [], embedImages: true }
-        );
-        
-      } catch (error) {
-        console.error('Animated export failed:', error);
-        alert('Animated export failed. Please try again.');
-      }
-    }
-    
-    function exportVideoFiles(videosToEmbed) {
-      // Export each video as a separate file for manual import
-      videosToEmbed.forEach((videoData, index) => {
-        const video = videoData.video;
-        
-        // Create a link to download the original video file
-        if (video.src && video.src.startsWith('blob:')) {
-          // For blob URLs, we'll capture a longer sequence
-          captureVideoSequence(video, `video_${index}_${videoData.name}`);
-        }
-      });
-      
-      alert(`Exported GLTF file and ${videosToEmbed.length} video references. Note: GLTF contains static textures. For true animation, manually replace textures with video files in your 3D application.`);
-    }
-    
-    function captureVideoSequence(video, baseName) {
-      // Capture multiple frames to create a basic animation sequence
-      const frameCount = 30; // Capture 30 frames
-      const interval = 100; // 100ms between captures
-      const frames = [];
-      let currentFrame = 0;
-      
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      
-      const captureFrame = () => {
-        if (currentFrame >= frameCount) {
-          // Create a zip-like structure or individual files
-          frames.forEach((frameBlob, i) => {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(frameBlob);
-            link.download = `${baseName}_frame_${String(i).padStart(3, '0')}.png`;
-            link.click();
-            URL.revokeObjectURL(link.href);
-          });
-          return;
-        }
-        
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => {
-          frames.push(blob);
-          currentFrame++;
-          setTimeout(captureFrame, interval);
-        }, 'image/png');
-      };
-      
-      captureFrame();
+      updateLayersList();
     }
 
     // Initialize Three.js scene
@@ -540,11 +991,21 @@
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(0, 0, 0);
+
+        // Auto-position new layers in a spiral pattern
+        const layerCount = videoLayers.length;
+        const angle = layerCount * 0.8;
+        const radius = 1 + layerCount * 0.5;
+        mesh.position.set(
+          Math.cos(angle) * radius,
+          Math.sin(angle * 0.5) * 1,
+          Math.sin(angle) * radius
+        );
 
         const layer = {
           id: layerCounter++,
           name: file.name,
+          file: file,
           mesh: mesh,
           video: video,
           texture: texture
@@ -571,8 +1032,21 @@
       videoLayers.forEach(layer => {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
-        layerDiv.textContent = `${layer.id}: ${layer.name}`;
-        layerDiv.onclick = () => selectLayer(layer);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = `${layer.id}: ${layer.name}`;
+        nameSpan.onclick = () => selectLayer(layer);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'delete';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteLayer(layer.id);
+        };
+
+        layerDiv.appendChild(nameSpan);
+        layerDiv.appendChild(deleteBtn);
         layersDiv.appendChild(layerDiv);
       });
     }
