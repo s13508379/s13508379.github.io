@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>project - AR Experience</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        #arScene {
+            width: 100%;
+            height: 100vh;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        #info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+
+<body>
+    <div id="controls">
+        <h3>project AR</h3>
+        <div class="control-group">
+            <button onclick="playAllAnimations()">Play All</button>
+            <button onclick="stopAllAnimations()">Stop All</button>
+        </div>
+        <div class="control-group">
+            <label>AR Scale: <span id="arScaleValue">1.0</span></label>
+            <input type="range" id="arScale" min="0.1" max="5" step="0.1" value="1" oninput="updateARScale()">
+        </div>
+        <div class="control-group">
+            <label>AR Height: <span id="arHeightValue">0</span></label>
+            <input type="range" id="arHeight" min="-2" max="2" step="0.1" value="0" oninput="updateARHeight()">
+        </div>
+        <div class="control-group">
+            <button onclick="toggleControls()">Hide Controls</button>
+        </div>
+    </div>
+
+    <div id="info">
+        Point camera at marker to see AR content
+    </div>
+
+    <a-scene id="arScene" embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; precision: medium;"
+        loading-screen="enabled: false" gesture-detector>
+        <a-assets>
+            <!-- Marker Assets -->
+            <a-marker-camera id="marker" preset="hiro" raycaster="objects: .clickable" emitevents="true"
+                cursor="fuse: false; rayOrigin: mouse">
+                <a-entity id="arContainer" position="0 0 0" scale="1 1 1">
+                    <!-- 3D content will be added here -->
+                </a-entity>
+            </a-marker-camera>
+        </a-assets>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <!-- AR.js -->
+
+    <script>
+        let arContainer;
+        let arLayers = [];
+        let arScale = 1;
+        let arHeight = 0;
+        let controlsVisible = true;
+
+        const layersData = [];
+
+        // Initialize AR scene
+        AFRAME.registerComponent('ar-init', {
+            init: function () {
+                arContainer = document.getElementById('arContainer');
+                loadARLayers();
+            }
+        });
+
+        // Add the component to the scene
+        document.querySelector('a-scene').setAttribute('ar-init', '');
+
+        function loadARLayers() {
+            layersData.forEach((layerData, index) => {
+                // Create image element
+                const imgEl = document.createElement('img');
+                imgEl.src = layerData.imageData;
+                imgEl.id = 'img-' + layerData.id;
+                imgEl.crossOrigin = 'anonymous';
+
+                // Add to assets
+                const assets = document.querySelector('a-assets');
+                assets.appendChild(imgEl);
+
+                imgEl.onload = function () {
+                    // Calculate aspect ratio
+                    const aspect = imgEl.width / imgEl.height;
+
+                    // Create A-Frame plane
+                    const plane = document.createElement('a-plane');
+                    plane.setAttribute('id', 'layer-' + layerData.id);
+                    plane.setAttribute('src', '#img-' + layerData.id);
+                    plane.setAttribute('width', 2 * aspect);
+                    plane.setAttribute('height', 2);
+                    plane.setAttribute('position',
+                        layerData.position.x + ' ' +
+                        layerData.position.y + ' ' +
+                        layerData.position.z
+                    );
+                    plane.setAttribute('rotation',
+                        (layerData.rotation.x * 180 / Math.PI) + ' ' +
+                        (layerData.rotation.y * 180 / Math.PI) + ' ' +
+                        (layerData.rotation.z * 180 / Math.PI)
+                    );
+                    plane.setAttribute('scale',
+                        layerData.scale.x + ' ' +
+                        layerData.scale.y + ' ' +
+                        layerData.scale.z
+                    );
+                    plane.setAttribute('opacity', layerData.opacity);
+                    plane.setAttribute('transparent', 'true');
+                    plane.setAttribute('material', 'alphaTest: 0.1');
+
+                    // Store layer data
+                    plane.layerData = layerData;
+
+                    // Add to AR container
+                    arContainer.appendChild(plane);
+                    arLayers.push(plane);
+
+                    // Start animation if needed
+                    if (layerData.animationType !== 'none') {
+                        startARAnimation(plane);
+                    }
+                };
+            });
+        }
+
+        function startARAnimation(plane) {
+            const layerData = plane.layerData;
+            const animationType = layerData.animationType;
+            const duration = layerData.animationDuration * 1000; // Convert to milliseconds
+
+            if (animationType === 'custom') {
+                const start = layerData.customAnimation.start;
+                const end = layerData.customAnimation.end;
+
+                // Position animation
+                plane.setAttribute('animation__position', {
+                    property: 'position',
+                    from: start.x + ' ' + start.y + ' ' + start.z,
+                    to: end.x + ' ' + end.y + ' ' + end.z,
+                    dur: duration,
+                    easing: 'easeInOutQuad',
+                    loop: true
+                });
+
+                // Scale animation
+                plane.setAttribute('animation__scale', {
+                    property: 'scale',
+                    from: start.scale + ' ' + start.scale + ' ' + start.scale,
+                    to: end.scale + ' ' + end.scale + ' ' + end.scale,
+                    dur: duration,
+                    easing: 'easeInOutQuad',
+                    loop: true
+                });
+
+                // Opacity animation
+                plane.setAttribute('animation__opacity', {
+                    property: 'opacity',
+                    from: start.opacity,
+                    to: end.opacity,
+                    dur: duration,
+                    easing: 'easeInOutQuad',
+                    loop: true
+                });
+
+                // Rotation animation
+                plane.setAttribute('animation__rotation', {
+                    property: 'rotation',
+                    from: start.rotation + ' 0 0',
+                    to: end.rotation + ' 0 0',
+                    dur: duration,
+                    easing: 'easeInOutQuad',
+                    loop: true
+                });
+            } else {
+                // Preset animations
+                const originalPos = layerData.position;
+                switch (animationType) {
+                    case 'slideDown':
+                        plane.setAttribute('animation', {
+                            property: 'position',
+                            from: originalPos.x + ' ' + (originalPos.y + 10) + ' ' + originalPos.z,
+                            to: originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z,
+                            dur: duration,
+                            easing: 'easeInOutQuad',
+                            loop: true
+                        });
+                        break;
+                    case 'fadeIn':
+                        plane.setAttribute('animation', {
+                            property: 'opacity',
+                            from: 0,
+                            to: layerData.opacity,
+                            dur: duration,
+                            easing: 'easeInOutQuad',
+                            loop: true
+                        });
+                        break;
+                    case 'rotate':
+                        plane.setAttribute('animation', {
+                            property: 'rotation',
+                            from: '0 0 0',
+                            to: '0 0 360',
+                            dur: duration,
+                            easing: 'linear',
+                            loop: true
+                        });
+                        break;
+                    case 'bounce':
+                        plane.setAttribute('animation', {
+                            property: 'position',
+                            from: originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z,
+                            to: originalPos.x + ' ' + (originalPos.y + 2) + ' ' + originalPos.z,
+                            dur: duration / 2,
+                            easing: 'easeInOutQuad',
+                            loop: true,
+                            dir: 'alternate'
+                        });
+                        break;
+                }
+            }
+        }
+
+        function playAllAnimations() {
+            arLayers.forEach(layer => {
+                if (layer.layerData.animationType !== 'none') {
+                    startARAnimation(layer);
+                }
+            });
+        }
+
+        function stopAllAnimations() {
+            arLayers.forEach(layer => {
+                layer.removeAttribute('animation');
+                layer.removeAttribute('animation__position');
+                layer.removeAttribute('animation__scale');
+                layer.removeAttribute('animation__opacity');
+                layer.removeAttribute('animation__rotation');
+            });
+        }
+
+        function updateARScale() {
+            arScale = parseFloat(document.getElementById('arScale').value);
+            document.getElementById('arScaleValue').textContent = arScale.toFixed(1);
+            arContainer.setAttribute('scale', arScale + ' ' + arScale + ' ' + arScale);
+        }
+
+        function updateARHeight() {
+            arHeight = parseFloat(document.getElementById('arHeight').value);
+            document.getElementById('arHeightValue').textContent = arHeight.toFixed(1);
+            const currentPos = arContainer.getAttribute('position');
+            arContainer.setAttribute('position', currentPos.x + ' ' + arHeight + ' ' + currentPos.z);
+        }
+
+        function toggleControls() {
+            const controls = document.getElementById('controls');
+            const button = controls.querySelector('button:last-child');
+            if (controlsVisible) {
+                controls.style.display = 'none';
+                controlsVisible = false;
+
+                // Create floating toggle button
+                const toggleBtn = document.createElement('button');
+                toggleBtn.innerHTML = 'Show Controls';
+                toggleBtn.style.position = 'absolute';
+                toggleBtn.style.top = '10px';
+                toggleBtn.style.left = '10px';
+                toggleBtn.style.zIndex = '1001';
+                toggleBtn.onclick = () => {
+                    controls.style.display = 'block';
+                    controlsVisible = true;
+                    document.body.removeChild(toggleBtn);
+                };
+                document.body.appendChild(toggleBtn);
+            } else {
+                controls.style.display = 'block';
+                controlsVisible = true;
+            }
+        }
+
+        // Update control values on load
+        document.getElementById('arScaleValue').textContent = '1.0';
+        document.getElementById('arHeightValue').textContent = '0.0';
+    </script>
+</body>
+
+</html>
