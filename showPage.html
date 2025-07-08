@@ -248,24 +248,6 @@
       </div>
     </div>
 
-    <!-- QR Code Output Modal -->
-    <div id="qrOutput">
-      <h3>QR Code for AR Experience</h3>
-      <div id="qrDisplay">
-        <canvas id="qrCanvas"></canvas>
-        <p>Scan this QR code with your phone to access the AR experience!</p>
-        <div style="margin-top: 20px;">
-          <strong>URL:</strong> <span id="qrUrlDisplay"></span>
-        </div>
-      </div>
-      <div class="controls">
-        <button onclick="downloadQR()">Download QR Code</button>
-        <button onclick="printQR()">Print QR Code</button>
-        <button onclick="closeQROutput()">Close</button>
-      </div>
-    </div>
-  </div>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -346,71 +328,7 @@
       link.click();
     }
 
-    function printQR() {
-      const canvas = document.getElementById('qrCanvas');
-      const url = document.getElementById('websiteUrl').value;
-      const projectName = document.getElementById('projectName').value || 'ar-project';
 
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>QR Code - ${projectName}</title>
-            <style>
-              body { 
-                text-align: center; 
-                font-family: Arial, sans-serif; 
-                margin: 40px;
-              }
-              .qr-container {
-                border: 2px solid #000;
-                display: inline-block;
-                padding: 20px;
-                margin: 20px;
-              }
-              h1 { margin-bottom: 10px; }
-              .url { 
-                font-size: 12px; 
-                word-break: break-all; 
-                margin-top: 15px;
-                color: #666;
-              }
-              .instructions {
-                margin-top: 20px;
-                font-size: 14px;
-                max-width: 400px;
-                margin-left: auto;
-                margin-right: auto;
-              }
-            </style>
-          </head>
-          <body>
-            <h1>AR Experience QR Code</h1>
-            <h2>${projectName}</h2>
-            <div class="qr-container">
-              <img src="${canvas.toDataURL()}" alt="QR Code" />
-            </div>
-            <div class="url">URL: ${url}</div>
-            <div class="instructions">
-              <strong>Instructions:</strong><br>
-              1. Scan this QR code with your phone camera<br>
-              2. Open the website link<br>
-              3. Allow camera access<br>
-              4. Point camera at a flat surface<br>
-              5. Enjoy the AR video experience!
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 250);
-    }
-
-    function closeQROutput() {
-      document.getElementById('qrOutput').style.display = 'none';
-    }
 
     function downloadHTML() {
       const htmlCode = generateHTMLCode();
@@ -743,7 +661,13 @@
     ${videoAssets}
     </a-assets>
 
-    <a-marker type='barcode' value='1' id="qrMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+   <a-marker
+  type="pattern"                       
+  url="${projectName}-qr-code.patt"           
+  id="qrMarker"
+  emitevents
+  smooth="true" smoothCount="10"
+  smoothTolerance="0.01" smoothThreshold="5">
       <a-entity id="videoContainer" position='0 0 0' scale="1">
       ${videoElements}
       </a-entity>

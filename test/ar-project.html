@@ -109,10 +109,16 @@
     background="color: #000000; transparent: true">
     
     <a-assets>
-        <video id="video-0" src="./video/123.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>
+        <video id="video-0" src="./video/456.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>
     </a-assets>
 
-    <a-marker type='barcode' value='1' id="qrMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+   <a-marker
+  type="pattern"                       
+  url="ar-project-qr-code.patt"           
+  id="qrMarker"
+  emitevents
+  smooth="true" smoothCount="10"
+  smoothTolerance="0.01" smoothThreshold="5">
       <a-entity id="videoContainer" position='0 0 0' scale="1">
             <a-video 
         src="#video-0" 
