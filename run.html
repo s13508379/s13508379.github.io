@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Video Layer Composer</title>
+    <title>3D PNG Layer Animator</title>
     <style>
         body {
             margin: 0;
@@ -29,6 +29,8 @@
             border-radius: 10px;
             z-index: 100;
             max-width: 300px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .control-group {
@@ -51,6 +53,24 @@
             margin-bottom: 10px;
         }
 
+        input[type="color"] {
+            width: 100%;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #333;
+            background: #222;
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
         button {
             background: #4CAF50;
             color: white;
@@ -64,6 +84,14 @@
 
         button:hover {
             background: #45a049;
+        }
+
+        button.danger {
+            background: #f44336;
+        }
+
+        button.danger:hover {
+            background: #da190b;
         }
 
         #layersList {
@@ -81,10 +109,32 @@
             margin-bottom: 5px;
             border-radius: 3px;
             cursor: pointer;
+            position: relative;
         }
 
         .layer-item.selected {
             background: rgba(76, 175, 80, 0.3);
+        }
+
+        .layer-item .delete-btn {
+            position: absolute;
+            right: 5px;
+            top: 2px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .animation-controls {
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -92,18 +142,22 @@
 <body>
     <div id="container">
         <div id="controls">
-            <h3>3D Video Layer Composer</h3>
+            <h3>3D PNG Layer Animator</h3>
 
             <div class="control-group">
                 <label>Project Name:</label>
                 <input type="text" id="projectName" placeholder="Enter project name" value="project">
             </div>
 
+            <div class="control-group">
+                <label>Background Color:</label>
+                <input type="color" id="bgColor" value="#000000" onchange="updateBackgroundColor()">
+            </div>
 
             <div class="control-group">
-                <label>Add Video Layer:</label>
-                <input type="file" id="videoFile" accept="video/*">
-                <button onclick="addVideoLayer()">Add Layer</button>
+                <label>Add PNG Image:</label>
+                <input type="file" id="imageFile" accept="image/png,image/jpg,image/jpeg" multiple>
+                <button onclick="addImageLayer()">Add Layer</button>
             </div>
 
             <div class="control-group">
@@ -136,10 +190,46 @@
                 <input type="range" id="rotZ" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
             </div>
 
+            <div class="animation-controls">
+                <h4>Animation Controls</h4>
+                <div class="control-group">
+                    <label>Animation Type:</label>
+                    <select id="animationType">
+                        <option value="none">None</option>
+                        <option value="slideDown">Slide Down</option>
+                        <option value="slideUp">Slide Up</option>
+                        <option value="slideLeft">Slide Left</option>
+                        <option value="slideRight">Slide Right</option>
+                        <option value="fadeIn">Fade In</option>
+                        <option value="scaleIn">Scale In</option>
+                        <option value="rotate">Rotate</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="spiral">Spiral</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Animation Speed: <span id="speedValue">1.0</span></label>
+                    <input type="range" id="animationSpeed" min="0.1" max="3" step="0.1" value="1"
+                        oninput="updateAnimationSpeed()">
+                </div>
+
+                <div class="control-group">
+                    <label>Animation Duration: <span id="durationValue">2.0</span>s</label>
+                    <input type="range" id="animationDuration" min="0.5" max="5" step="0.1" value="2"
+                        oninput="updateAnimationDuration()">
+                </div>
+
+                <div class="control-group">
+                    <button onclick="applyAnimation()">Apply Animation</button>
+                    <button onclick="stopAnimation()">Stop Animation</button>
+                </div>
+            </div>
+
             <div class="control-group">
-                <button onclick="playAll()">Play All</button>
-                <button onclick="pauseAll()">Pause All</button>
                 <button onclick="resetCamera()">Reset Camera</button>
+                <button onclick="playAllAnimations()">Play All Animations</button>
+                <button onclick="stopAllAnimations()">Stop All Animations</button>
             </div>
 
             <div id="layersList">
@@ -147,18 +237,16 @@
                 <div id="layers"></div>
             </div>
         </div>
-
-
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
-        let scene, camera, renderer, controls;
-        let videoLayers = [];
+        let scene, camera, renderer;
+        let imageLayers = [];
         let selectedLayer = null;
         let layerCounter = 0;
+        let animationMixer;
+        let clock;
 
         // Initialize Three.js scene
         function initScene() {
@@ -172,8 +260,11 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('container').appendChild(renderer.domElement);
 
+            // Initialize animation system
+            clock = new THREE.Clock();
+
             // Add lights
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
             scene.add(ambientLight);
 
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -236,54 +327,65 @@
             });
         }
 
-        // Add video layer
-        function addVideoLayer() {
-            const fileInput = document.getElementById('videoFile');
-            const file = fileInput.files[0];
+        // Update background color
+        function updateBackgroundColor() {
+            const color = document.getElementById('bgColor').value;
+            scene.background = new THREE.Color(color);
+        }
 
-            if (!file) {
-                alert('Please select a video file first');
+        // Add image layer
+        function addImageLayer() {
+            const fileInput = document.getElementById('imageFile');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert('Please select image files first');
                 return;
             }
 
-            const video = document.createElement('video');
-            video.src = URL.createObjectURL(file);
-            video.load();
-            video.loop = true;
-            video.muted = true;
-            video.crossOrigin = 'anonymous';
+            Array.from(files).forEach(file => {
+                const img = new Image();
+                img.onload = function () {
+                    const texture = new THREE.Texture(img);
+                    texture.needsUpdate = true;
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
 
-            video.addEventListener('loadeddata', () => {
-                const texture = new THREE.VideoTexture(video);
-                texture.minFilter = THREE.LinearFilter;
-                texture.magFilter = THREE.LinearFilter;
+                    // Calculate aspect ratio
+                    const aspect = img.width / img.height;
+                    const geometry = new THREE.PlaneGeometry(2 * aspect, 2);
+                    const material = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        transparent: true,
+                        side: THREE.DoubleSide,
+                        alphaTest: 0.1
+                    });
 
-                const geometry = new THREE.PlaneGeometry(2, 2);
-                const material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    transparent: true,
-                    side: THREE.DoubleSide
-                });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.set(0, 0, 0);
 
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(0, 0, 0);
+                    const layer = {
+                        id: layerCounter++,
+                        name: file.name,
+                        mesh: mesh,
+                        texture: texture,
+                        originalPosition: { x: 0, y: 0, z: 0 },
+                        originalRotation: { x: 0, y: 0, z: 0 },
+                        originalScale: { x: 1, y: 1, z: 1 },
+                        originalOpacity: 1,
+                        animation: null,
+                        animationType: 'none',
+                        animationSpeed: 1,
+                        animationDuration: 2
+                    };
 
-                const layer = {
-                    id: layerCounter++,
-                    name: file.name,
-                    mesh: mesh,
-                    video: video,
-                    texture: texture
+                    imageLayers.push(layer);
+                    scene.add(mesh);
+
+                    updateLayersList();
+                    selectLayer(layer);
                 };
-
-                videoLayers.push(layer);
-                scene.add(mesh);
-
-                updateLayersList();
-                selectLayer(layer);
-
-                // Auto-play video
-                video.play().catch(e => console.log('Video play failed:', e));
+                img.src = URL.createObjectURL(file);
             });
 
             fileInput.value = '';
@@ -294,13 +396,35 @@
             const layersDiv = document.getElementById('layers');
             layersDiv.innerHTML = '';
 
-            videoLayers.forEach(layer => {
+            imageLayers.forEach(layer => {
                 const layerDiv = document.createElement('div');
                 layerDiv.className = 'layer-item';
-                layerDiv.textContent = `${layer.id}: ${layer.name}`;
-                layerDiv.onclick = () => selectLayer(layer);
+                layerDiv.innerHTML = `
+                    <span>${layer.id}: ${layer.name}</span>
+                    <button class="delete-btn" onclick="deleteLayer(${layer.id})">×</button>
+                `;
+                layerDiv.onclick = (e) => {
+                    if (e.target.classList.contains('delete-btn')) return;
+                    selectLayer(layer);
+                };
                 layersDiv.appendChild(layerDiv);
             });
+        }
+
+        // Delete layer
+        function deleteLayer(layerId) {
+            const layerIndex = imageLayers.findIndex(layer => layer.id === layerId);
+            if (layerIndex === -1) return;
+
+            const layer = imageLayers[layerIndex];
+            scene.remove(layer.mesh);
+            imageLayers.splice(layerIndex, 1);
+
+            if (selectedLayer && selectedLayer.id === layerId) {
+                selectedLayer = null;
+            }
+
+            updateLayersList();
         }
 
         // Select layer
@@ -313,8 +437,8 @@
             });
 
             const layerItems = document.querySelectorAll('.layer-item');
-            if (layerItems[videoLayers.indexOf(layer)]) {
-                layerItems[videoLayers.indexOf(layer)].classList.add('selected');
+            if (layerItems[imageLayers.indexOf(layer)]) {
+                layerItems[imageLayers.indexOf(layer)].classList.add('selected');
             }
 
             // Update controls to match selected layer
@@ -331,6 +455,9 @@
             document.getElementById('rotZ').value = rot.z * 180 / Math.PI;
             document.getElementById('scale').value = scale;
             document.getElementById('alpha').value = alpha;
+            document.getElementById('animationType').value = layer.animationType;
+            document.getElementById('animationSpeed').value = layer.animationSpeed;
+            document.getElementById('animationDuration').value = layer.animationDuration;
 
             updateControlValues();
         }
@@ -345,6 +472,8 @@
             document.getElementById('rotZValue').textContent = document.getElementById('rotZ').value + '°';
             document.getElementById('scaleValue').textContent = document.getElementById('scale').value;
             document.getElementById('alphaValue').textContent = document.getElementById('alpha').value;
+            document.getElementById('speedValue').textContent = document.getElementById('animationSpeed').value;
+            document.getElementById('durationValue').textContent = document.getElementById('animationDuration').value;
         }
 
         // Update position
@@ -356,6 +485,7 @@
             const z = parseFloat(document.getElementById('zPos').value);
 
             selectedLayer.mesh.position.set(x, y, z);
+            selectedLayer.originalPosition = { x, y, z };
             updateControlValues();
         }
 
@@ -368,6 +498,7 @@
             const z = parseFloat(document.getElementById('rotZ').value) * Math.PI / 180;
 
             selectedLayer.mesh.rotation.set(x, y, z);
+            selectedLayer.originalRotation = { x, y, z };
             updateControlValues();
         }
 
@@ -377,6 +508,7 @@
 
             const alpha = parseFloat(document.getElementById('alpha').value);
             selectedLayer.mesh.material.opacity = alpha;
+            selectedLayer.originalOpacity = alpha;
             updateControlValues();
         }
 
@@ -386,20 +518,137 @@
 
             const scale = parseFloat(document.getElementById('scale').value);
             selectedLayer.mesh.scale.set(scale, scale, scale);
+            selectedLayer.originalScale = { x: scale, y: scale, z: scale };
             updateControlValues();
         }
 
-        // Play all videos
-        function playAll() {
-            videoLayers.forEach(layer => {
-                layer.video.play().catch(e => console.log('Video play failed:', e));
+        // Update animation speed
+        function updateAnimationSpeed() {
+            if (!selectedLayer) return;
+            selectedLayer.animationSpeed = parseFloat(document.getElementById('animationSpeed').value);
+            updateControlValues();
+        }
+
+        // Update animation duration
+        function updateAnimationDuration() {
+            if (!selectedLayer) return;
+            selectedLayer.animationDuration = parseFloat(document.getElementById('animationDuration').value);
+            updateControlValues();
+        }
+
+        // Apply animation
+        function applyAnimation() {
+            if (!selectedLayer) return;
+
+            const animationType = document.getElementById('animationType').value;
+            selectedLayer.animationType = animationType;
+
+            if (animationType === 'none') {
+                stopAnimation();
+                return;
+            }
+
+            const mesh = selectedLayer.mesh;
+            const duration = selectedLayer.animationDuration;
+            const speed = selectedLayer.animationSpeed;
+
+            // Stop existing animation
+            if (selectedLayer.animation) {
+                selectedLayer.animation.stop();
+            }
+
+            // Reset to original state
+            mesh.position.copy(selectedLayer.originalPosition);
+            mesh.rotation.copy(selectedLayer.originalRotation);
+            mesh.scale.copy(selectedLayer.originalScale);
+            mesh.material.opacity = selectedLayer.originalOpacity;
+
+            // Create animation based on type
+            const startTime = Date.now();
+            selectedLayer.animation = {
+                stop: () => { selectedLayer.animation = null; },
+                update: (currentTime) => {
+                    const elapsed = (currentTime - startTime) / 1000 * speed;
+                    const progress = (elapsed % duration) / duration;
+
+                    switch (animationType) {
+                        case 'slideDown':
+                            mesh.position.y = selectedLayer.originalPosition.y + 10 * (1 - progress);
+                            break;
+                        case 'slideUp':
+                            mesh.position.y = selectedLayer.originalPosition.y - 10 * (1 - progress);
+                            break;
+                        case 'slideLeft':
+                            mesh.position.x = selectedLayer.originalPosition.x + 10 * (1 - progress);
+                            break;
+                        case 'slideRight':
+                            mesh.position.x = selectedLayer.originalPosition.x - 10 * (1 - progress);
+                            break;
+                        case 'fadeIn':
+                            mesh.material.opacity = selectedLayer.originalOpacity * progress;
+                            break;
+                        case 'scaleIn':
+                            const scale = selectedLayer.originalScale.x * progress;
+                            mesh.scale.set(scale, scale, scale);
+                            break;
+                        case 'rotate':
+                            mesh.rotation.z = selectedLayer.originalRotation.z + progress * Math.PI * 2;
+                            break;
+                        case 'bounce':
+                            const bounceY = Math.abs(Math.sin(progress * Math.PI * 4)) * 2;
+                            mesh.position.y = selectedLayer.originalPosition.y + bounceY;
+                            break;
+                        case 'spiral':
+                            const spiralRadius = 3 * (1 - progress);
+                            const spiralAngle = progress * Math.PI * 6;
+                            mesh.position.x = selectedLayer.originalPosition.x + spiralRadius * Math.cos(spiralAngle);
+                            mesh.position.y = selectedLayer.originalPosition.y + spiralRadius * Math.sin(spiralAngle);
+                            break;
+                    }
+                }
+            };
+        }
+
+        // Stop animation for selected layer
+        function stopAnimation() {
+            if (!selectedLayer || !selectedLayer.animation) return;
+
+            selectedLayer.animation.stop();
+            selectedLayer.animationType = 'none';
+            document.getElementById('animationType').value = 'none';
+
+            // Reset to original state
+            const mesh = selectedLayer.mesh;
+            mesh.position.copy(selectedLayer.originalPosition);
+            mesh.rotation.copy(selectedLayer.originalRotation);
+            mesh.scale.copy(selectedLayer.originalScale);
+            mesh.material.opacity = selectedLayer.originalOpacity;
+        }
+
+        // Play all animations
+        function playAllAnimations() {
+            imageLayers.forEach(layer => {
+                if (layer.animationType !== 'none') {
+                    selectLayer(layer);
+                    applyAnimation();
+                }
             });
         }
 
-        // Pause all videos
-        function pauseAll() {
-            videoLayers.forEach(layer => {
-                layer.video.pause();
+        // Stop all animations
+        function stopAllAnimations() {
+            imageLayers.forEach(layer => {
+                if (layer.animation) {
+                    layer.animation.stop();
+                }
+                layer.animationType = 'none';
+
+                // Reset to original state
+                const mesh = layer.mesh;
+                mesh.position.copy(layer.originalPosition);
+                mesh.rotation.copy(layer.originalRotation);
+                mesh.scale.copy(layer.originalScale);
+                mesh.material.opacity = layer.originalOpacity;
             });
         }
 
@@ -413,10 +662,12 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Update video textures
-            videoLayers.forEach(layer => {
-                if (layer.video.readyState === layer.video.HAVE_ENOUGH_DATA) {
-                    layer.texture.needsUpdate = true;
+            const currentTime = Date.now();
+
+            // Update animations
+            imageLayers.forEach(layer => {
+                if (layer.animation && layer.animation.update) {
+                    layer.animation.update(currentTime);
                 }
             });
 
