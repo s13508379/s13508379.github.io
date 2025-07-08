@@ -1,12 +1,990 @@
-<script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.js"></script>
+<!DOCTYPE html>
+<html lang="en">
 
-<body style='margin : 0px; overflow: hidden;'>
-  <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false;'>
-    <a-marker type='pattern' url='./assets/pattern-marker.patt'>
-      <a-entity position='0 0 0' rotation="0 0 0" gltf-model="./assets/abc.glb"></a-entity>
-      <a-light type="directional" intensity="1" position="0 10 0"></a-light>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Video Layer Composer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    #container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+    }
+
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 100;
+      max-width: 300px;
+    }
+
+    .control-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    button.delete {
+      background: #f44336;
+    }
+
+    button.delete:hover {
+      background: #da190b;
+    }
+
+    #layersList {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    .layer-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 5px;
+      margin-bottom: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .layer-item.selected {
+      background: rgba(76, 175, 80, 0.3);
+    }
+
+    .layer-item button {
+      padding: 2px 6px;
+      font-size: 10px;
+      margin: 0;
+    }
+
+    #info {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    #htmlOutput {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      display: none;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #htmlOutput textarea {
+      width: 100%;
+      height: 80%;
+      background: #1a1a1a;
+      color: #00ff00;
+      border: 1px solid #333;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    #htmlOutput .controls {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #htmlOutput button {
+      margin: 0 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <div id="controls">
+      <h3>AR Video Layer Composer</h3>
+
+      <div class="control-group">
+        <label>Project Name:</label>
+        <input type="text" id="projectName" placeholder="Enter project name" value="ar-project">
+      </div>
+
+      <div class="control-group">
+        <label>Add Video Layer:</label>
+        <input type="file" id="videoFile" accept="video/*">
+        <button onclick="addVideoLayer()">Add Layer</button>
+      </div>
+
+      <div class="control-group">
+        <label>Position X: <span id="xValue">0</span></label>
+        <input type="range" id="xPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
+
+        <label>Position Y: <span id="yValue">0</span></label>
+        <input type="range" id="yPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
+
+        <label>Position Z (Depth): <span id="zValue">0</span></label>
+        <input type="range" id="zPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
+      </div>
+
+      <div class="control-group">
+        <label>Transparency: <span id="alphaValue">1.0</span></label>
+        <input type="range" id="alpha" min="0" max="1" step="0.1" value="1" oninput="updateTransparency()">
+
+        <label>Scale: <span id="scaleValue">1.0</span></label>
+        <input type="range" id="scale" min="0.1" max="5" step="0.1" value="1" oninput="updateScale()">
+      </div>
+
+      <div class="control-group">
+        <label>Rotation X: <span id="rotXValue">0</span></label>
+        <input type="range" id="rotX" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+        <label>Rotation Y: <span id="rotYValue">0</span></label>
+        <input type="range" id="rotY" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+        <label>Rotation Z: <span id="rotZValue">0</span></label>
+        <input type="range" id="rotZ" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+      </div>
+
+      <div class="control-group">
+        <button onclick="playAll()">Play All</button>
+        <button onclick="pauseAll()">Pause All</button>
+        <button onclick="resetCamera()">Reset Camera</button>
+        <button onclick="downloadHTML()">Download AR HTML</button>
+        <button onclick="downloadPackage()">Download AR Package</button>
+      </div>
+
+      <div id="layersList">
+        <h4>Layers:</h4>
+        <div id="layers"></div>
+      </div>
+    </div>
+
+    <!-- HTML Output Modal -->
+    <div id="htmlOutput">
+      <h3>Generated AR HTML Code</h3>
+      <textarea id="htmlCode" readonly></textarea>
+      <div class="controls">
+        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        <button onclick="downloadHTMLFile()">Download as HTML File</button>
+        <button onclick="closeHTMLOutput()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script>
+    let scene, camera, renderer, controls;
+    let videoLayers = [];
+    let selectedLayer = null;
+    let layerCounter = 0;
+
+    function downloadHTML() {
+      const htmlCode = generateHTMLCode();
+      document.getElementById('htmlCode').value = htmlCode;
+      document.getElementById('htmlOutput').style.display = 'block';
+    }
+
+    async function downloadPackage() {
+      const name = (document.getElementById('projectName').value || 'ar-project').trim();
+      const zip = new JSZip();
+
+      // Add HTML file
+      zip.file(name + '.html', generateHTMLCode());
+
+      // Add assets folder with pattern marker
+      const assetsFolder = zip.folder('assets');
+
+      // Create a sample pattern marker file
+      const patternContent = `
+255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
+255 255 255 255   0   0   0   0   0   0   0   0 255 255 255 255
+255 255 255   0   0   0   0   0   0   0   0   0   0 255 255 255
+255 255   0   0   0   0   0   0   0   0   0   0   0   0 255 255
+255   0   0   0   0   0   0   0   0   0   0   0   0   0   0 255
+255   0   0   0   0   0   0   0   0   0   0   0   0   0   0 255
+255   0   0   0   0   0 255 255 255 255   0   0   0   0   0 255
+255   0   0   0   0   0 255 255 255 255   0   0   0   0   0 255
+255   0   0   0   0   0 255 255 255 255   0   0   0   0   0 255
+255   0   0   0   0   0 255 255 255 255   0   0   0   0   0 255
+255   0   0   0   0   0   0   0   0   0   0   0   0   0   0 255
+255   0   0   0   0   0   0   0   0   0   0   0   0   0   0 255
+255 255   0   0   0   0   0   0   0   0   0   0   0   0 255 255
+255 255 255   0   0   0   0   0   0   0   0   0   0 255 255 255
+255 255 255 255   0   0   0   0   0   0   0   0 255 255 255 255
+255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255`;
+
+      assetsFolder.file(name + '.patt', patternContent);
+
+      const patternPNG = await generatePatternPNG();
+      assetsFolder.file(name + '.png', patternPNG, { binary: true });
+
+      // Add video files
+      const videoFolder = zip.folder('video');
+      for (const layer of videoLayers) {
+        try {
+          let arrayBuffer;
+          if (layer.file && typeof layer.file.arrayBuffer === 'function') {
+            arrayBuffer = await layer.file.arrayBuffer();
+          } else if (layer.video && layer.video.src) {
+            const response = await fetch(layer.video.src);
+            arrayBuffer = await response.arrayBuffer();
+          } else {
+            console.warn('No file or video src for layer:', layer.name);
+            continue;
+          }
+          const filename = /\.\w+$/.test(layer.name) ? layer.name : layer.name + '.mp4';
+          videoFolder.file(filename, arrayBuffer, { binary: true });
+        } catch (e) {
+          console.error('Error adding layer to ZIP:', layer.name, e);
+        }
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      saveAs(blob, name + '.zip');
+    }
+
+    function generatePatternPNG() {
+      // Create a canvas to draw the pattern
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Set canvas size (larger for better print quality)
+      const size = 512;
+      canvas.width = size;
+      canvas.height = size;
+
+      // Fill white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw black border
+      ctx.fillStyle = '#000000';
+      const borderSize = size / 16;
+
+      // Top and bottom borders
+      ctx.fillRect(0, 0, size, borderSize * 4);
+      ctx.fillRect(0, size - borderSize * 4, size, borderSize * 4);
+
+      // Left and right borders
+      ctx.fillRect(0, 0, borderSize * 4, size);
+      ctx.fillRect(size - borderSize * 4, 0, borderSize * 4, size);
+
+      // Draw inner pattern (white square in center)
+      const centerSize = borderSize * 4;
+      const centerX = (size - centerSize) / 2;
+      const centerY = (size - centerSize) / 2;
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(centerX, centerY, centerSize, centerSize);
+
+      // Add some pattern details for better tracking
+      ctx.fillStyle = '#000000';
+      const detailSize = borderSize;
+
+      // Add corner markers for better detection
+      ctx.fillRect(borderSize * 5, borderSize * 5, detailSize, detailSize);
+      ctx.fillRect(borderSize * 10, borderSize * 5, detailSize, detailSize);
+      ctx.fillRect(borderSize * 5, borderSize * 10, detailSize, detailSize);
+      ctx.fillRect(borderSize * 10, borderSize * 10, detailSize, detailSize);
+
+      // Convert canvas to blob
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const arrayBuffer = reader.result;
+            resolve(new Uint8Array(arrayBuffer));
+          };
+          reader.readAsArrayBuffer(blob);
+        }, 'image/png');
+      });
+    }
+
+    function generateHTMLCode() {
+      const projectName = document.getElementById('projectName').value || 'ar-project';
+      
+      // Generate all video assets and elements with proper 3D positioning
+      const videoAssets = videoLayers.map(layer => {
+        const videoSrc = "./video/" + (layer.file ? layer.file.name : layer.name);
+        const videoId = `video-${layer.id}`;
+        
+        return `    <video id="${videoId}" src="${videoSrc}" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>`;
+      }).join('\n');
+
+      const videoElements = videoLayers.map(layer => {
+        const mesh = layer.mesh;
+        const videoId = `video-${layer.id}`;
+        
+        // Convert Three.js coordinates to A-Frame coordinates
+        const position = `${mesh.position.x.toFixed(2)} ${mesh.position.y.toFixed(2)} ${mesh.position.z.toFixed(2)}`;
+        const rotation = `${(mesh.rotation.x * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.y * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.z * 180 / Math.PI).toFixed(1)}`;
+        const scale = `${mesh.scale.x.toFixed(2)} ${mesh.scale.y.toFixed(2)} ${mesh.scale.z.toFixed(2)}`;
+        const opacity = mesh.material.opacity.toFixed(2);
+        
+        return `      <a-video 
+        src="#${videoId}" 
+        position="${position}" 
+        rotation="${rotation}" 
+        scale="${scale}" 
+        opacity="${opacity}" 
+        width="2" 
+        height="2"
+        material="transparent: true"
+        geometry="primitive: plane"
+        look-at="[camera]"
+        class="video-layer"></a-video>`;
+      }).join('\n');
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Video Scene - ${projectName}</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"><\/script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      z-index: 1000;
+      max-width: 250px;
+    }
+    
+    .controls button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 2px;
+      font-size: 12px;
+    }
+    
+    .controls button:hover {
+      background: #45a049;
+    }
+    
+    .info {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      z-index: 1000;
+      max-width: 300px;
+    }
+    
+    .stats {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h4>AR Video Controls</h4>
+    <button onclick="playAllVideos()">▶ Play All</button>
+    <button onclick="pauseAllVideos()">⏸ Pause All</button>
+    <button onclick="toggleDebug()">🔧 Debug</button>
+    <button onclick="resetVideos()">🔄 Reset</button>
+    <div style="margin-top: 10px; font-size: 11px;">
+      Videos: ${videoLayers.length} loaded
+    </div>
+  </div>
+  
+  <div class="stats" id="stats">
+    <div>Marker: Not Found</div>
+    <div>Videos: 0 playing</div>
+    <div>FPS: --</div>
+  </div>
+  
+  <div class="info">
+    <strong>Instructions:</strong><br>
+    1. Print the AR marker (${projectName}.png)<br>
+    2. Point your camera at the marker<br>
+    3. Watch videos appear in 3D space!<br>
+    <br>
+    <strong>Marker Status:</strong> <span id="markerStatus">Searching...</span>
+  </div>
+
+  <a-scene
+    vr-mode-ui="enabled: false"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+    background="color: #000000; transparent: true">
+    
+    <a-assets>
+${videoAssets}
+    </a-assets>
+
+    <a-marker type='pattern' url='./assets/${projectName}.patt' id="mainMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+      <!-- 3D Video Layer Container -->
+      <a-entity id="videoContainer" position="0 0 0">
+${videoElements}
+      </a-entity>
+      
+      <!-- Optional: Add reference objects for scale -->
+      <a-box position="0 -1 0" scale="0.1 0.1 0.1" color="#444" opacity="0.5" class="reference-object"></a-box>
+      <a-ring position="0 0 -0.1" radius-inner="0.8" radius-outer="1" color="#333" opacity="0.3" class="reference-object"></a-ring>
     </a-marker>
-    <a-entity camera></a-entity>
+
+    <a-entity camera look-controls-enabled="false" arjs-look-controls="smoothingFactor: 0.1"></a-entity>
   </a-scene>
+
+  <script>
+    let debugMode = false;
+    let markerFound = false;
+    let playingVideos = 0;
+    let frameCount = 0;
+    let lastTime = Date.now();
+    
+    // Initialize AR scene
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('AR Video Scene initialized with ${videoLayers.length} video layers');
+      
+      const marker = document.querySelector('#mainMarker');
+      const scene = document.querySelector('a-scene');
+      
+      // Marker detection events
+      marker.addEventListener('markerFound', function() {
+        console.log('AR Marker detected - Starting video playback');
+        markerFound = true;
+        document.getElementById('markerStatus').textContent = 'Found ✓';
+        playAllVideos();
+        
+        // Show reference objects
+        document.querySelectorAll('.reference-object').forEach(obj => {
+          obj.setAttribute('visible', true);
+        });
+      });
+      
+      marker.addEventListener('markerLost', function() {
+        console.log('AR Marker lost - Pausing videos');
+        markerFound = false;
+        document.getElementById('markerStatus').textContent = 'Lost ✗';
+        pauseAllVideos();
+        
+        // Hide reference objects
+        document.querySelectorAll('.reference-object').forEach(obj => {
+          obj.setAttribute('visible', false);
+        });
+      });
+      
+      // Performance monitoring
+      setInterval(updateStats, 1000);
+    });
+    
+    function playAllVideos() {
+      const videos = document.querySelectorAll('video');
+      playingVideos = 0;
+      
+      videos.forEach(video => {
+        video.play().then(() => {
+          playingVideos++;
+          console.log(\`Video \${video.id} started playing\`);
+        }).catch(e => {
+          console.warn(\`Video \${video.id} play failed:\`, e);
+        });
+      });
+    }
+    
+    function pauseAllVideos() {
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        video.pause();
+      });
+      playingVideos = 0;
+    }
+    
+    function resetVideos() {
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        video.currentTime = 0;
+        if (markerFound) {
+          video.play().catch(e => console.log('Video reset play failed:', e));
+        }
+      });
+    }
+    
+    function toggleDebug() {
+      debugMode = !debugMode;
+      const scene = document.querySelector('a-scene');
+      scene.setAttribute('arjs', \`sourceType: webcam; debugUIEnabled: \${debugMode}; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60;\`);
+      
+      // Toggle reference objects visibility
+      document.querySelectorAll('.reference-object').forEach(obj => {
+        obj.setAttribute('visible', debugMode || markerFound);
+      });
+    }
+    
+    function updateStats() {
+      const now = Date.now();
+      const fps = Math.round(1000 / (now - lastTime));
+      lastTime = now;
+      
+      const videos = document.querySelectorAll('video');
+      let activeVideos = 0;
+      videos.forEach(video => {
+        if (!video.paused) activeVideos++;
+      });
+      
+      document.getElementById('stats').innerHTML = \`
+        <div>Marker: \${markerFound ? 'Found ✓' : 'Searching...'}</div>
+        <div>Videos: \${activeVideos}/\${videos.length} playing</div>
+        <div>FPS: \${fps}</div>
+      \`;
+    }
+    
+    // Handle mobile device orientation
+    window.addEventListener('orientationchange', function() {
+      setTimeout(() => {
+        const scene = document.querySelector('a-scene');
+        scene.resize();
+      }, 500);
+    });
+    
+    // Auto-play on user interaction (required for mobile)
+    document.addEventListener('touchstart', function() {
+      if (markerFound) {
+        playAllVideos();
+      }
+    }, { once: true });
+    
+    document.addEventListener('click', function() {
+      if (markerFound) {
+        playAllVideos();
+      }
+    }, { once: true });
+  <\/script>
 </body>
+</html>`;
+
+      return html;
+    }
+
+    function copyToClipboard() {
+      const textarea = document.getElementById('htmlCode');
+      textarea.select();
+      document.execCommand('copy');
+      alert('AR HTML code copied to clipboard!');
+    }
+
+    function downloadHTMLFile() {
+      const htmlCode = document.getElementById('htmlCode').value;
+      const blob = new Blob([htmlCode], { type: 'text/html' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      const projectName = document.getElementById('projectName').value || 'ar-project';
+      link.download = projectName + '.html';
+      link.click();
+    }
+
+    function closeHTMLOutput() {
+      document.getElementById('htmlOutput').style.display = 'none';
+    }
+
+    function deleteLayer(layerId) {
+      const layerIndex = videoLayers.findIndex(layer => layer.id === layerId);
+      if (layerIndex === -1) return;
+      
+      const layer = videoLayers[layerIndex];
+      
+      // Remove from scene
+      scene.remove(layer.mesh);
+      
+      // Stop and dispose video
+      layer.video.pause();
+      layer.video.src = '';
+      layer.video.load();
+      
+      // Dispose texture and material
+      layer.texture.dispose();
+      layer.mesh.material.dispose();
+      layer.mesh.geometry.dispose();
+      
+      // Remove from array
+      videoLayers.splice(layerIndex, 1);
+      
+      // Update UI
+      if (selectedLayer === layer) {
+        selectedLayer = null;
+      }
+      
+      updateLayersList();
+    }
+
+    // Initialize Three.js scene
+    function initScene() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 0, 5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('container').appendChild(renderer.domElement);
+
+      // Add lights
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(1, 1, 1);
+      scene.add(directionalLight);
+
+      // Add grid helper
+      const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x444444);
+      scene.add(gridHelper);
+
+      // Add axes helper
+      const axesHelper = new THREE.AxesHelper(5);
+      scene.add(axesHelper);
+
+      // Mouse controls
+      addMouseControls();
+
+      animate();
+    }
+
+    // Add mouse controls for camera
+    function addMouseControls() {
+      let mouseDown = false;
+      let mouseX = 0;
+      let mouseY = 0;
+
+      renderer.domElement.addEventListener('mousedown', (event) => {
+        mouseDown = true;
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+      });
+
+      renderer.domElement.addEventListener('mousemove', (event) => {
+        if (!mouseDown) return;
+
+        const deltaX = event.clientX - mouseX;
+        const deltaY = event.clientY - mouseY;
+
+        const spherical = new THREE.Spherical();
+        spherical.setFromVector3(camera.position);
+        spherical.theta -= deltaX * 0.01;
+        spherical.phi += deltaY * 0.01;
+        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+        camera.position.setFromSpherical(spherical);
+        camera.lookAt(0, 0, 0);
+
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+      });
+
+      renderer.domElement.addEventListener('mouseup', () => {
+        mouseDown = false;
+      });
+
+      renderer.domElement.addEventListener('wheel', (event) => {
+        const scale = event.deltaY > 0 ? 1.1 : 0.9;
+        camera.position.multiplyScalar(scale);
+        camera.position.clampLength(1, 50);
+      });
+    }
+
+    // Add video layer
+    function addVideoLayer() {
+      const fileInput = document.getElementById('videoFile');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a video file first');
+        return;
+      }
+
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(file);
+      video.load();
+      video.loop = true;
+      video.muted = true;
+      video.crossOrigin = 'anonymous';
+
+      video.addEventListener('loadeddata', () => {
+        const texture = new THREE.VideoTexture(video);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        // Auto-position new layers in a spiral pattern
+        const layerCount = videoLayers.length;
+        const angle = layerCount * 0.8;
+        const radius = 1 + layerCount * 0.5;
+        mesh.position.set(
+          Math.cos(angle) * radius,
+          Math.sin(angle * 0.5) * 1,
+          Math.sin(angle) * radius
+        );
+
+        const layer = {
+          id: layerCounter++,
+          name: file.name,
+          file: file,
+          mesh: mesh,
+          video: video,
+          texture: texture
+        };
+
+        videoLayers.push(layer);
+        scene.add(mesh);
+
+        updateLayersList();
+        selectLayer(layer);
+
+        // Auto-play video
+        video.play().catch(e => console.log('Video play failed:', e));
+      });
+
+      fileInput.value = '';
+    }
+
+    // Update layers list
+    function updateLayersList() {
+      const layersDiv = document.getElementById('layers');
+      layersDiv.innerHTML = '';
+
+      videoLayers.forEach(layer => {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'layer-item';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = `${layer.id}: ${layer.name}`;
+        nameSpan.onclick = () => selectLayer(layer);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'delete';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteLayer(layer.id);
+        };
+        
+        layerDiv.appendChild(nameSpan);
+        layerDiv.appendChild(deleteBtn);
+        layersDiv.appendChild(layerDiv);
+      });
+    }
+
+    // Select layer
+    function selectLayer(layer) {
+      selectedLayer = layer;
+
+      // Update UI
+      document.querySelectorAll('.layer-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+
+      const layerItems = document.querySelectorAll('.layer-item');
+      if (layerItems[videoLayers.indexOf(layer)]) {
+        layerItems[videoLayers.indexOf(layer)].classList.add('selected');
+      }
+
+      // Update controls to match selected layer
+      const pos = layer.mesh.position;
+      const rot = layer.mesh.rotation;
+      const scale = layer.mesh.scale.x;
+      const alpha = layer.mesh.material.opacity;
+
+      document.getElementById('xPos').value = pos.x;
+      document.getElementById('yPos').value = pos.y;
+      document.getElementById('zPos').value = pos.z;
+      document.getElementById('rotX').value = rot.x * 180 / Math.PI;
+      document.getElementById('rotY').value = rot.y * 180 / Math.PI;
+      document.getElementById('rotZ').value = rot.z * 180 / Math.PI;
+      document.getElementById('scale').value = scale;
+      document.getElementById('alpha').value = alpha;
+
+      updateControlValues();
+    }
+
+    // Update control value displays
+    function updateControlValues() {
+      document.getElementById('xValue').textContent = document.getElementById('xPos').value;
+      document.getElementById('yValue').textContent = document.getElementById('yPos').value;
+      document.getElementById('zValue').textContent = document.getElementById('zPos').value;
+      document.getElementById('rotXValue').textContent = document.getElementById('rotX').value + '°';
+      document.getElementById('rotYValue').textContent = document.getElementById('rotY').value + '°';
+      document.getElementById('rotZValue').textContent = document.getElementById('rotZ').value + '°';
+      document.getElementById('scaleValue').textContent = document.getElementById('scale').value;
+      document.getElementById('alphaValue').textContent = document.getElementById('alpha').value;
+    }
+
+    // Update position
+    function updatePosition() {
+      if (!selectedLayer) return;
+
+      const x = parseFloat(document.getElementById('xPos').value);
+      const y = parseFloat(document.getElementById('yPos').value);
+      const z = parseFloat(document.getElementById('zPos').value);
+
+      selectedLayer.mesh.position.set(x, y, z);
+      updateControlValues();
+    }
+
+    // Update rotation
+    function updateRotation() {
+      if (!selectedLayer) return;
+
+      const x = parseFloat(document.getElementById('rotX').value) * Math.PI / 180;
+      const y = parseFloat(document.getElementById('rotY').value) * Math.PI / 180;
+      const z = parseFloat(document.getElementById('rotZ').value) * Math.PI / 180;
+
+      selectedLayer.mesh.rotation.set(x, y, z);
+      updateControlValues();
+    }
+
+    // Update transparency
+    function updateTransparency() {
+      if (!selectedLayer) return;
+
+      const alpha = parseFloat(document.getElementById('alpha').value);
+      selectedLayer.mesh.material.opacity = alpha;
+      updateControlValues();
+    }
+
+    // Update scale
+    function updateScale() {
+      if (!selectedLayer) return;
+
+      const scale = parseFloat(document.getElementById('scale').value);
+      selectedLayer.mesh.scale.set(scale, scale, scale);
+      updateControlValues();
+    }
+
+    // Play all videos
+    function playAll() {
+      videoLayers.forEach(layer => {
+        layer.video.play().catch(e => console.log('Video play failed:', e));
+      });
+    }
+
+    // Pause all videos
+    function pauseAll() {
+      videoLayers.forEach(layer => {
+        layer.video.pause();
+      });
+    }
+
+    // Reset camera
+    function resetCamera() {
+      camera.position.set(0, 0, 5);
+      camera.lookAt(0, 0, 0);
+    }
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Update video textures
+      videoLayers.forEach(layer => {
+        if (layer.video.readyState === layer.video.HAVE_ENOUGH_DATA) {
+          layer.texture.needsUpdate = true;
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Initialize scene when page loads
+    window.addEventListener('load', initScene);
+  </script>
+</body>
+
+</html>

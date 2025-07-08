@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Video Layer Composer</title>
+  <title>3D Video Layer Composer</title>
   <style>
     body {
       margin: 0;
@@ -66,14 +66,6 @@
       background: #45a049;
     }
 
-    button.delete {
-      background: #f44336;
-    }
-
-    button.delete:hover {
-      background: #da190b;
-    }
-
     #layersList {
       max-height: 200px;
       overflow-y: auto;
@@ -89,19 +81,10 @@
       margin-bottom: 5px;
       border-radius: 3px;
       cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     .layer-item.selected {
       background: rgba(76, 175, 80, 0.3);
-    }
-
-    .layer-item button {
-      padding: 2px 6px;
-      font-size: 10px;
-      margin: 0;
     }
 
     #info {
@@ -152,12 +135,13 @@
 <body>
   <div id="container">
     <div id="controls">
-      <h3>AR Video Layer Composer</h3>
+      <h3>3D Video Layer Composer</h3>
 
       <div class="control-group">
         <label>Project Name:</label>
-        <input type="text" id="projectName" placeholder="Enter project name" value="ar-project">
+        <input type="text" id="projectName" placeholder="Enter project name" value="project">
       </div>
+
 
       <div class="control-group">
         <label>Add Video Layer:</label>
@@ -167,13 +151,13 @@
 
       <div class="control-group">
         <label>Position X: <span id="xValue">0</span></label>
-        <input type="range" id="xPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
+        <input type="range" id="xPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
 
         <label>Position Y: <span id="yValue">0</span></label>
-        <input type="range" id="yPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
+        <input type="range" id="yPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
 
         <label>Position Z (Depth): <span id="zValue">0</span></label>
-        <input type="range" id="zPos" min="-5" max="5" step="0.1" value="0" oninput="updatePosition()">
+        <input type="range" id="zPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
       </div>
 
       <div class="control-group">
@@ -199,8 +183,8 @@
         <button onclick="playAll()">Play All</button>
         <button onclick="pauseAll()">Pause All</button>
         <button onclick="resetCamera()">Reset Camera</button>
-        <button onclick="downloadHTML()">Download AR HTML</button>
-        <button onclick="downloadPackage()">Download AR Package</button>
+        <button onclick="downloadHTML()">Download HTML</button>
+        <button onclick="downloadPackage()">Download Package</button>
       </div>
 
       <div id="layersList">
@@ -211,7 +195,7 @@
 
     <!-- HTML Output Modal -->
     <div id="htmlOutput">
-      <h3>Generated AR HTML Code</h3>
+      <h3>Generated HTML Code</h3>
       <textarea id="htmlCode" readonly></textarea>
       <div class="controls">
         <button onclick="copyToClipboard()">Copy to Clipboard</button>
@@ -237,12 +221,8 @@
     }
 
     async function downloadPackage() {
-      const name = (document.getElementById('projectName').value || 'ar-project').trim();
+      const name = (document.getElementById('projectName').value || 'project').trim();
       const zip = new JSZip();
-
-      // Add HTML file
-      zip.file(name + '.html', generateHTMLCode());
-
       // Add assets folder with pattern marker
       const assetsFolder = zip.folder('assets');
 
@@ -269,8 +249,7 @@
 
       const patternPNG = await generatePatternPNG();
       assetsFolder.file(name + '.png', patternPNG, { binary: true });
-
-      // Add video files
+      zip.file(name + '.html', generateHTMLCode());
       const videoFolder = zip.folder('video');
       for (const layer of videoLayers) {
         try {
@@ -290,7 +269,6 @@
           console.error('Error adding layer to ZIP:', layer.name, e);
         }
       }
-
       const blob = await zip.generateAsync({ type: 'blob' });
       saveAs(blob, name + '.zip');
     }
@@ -353,286 +331,117 @@
     }
 
     function generateHTMLCode() {
-      const projectName = document.getElementById('projectName').value || 'ar-project';
-      
-      // Generate all video assets and elements with proper 3D positioning
-      const videoAssets = videoLayers.map(layer => {
-        const videoSrc = "./video/" + (layer.file ? layer.file.name : layer.name);
-        const videoId = `video-${layer.id}`;
-        
-        return `    <video id="${videoId}" src="${videoSrc}" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>`;
-      }).join('\n');
-
-      const videoElements = videoLayers.map(layer => {
+      // Serialize all video layers and their properties
+      let layersData = videoLayers.map(layer => {
         const mesh = layer.mesh;
-        const videoId = `video-${layer.id}`;
-        
-        // Convert Three.js coordinates to A-Frame coordinates
-        const position = `${mesh.position.x.toFixed(2)} ${mesh.position.y.toFixed(2)} ${mesh.position.z.toFixed(2)}`;
-        const rotation = `${(mesh.rotation.x * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.y * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.z * 180 / Math.PI).toFixed(1)}`;
-        const scale = `${mesh.scale.x.toFixed(2)} ${mesh.scale.y.toFixed(2)} ${mesh.scale.z.toFixed(2)}`;
-        const opacity = mesh.material.opacity.toFixed(2);
-        
-        return `      <a-video 
-        src="#${videoId}" 
-        position="${position}" 
-        rotation="${rotation}" 
-        scale="${scale}" 
-        opacity="${opacity}" 
-        width="2" 
-        height="2"
-        material="transparent: true"
-        geometry="primitive: plane"
-        look-at="[camera]"
-        class="video-layer"></a-video>`;
-      }).join('\n');
+        return {
+          name: layer.name,
+          videoSrc: "./video/" + layer.name,
+          position: { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z },
+          rotation: { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z },
+          scale: mesh.scale.x,
+          alpha: mesh.material.opacity
+        };
+      });
 
-      const html = `<!DOCTYPE html>
+      let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Video Scene - ${projectName}</title>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"><\/script>
+  <title>3D Video Scene</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
-    
-    .controls {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 15px;
-      border-radius: 10px;
-      z-index: 1000;
-      max-width: 250px;
-    }
-    
-    .controls button {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 2px;
-      font-size: 12px;
-    }
-    
-    .controls button:hover {
-      background: #45a049;
-    }
-    
-    .info {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 12px;
-      z-index: 1000;
-      max-width: 300px;
-    }
-    
-    .stats {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 11px;
-      z-index: 1000;
-    }
+    canvas { display: block; }
   </style>
 </head>
 <body>
-  <div class="controls">
-    <h4>AR Video Controls</h4>
-    <button onclick="playAllVideos()">▶ Play All</button>
-    <button onclick="pauseAllVideos()">⏸ Pause All</button>
-    <button onclick="toggleDebug()">🔧 Debug</button>
-    <button onclick="resetVideos()">🔄 Reset</button>
-    <div style="margin-top: 10px; font-size: 11px;">
-      Videos: ${videoLayers.length} loaded
+   <div id="container">
+    
     </div>
-  </div>
-  
-  <div class="stats" id="stats">
-    <div>Marker: Not Found</div>
-    <div>Videos: 0 playing</div>
-    <div>FPS: --</div>
-  </div>
-  
-  <div class="info">
-    <strong>Instructions:</strong><br>
-    1. Print the AR marker (${projectName}.png)<br>
-    2. Point your camera at the marker<br>
-    3. Watch videos appear in 3D space!<br>
-    <br>
-    <strong>Marker Status:</strong> <span id="markerStatus">Searching...</span>
-  </div>
-
-  <a-scene
-    vr-mode-ui="enabled: false"
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
-    renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
-    background="color: #000000; transparent: true">
-    
-    <a-assets>
-${videoAssets}
-    </a-assets>
-
-    <a-marker type='pattern' url='./assets/${projectName}.patt' id="mainMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
-      <!-- 3D Video Layer Container -->
-      <a-entity id="videoContainer" position="0 0 0">
-${videoElements}
-      </a-entity>
-      
-      <!-- Optional: Add reference objects for scale -->
-      <a-box position="0 -1 0" scale="0.1 0.1 0.1" color="#444" opacity="0.5" class="reference-object"></a-box>
-      <a-ring position="0 0 -0.1" radius-inner="0.8" radius-outer="1" color="#333" opacity="0.3" class="reference-object"></a-ring>
-    </a-marker>
-
-    <a-entity camera look-controls-enabled="false" arjs-look-controls="smoothingFactor: 0.1"></a-entity>
-  </a-scene>
-
+  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js\"><\/script>
   <script>
-    let debugMode = false;
-    let markerFound = false;
-    let playingVideos = 0;
-    let frameCount = 0;
-    let lastTime = Date.now();
-    
-    // Initialize AR scene
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('AR Video Scene initialized with ${videoLayers.length} video layers');
-      
-      const marker = document.querySelector('#mainMarker');
-      const scene = document.querySelector('a-scene');
-      
-      // Marker detection events
-      marker.addEventListener('markerFound', function() {
-        console.log('AR Marker detected - Starting video playback');
-        markerFound = true;
-        document.getElementById('markerStatus').textContent = 'Found ✓';
-        playAllVideos();
-        
-        // Show reference objects
-        document.querySelectorAll('.reference-object').forEach(obj => {
-          obj.setAttribute('visible', true);
+    let scene, camera, renderer;
+    let videoLayers = [];
+    const layersData = ${JSON.stringify(layersData, null, 2)};
+
+    function createVideoLayer(layer) {
+      if (!layer.videoSrc) return;
+      const video = document.createElement('video');
+      video.src = layer.videoSrc;
+      video.loop = true;
+      video.muted = true;
+      video.crossOrigin = 'anonymous';
+      video.autoplay = true;
+      video.playsInline = true;
+      video.load();
+      video.play().catch(() => {});
+
+      video.addEventListener('loadeddata', () => {
+        const texture = new THREE.VideoTexture(video);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          opacity: layer.alpha,
+          side: THREE.DoubleSide
         });
-      });
-      
-      marker.addEventListener('markerLost', function() {
-        console.log('AR Marker lost - Pausing videos');
-        markerFound = false;
-        document.getElementById('markerStatus').textContent = 'Lost ✗';
-        pauseAllVideos();
-        
-        // Hide reference objects
-        document.querySelectorAll('.reference-object').forEach(obj => {
-          obj.setAttribute('visible', false);
-        });
-      });
-      
-      // Performance monitoring
-      setInterval(updateStats, 1000);
-    });
-    
-    function playAllVideos() {
-      const videos = document.querySelectorAll('video');
-      playingVideos = 0;
-      
-      videos.forEach(video => {
-        video.play().then(() => {
-          playingVideos++;
-          console.log(\`Video \${video.id} started playing\`);
-        }).catch(e => {
-          console.warn(\`Video \${video.id} play failed:\`, e);
-        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(layer.position.x, layer.position.y, layer.position.z);
+        mesh.rotation.set(layer.rotation.x, layer.rotation.y, layer.rotation.z);
+        mesh.scale.set(layer.scale, layer.scale, layer.scale);
+        scene.add(mesh);
+        videoLayers.push({ mesh, video, texture });
       });
     }
-    
-    function pauseAllVideos() {
-      const videos = document.querySelectorAll('video');
-      videos.forEach(video => {
-        video.pause();
-      });
-      playingVideos = 0;
+
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 0, 5);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Add lights
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(1, 1, 1);
+      scene.add(directionalLight);
+
+      // Add grid and axes helpers
+      const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x444444);
+      scene.add(gridHelper);
+      const axesHelper = new THREE.AxesHelper(5);
+      scene.add(axesHelper);
+
+      // Add video layers
+      layersData.forEach(createVideoLayer);
     }
-    
-    function resetVideos() {
-      const videos = document.querySelectorAll('video');
-      videos.forEach(video => {
-        video.currentTime = 0;
-        if (markerFound) {
-          video.play().catch(e => console.log('Video reset play failed:', e));
+
+    function animate() {
+      requestAnimationFrame(animate);
+      // Update video textures
+      videoLayers.forEach(layer => {
+        if (layer.video.readyState === layer.video.HAVE_ENOUGH_DATA) {
+          layer.texture.needsUpdate = true;
         }
       });
+      renderer.render(scene, camera);
     }
-    
-    function toggleDebug() {
-      debugMode = !debugMode;
-      const scene = document.querySelector('a-scene');
-      scene.setAttribute('arjs', \`sourceType: webcam; debugUIEnabled: \${debugMode}; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60;\`);
-      
-      // Toggle reference objects visibility
-      document.querySelectorAll('.reference-object').forEach(obj => {
-        obj.setAttribute('visible', debugMode || markerFound);
-      });
-    }
-    
-    function updateStats() {
-      const now = Date.now();
-      const fps = Math.round(1000 / (now - lastTime));
-      lastTime = now;
-      
-      const videos = document.querySelectorAll('video');
-      let activeVideos = 0;
-      videos.forEach(video => {
-        if (!video.paused) activeVideos++;
-      });
-      
-      document.getElementById('stats').innerHTML = \`
-        <div>Marker: \${markerFound ? 'Found ✓' : 'Searching...'}</div>
-        <div>Videos: \${activeVideos}/\${videos.length} playing</div>
-        <div>FPS: \${fps}</div>
-      \`;
-    }
-    
-    // Handle mobile device orientation
-    window.addEventListener('orientationchange', function() {
-      setTimeout(() => {
-        const scene = document.querySelector('a-scene');
-        scene.resize();
-      }, 500);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
-    
-    // Auto-play on user interaction (required for mobile)
-    document.addEventListener('touchstart', function() {
-      if (markerFound) {
-        playAllVideos();
-      }
-    }, { once: true });
-    
-    document.addEventListener('click', function() {
-      if (markerFound) {
-        playAllVideos();
-      }
-    }, { once: true });
+
+    window.addEventListener('load', () => {
+      init();
+      animate();
+    });
   <\/script>
-</body>
 </html>`;
 
       return html;
@@ -642,7 +451,7 @@ ${videoElements}
       const textarea = document.getElementById('htmlCode');
       textarea.select();
       document.execCommand('copy');
-      alert('AR HTML code copied to clipboard!');
+      alert('HTML code copied to clipboard!');
     }
 
     function downloadHTMLFile() {
@@ -650,43 +459,12 @@ ${videoElements}
       const blob = new Blob([htmlCode], { type: 'text/html' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      const projectName = document.getElementById('projectName').value || 'ar-project';
-      link.download = projectName + '.html';
+      link.download = '3d-video-scene.html';
       link.click();
     }
 
     function closeHTMLOutput() {
       document.getElementById('htmlOutput').style.display = 'none';
-    }
-
-    function deleteLayer(layerId) {
-      const layerIndex = videoLayers.findIndex(layer => layer.id === layerId);
-      if (layerIndex === -1) return;
-      
-      const layer = videoLayers[layerIndex];
-      
-      // Remove from scene
-      scene.remove(layer.mesh);
-      
-      // Stop and dispose video
-      layer.video.pause();
-      layer.video.src = '';
-      layer.video.load();
-      
-      // Dispose texture and material
-      layer.texture.dispose();
-      layer.mesh.material.dispose();
-      layer.mesh.geometry.dispose();
-      
-      // Remove from array
-      videoLayers.splice(layerIndex, 1);
-      
-      // Update UI
-      if (selectedLayer === layer) {
-        selectedLayer = null;
-      }
-      
-      updateLayersList();
     }
 
     // Initialize Three.js scene
@@ -795,21 +573,11 @@ ${videoElements}
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        
-        // Auto-position new layers in a spiral pattern
-        const layerCount = videoLayers.length;
-        const angle = layerCount * 0.8;
-        const radius = 1 + layerCount * 0.5;
-        mesh.position.set(
-          Math.cos(angle) * radius,
-          Math.sin(angle * 0.5) * 1,
-          Math.sin(angle) * radius
-        );
+        mesh.position.set(0, 0, 0);
 
         const layer = {
           id: layerCounter++,
           name: file.name,
-          file: file,
           mesh: mesh,
           video: video,
           texture: texture
@@ -836,21 +604,8 @@ ${videoElements}
       videoLayers.forEach(layer => {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = `${layer.id}: ${layer.name}`;
-        nameSpan.onclick = () => selectLayer(layer);
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.className = 'delete';
-        deleteBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteLayer(layer.id);
-        };
-        
-        layerDiv.appendChild(nameSpan);
-        layerDiv.appendChild(deleteBtn);
+        layerDiv.textContent = `${layer.id}: ${layer.name}`;
+        layerDiv.onclick = () => selectLayer(layer);
         layersDiv.appendChild(layerDiv);
       });
     }
