@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLB Animation Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+        }
+        
+        button {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h3>GLB Animation Controls</h3>
+            <button id="playBtn">Play Animation</button>
+            <button id="pauseBtn">Pause Animation</button>
+            <button id="resetBtn">Reset Animation</button>
+            <br>
+            <button id="createBtn">Create Animated Cube</button>
+            <button id="exportBtn" disabled>Export GLB</button>
+        </div>
+        
+        <div id="info">
+            <div>Click "Create Animated Cube" to generate a simple animated 3D model</div>
+            <div>Use controls to play/pause the animation</div>
+            <div>Export to GLB format to save the animation</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, mixer, clock;
+        let animatedObject = null;
+        let animationClip = null;
+        let action = null;
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x222222);
+            
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+            
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 5, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            // Animation mixer and clock
+            mixer = new THREE.AnimationMixer(scene);
+            clock = new THREE.Clock();
+            
+            // Controls
+            setupControls();
+            
+            // Start render loop
+            animate();
+        }
+
+        function createAnimatedCube() {
+            // Remove existing object
+            if (animatedObject) {
+                scene.remove(animatedObject);
+            }
+            
+            // Create cube geometry and material
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x00ff88,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            animatedObject = new THREE.Mesh(geometry, material);
+            animatedObject.castShadow = true;
+            scene.add(animatedObject);
+            
+            // Create animation keyframes
+            const times = [0, 1, 2, 3, 4];
+            const positionValues = [
+                0, 0, 0,    // t=0: original position
+                2, 0, 0,    // t=1: move right
+                2, 2, 0,    // t=2: move up
+                -2, 2, 0,   // t=3: move left
+                0, 0, 0     // t=4: back to start
+            ];
+            
+            const rotationValues = [
+                0, 0, 0,         // t=0: no rotation
+                0, Math.PI/2, 0, // t=1: rotate Y 90°
+                0, Math.PI, 0,   // t=2: rotate Y 180°
+                0, 3*Math.PI/2, 0, // t=3: rotate Y 270°
+                0, 2*Math.PI, 0  // t=4: full rotation
+            ];
+            
+            const scaleValues = [
+                1, 1, 1,    // t=0: normal size
+                1.5, 1.5, 1.5, // t=1: bigger
+                1, 1, 1,    // t=2: normal
+                0.5, 0.5, 0.5, // t=3: smaller
+                1, 1, 1     // t=4: normal
+            ];
+            
+            // Create keyframe tracks
+            const positionTrack = new THREE.VectorKeyframeTrack('.position', times, positionValues);
+            const rotationTrack = new THREE.VectorKeyframeTrack('.rotation', times, rotationValues);
+            const scaleTrack = new THREE.VectorKeyframeTrack('.scale', times, scaleValues);
+            
+            // Create animation clip
+            animationClip = new THREE.AnimationClip('CubeAnimation', 4, [positionTrack, rotationTrack, scaleTrack]);
+            
+            // Create animation mixer and action
+            mixer = new THREE.AnimationMixer(animatedObject);
+            action = mixer.clipAction(animationClip);
+            action.setLoop(THREE.LoopRepeat);
+            
+            // Enable export button
+            document.getElementById('exportBtn').disabled = false;
+            
+            console.log('Animated cube created with keyframe animation!');
+        }
+
+        function setupControls() {
+            document.getElementById('createBtn').addEventListener('click', createAnimatedCube);
+            
+            document.getElementById('playBtn').addEventListener('click', () => {
+                if (action) {
+                    action.play();
+                    console.log('Animation playing');
+                }
+            });
+            
+            document.getElementById('pauseBtn').addEventListener('click', () => {
+                if (action) {
+                    action.paused = !action.paused;
+                    console.log('Animation paused/resumed');
+                }
+            });
+            
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                if (action) {
+                    action.reset();
+                    action.play();
+                    console.log('Animation reset');
+                }
+            });
+            
+            document.getElementById('exportBtn').addEventListener('click', exportGLB);
+        }
+
+        function exportGLB() {
+            if (!animatedObject || !animationClip) {
+                alert('Please create an animated cube first!');
+                return;
+            }
+            
+            // Method 1: Export JSON structure (what we were doing before)
+            exportJSONStructure();
+            
+            // Method 2: Create a simple binary GLB-like file
+            setTimeout(() => {
+                exportBinaryGLB();
+            }, 1000);
+        }
+
+        function exportJSONStructure() {
+            const exportData = {
+                geometry: {
+                    type: animatedObject.geometry.type,
+                    vertices: animatedObject.geometry.attributes.position.count,
+                    faces: animatedObject.geometry.index ? animatedObject.geometry.index.count / 3 : 0
+                },
+                material: {
+                    type: animatedObject.material.type,
+                    color: animatedObject.material.color.getHex(),
+                    opacity: animatedObject.material.opacity
+                },
+                animation: {
+                    name: animationClip.name,
+                    duration: animationClip.duration,
+                    tracks: animationClip.tracks.length,
+                    trackDetails: animationClip.tracks.map(track => ({
+                        name: track.name,
+                        type: track.constructor.name,
+                        times: track.times.length,
+                        values: track.values.length,
+                        timesData: Array.from(track.times),
+                        valuesData: Array.from(track.values)
+                    }))
+                },
+                transform: {
+                    position: animatedObject.position.toArray(),
+                    rotation: animatedObject.rotation.toArray(),
+                    scale: animatedObject.scale.toArray()
+                }
+            };
+            
+            console.log('Detailed GLB Export Data:', exportData);
+            
+            // Create downloadable JSON file
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'animation_data.json';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('JSON structure exported!');
+        }
+
+        function exportBinaryGLB() {
+            // Create a simplified binary representation
+            const geometryData = animatedObject.geometry.attributes.position.array;
+            const normalData = animatedObject.geometry.attributes.normal.array;
+            
+            // Combine animation data
+            const animationData = {
+                name: animationClip.name,
+                duration: animationClip.duration,
+                tracks: animationClip.tracks.map(track => ({
+                    name: track.name,
+                    times: Array.from(track.times),
+                    values: Array.from(track.values)
+                }))
+            };
+            
+            // Create a simple binary-like structure
+            const header = new TextEncoder().encode('ANIMATED_GLB_DEMO');
+            const jsonData = new TextEncoder().encode(JSON.stringify(animationData));
+            const geometryBuffer = new Float32Array(geometryData);
+            const normalBuffer = new Float32Array(normalData);
+            
+            // Calculate sizes
+            const headerSize = header.length;
+            const jsonSize = jsonData.length;
+            const geometrySize = geometryBuffer.byteLength;
+            const normalSize = normalBuffer.byteLength;
+            const totalSize = headerSize + jsonSize + geometrySize + normalSize + 16; // 16 bytes for size info
+            
+            // Create combined buffer
+            const combinedBuffer = new ArrayBuffer(totalSize);
+            const view = new DataView(combinedBuffer);
+            let offset = 0;
+            
+            // Write header
+            new Uint8Array(combinedBuffer, offset, headerSize).set(header);
+            offset += headerSize;
+            
+            // Write sizes
+            view.setUint32(offset, jsonSize, true);
+            offset += 4;
+            view.setUint32(offset, geometrySize, true);
+            offset += 4;
+            view.setUint32(offset, normalSize, true);
+            offset += 4;
+            view.setUint32(offset, animationClip.tracks.length, true);
+            offset += 4;
+            
+            // Write JSON data
+            new Uint8Array(combinedBuffer, offset, jsonSize).set(jsonData);
+            offset += jsonSize;
+            
+            // Write geometry data
+            new Uint8Array(combinedBuffer, offset, geometrySize).set(new Uint8Array(geometryBuffer.buffer));
+            offset += geometrySize;
+            
+            // Write normal data
+            new Uint8Array(combinedBuffer, offset, normalSize).set(new Uint8Array(normalBuffer.buffer));
+            
+            // Create and download binary file
+            const blob = new Blob([combinedBuffer], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'animated_model.glb';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('Binary GLB-like file exported!');
+            console.log('File size:', totalSize, 'bytes');
+            console.log('Contains:', {
+                header: headerSize + ' bytes',
+                animation: jsonSize + ' bytes', 
+                geometry: geometrySize + ' bytes',
+                normals: normalSize + ' bytes'
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update animation mixer
+            if (mixer) {
+                mixer.update(clock.getDelta());
+            }
+            
+            // Render scene
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize the scene
+        init();
+    </script>
+</body>
+</html>
