@@ -354,25 +354,26 @@
 
     function generateHTMLCode() {
       const projectName = document.getElementById('projectName').value || 'ar-project';
-      
+
       // Generate all video assets and elements with proper 3D positioning
       const videoAssets = videoLayers.map(layer => {
         const videoSrc = "./video/" + (layer.file ? layer.file.name : layer.name);
         const videoId = `video-${layer.id}`;
-        
+
         return `    <video id="${videoId}" src="${videoSrc}" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline playsinline controls></video>`;
       }).join('\n');
 
       const videoElements = videoLayers.map(layer => {
         const mesh = layer.mesh;
         const videoId = `video-${layer.id}`;
-        
+
         // Convert Three.js coordinates to A-Frame coordinates
         const position = `${mesh.position.x.toFixed(2)} ${mesh.position.y.toFixed(2)} ${mesh.position.z.toFixed(2)}`;
         const rotation = `${(mesh.rotation.x * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.y * 180 / Math.PI).toFixed(1)} ${(mesh.rotation.z * 180 / Math.PI).toFixed(1)}`;
         const scale = `${mesh.scale.x.toFixed(2)} ${mesh.scale.y.toFixed(2)} ${mesh.scale.z.toFixed(2)}`;
         const opacity = mesh.material.opacity.toFixed(2);
-        
+
+
         return `      <a-video 
         src="#${videoId}" 
         position="${position}" 
@@ -386,7 +387,8 @@
         look-at="[camera]"
         class="video-layer"></a-video>`;
       }).join('\n');
-
+      const x = 0
+      console.log(videoElements + (x + 1));
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -490,13 +492,13 @@
     background="color: #000000; transparent: true">
     
     <a-assets>
-${videoAssets}
+    ${videoAssets}
     </a-assets>
 
     <a-marker type='pattern' url='./assets/${projectName}.patt' id="mainMarker" emitevents="true" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
-      <!-- 3D Video Layer Container -->
-      <a-entity id="videoContainer" position="0 0 0">
-${videoElements}
+
+      <a-entity id="videoContainer" position='0 0 0'  scale="1" alpha="1.0">
+      ${videoElements}
       </a-entity>
       
       <!-- Optional: Add reference objects for scale -->
@@ -662,30 +664,30 @@ ${videoElements}
     function deleteLayer(layerId) {
       const layerIndex = videoLayers.findIndex(layer => layer.id === layerId);
       if (layerIndex === -1) return;
-      
+
       const layer = videoLayers[layerIndex];
-      
+
       // Remove from scene
       scene.remove(layer.mesh);
-      
+
       // Stop and dispose video
       layer.video.pause();
       layer.video.src = '';
       layer.video.load();
-      
+
       // Dispose texture and material
       layer.texture.dispose();
       layer.mesh.material.dispose();
       layer.mesh.geometry.dispose();
-      
+
       // Remove from array
       videoLayers.splice(layerIndex, 1);
-      
+
       // Update UI
       if (selectedLayer === layer) {
         selectedLayer = null;
       }
-      
+
       updateLayersList();
     }
 
@@ -795,7 +797,7 @@ ${videoElements}
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        
+
         // Auto-position new layers in a spiral pattern
         const layerCount = videoLayers.length;
         const angle = layerCount * 0.8;
@@ -836,11 +838,11 @@ ${videoElements}
       videoLayers.forEach(layer => {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
-        
+
         const nameSpan = document.createElement('span');
         nameSpan.textContent = `${layer.id}: ${layer.name}`;
         nameSpan.onclick = () => selectLayer(layer);
-        
+
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Delete';
         deleteBtn.className = 'delete';
@@ -848,7 +850,7 @@ ${videoElements}
           e.stopPropagation();
           deleteLayer(layer.id);
         };
-        
+
         layerDiv.appendChild(nameSpan);
         layerDiv.appendChild(deleteBtn);
         layersDiv.appendChild(layerDiv);
