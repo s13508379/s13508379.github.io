@@ -307,7 +307,9 @@
 
                         // Apply special effects
                         if (layer.specialEffect !== 'none') {
+                            console.log('Applying special effect:', layer.specialEffect);
                             switch (layer.specialEffect) {
+
                                 case 'swingToTarget':
                                     // Add swing rotation effect
                                     const swingFrequency = 8;
