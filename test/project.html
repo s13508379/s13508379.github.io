@@ -76,20 +76,19 @@
             <img id="img-1" src="images/allimg_depth.png" crossorigin="anonymous">
         </a-assets>
 
-        <a-marker preset="hiro">
+        <!-- Replace the marker preset with a pattern marker using your custom pattern file -->
+        <a-marker type="pattern" url="pattern-project-qr-code.patt">
             <a-plane id="layer-0" src="#img-0" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
                 scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
                 data-special-effect="swingToTarget" data-animation-speed="1" data-animation-duration="2"
                 data-loop-animation="true"
                 data-custom-start='{"x":-4.3,"y":0,"z":-8.4,"scale":1,"opacity":1,"rotation":0}'
                 data-custom-end='{"x":0,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'>
-
             </a-plane>
             <a-plane id="layer-1" src="#img-1" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
                 scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
                 data-special-effect="spiral" data-animation-speed="1" data-animation-duration="2"
-                data-loop-animation="true"
-                data-custom-start='{"x":6.2,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'
+                data-loop-animation="true" data-custom-start='{"x":6.2,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'
                 data-custom-end='{"x":-7,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'>
             </a-plane>
         </a-marker>
