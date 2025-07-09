@@ -148,6 +148,25 @@
                 <input type="file" id="imageFile" accept="image/png,image/jpg,image/jpeg" multiple>
                 <button onclick="addImageLayer()">Add Layer</button>
             </div>
+            <div class="control-group">
+                <h4>AR Marker Generation</h4>
+                <label>Marker Type:</label>
+                <select id="markerType">
+                    <option value="artoolkit">AR.js (ARToolKit)</option>
+                    <option value="vuforia">Vuforia</option>
+                </select>
+
+                <label>Marker Size:</label>
+                <select id="markerSize">
+                    <option value="512">512px</option>
+                    <option value="1024" selected>1024px</option>
+                    <option value="2048">2048px</option>
+                </select>
+
+                <button onclick="generateMarker()">Generate AR Marker</button>
+                <div id="markerStatus"></div>
+                <div id="markerPreview" class="marker-preview" style="display: none;"></div>
+            </div>
 
             <div class="control-group">
                 <label>Position X: <span id="xValue">0</span></label>
@@ -345,6 +364,63 @@
 
             addMouseControls();
             animate();
+        }
+
+        async function generateMarker() {
+            const projectName = document.getElementById('projectName').value || 'project';
+            const websiteUrl = document.getElementById('websiteUrl').value;
+            const markerType = document.getElementById('markerType').value;
+            const markerSize = document.getElementById('markerSize').value;
+
+            if (!websiteUrl) {
+                console.log('Please enter a website URL for the QR code', 'error');
+                return;
+            }
+
+            console.log('Generating AR marker...', 'info');
+
+            try {
+                // Build API URL with parameters
+                const apiUrl = new URL('https://armaker.shawnlehner.com/api/v1/generate');
+                apiUrl.searchParams.append('type', markerType);
+                apiUrl.searchParams.append('size', markerSize);
+                apiUrl.searchParams.append('label', projectName);
+                apiUrl.searchParams.append('download', 'false');
+
+                // Generate marker with QR code containing the website URL
+                const response = await fetch(apiUrl.toString(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: websiteUrl
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Get the marker image as blob
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+
+                // Store marker data for export
+                generatedMarkerData = {
+                    blob: blob,
+                    url: imageUrl,
+                    type: markerType,
+                    projectName: projectName
+                };
+
+
+                console.log('AR marker generated successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error generating marker:', error);
+                console.log('Failed to generate AR marker. Please try again.', 'error');
+            }
         }
 
         // Add mouse controls for camera

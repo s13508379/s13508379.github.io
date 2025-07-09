@@ -9,14 +9,15 @@
         body {
             margin: 0;
             padding: 0;
-            background: #000;
             font-family: Arial, sans-serif;
-            color: white;
+            overflow: hidden;
+            background: #222;
+            color: #fff;
         }
 
         #container {
             position: relative;
-            width: 100%;
+            width: 100vw;
             height: 100vh;
         }
 
@@ -24,117 +25,99 @@
             position: absolute;
             top: 10px;
             left: 10px;
+            width: 300px;
+            max-height: 90vh;
+            overflow-y: auto;
             background: rgba(0, 0, 0, 0.8);
             padding: 20px;
             border-radius: 10px;
+            border: 1px solid #444;
             z-index: 100;
-            max-width: 300px;
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .control-group {
             margin-bottom: 15px;
         }
 
-        label {
+        .control-group label {
             display: block;
             margin-bottom: 5px;
             font-size: 12px;
+            color: #ccc;
         }
 
-        input[type="range"] {
-            width: 100%;
-            margin-bottom: 5px;
-        }
-
-        input[type="file"] {
+        .control-group input[type="range"] {
             width: 100%;
             margin-bottom: 10px;
         }
 
-        input[type="color"] {
-            width: 100%;
-            height: 30px;
-            border: none;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-
-        select {
+        .control-group input[type="text"],
+        .control-group input[type="color"],
+        .control-group select {
             width: 100%;
             padding: 5px;
-            border: 1px solid #333;
-            background: #222;
-            color: white;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            border: 1px solid #555;
+            background: #333;
+            color: #fff;
+            border-radius: 3px;
         }
 
-        button {
-            background: #4CAF50;
-            color: white;
+        .control-group button {
+            padding: 8px 15px;
+            margin: 2px;
             border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+            background: #0066cc;
+            color: white;
+            border-radius: 3px;
             cursor: pointer;
-            margin-right: 5px;
-            margin-bottom: 5px;
+            font-size: 12px;
         }
 
-        button:hover {
-            background: #45a049;
-        }
-
-        button.danger {
-            background: #f44336;
-        }
-
-        button.danger:hover {
-            background: #da190b;
-        }
-
-        #layersList {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #333;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 5px;
+        .control-group button:hover {
+            background: #0052a3;
         }
 
         .layer-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px;
-            margin-bottom: 5px;
-            border-radius: 3px;
+            padding: 8px;
+            margin: 5px 0;
+            background: #333;
+            border-radius: 5px;
             cursor: pointer;
-            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid transparent;
         }
 
         .layer-item.selected {
-            background: rgba(76, 175, 80, 0.3);
+            border-color: #0066cc;
+            background: #444;
         }
 
-        .layer-item .delete-btn {
-            position: absolute;
-            right: 5px;
-            top: 2px;
-            background: #f44336;
+        .delete-btn {
+            background: #cc0000 !important;
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 3px;
             cursor: pointer;
         }
 
+        .delete-btn:hover {
+            background: #aa0000 !important;
+        }
+
         .animation-controls {
-            border: 1px solid #333;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
+            border-top: 1px solid #555;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        h3,
+        h4,
+        h5 {
+            margin: 0 0 10px 0;
+            color: #fff;
         }
     </style>
 </head>
@@ -147,6 +130,11 @@
             <div class="control-group">
                 <label>Project Name:</label>
                 <input type="text" id="projectName" placeholder="Enter project name" value="project">
+            </div>
+
+            <div class="control-group">
+                <label>Website URL (for QR Code):</label>
+                <input type="url" id="websiteUrl" placeholder="https://your-website.com" value="">
             </div>
 
 
@@ -193,11 +181,18 @@
 
             <div class="animation-controls">
                 <h4>Animation Controls</h4>
+
                 <div class="control-group">
-                    <label>Animation Type:</label>
-                    <select id="animationType">
+                    <label>
+                        <input type="checkbox" id="enableCustomAnimation" onchange="toggleCustomControls()"> Enable
+                        Custom Animation
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label>Special Effect:</label>
+                    <select id="specialEffect" onchange="updateSpecialEffect()">
                         <option value="none">None</option>
-                        <option value="custom">Custom Movement</option>
                         <option value="slideDown">Slide Down</option>
                         <option value="slideUp">Slide Up</option>
                         <option value="slideLeft">Slide Left</option>
@@ -207,10 +202,17 @@
                         <option value="rotate">Rotate</option>
                         <option value="bounce">Bounce</option>
                         <option value="spiral">Spiral</option>
+                        <option value="swingToTarget">Swing to Target (90°↔0°)</option>
+                        <option value="zigzagToTarget">Zigzag to Target (L↔R)</option>
+                        <option value="pendulumMove">Pendulum Movement</option>
+                        <option value="waveToTarget">Wave to Target</option>
+                        <option value="elasticMove">Elastic Movement</option>
                     </select>
                 </div>
 
                 <div class="control-group" id="customAnimationControls" style="display: none;">
+                    <h5>Custom Animation Settings</h5>
+
                     <h5>Start Position:</h5>
                     <label>Start X: <span id="startXValue">0</span></label>
                     <input type="range" id="startX" min="-15" max="15" step="0.1" value="0"
@@ -254,11 +256,6 @@
                     <label>End Rotation: <span id="endRotationValue">0</span>°</label>
                     <input type="range" id="endRotation" min="-360" max="360" step="1" value="0"
                         oninput="updateCustomValues()">
-
-                    <div class="control-group">
-                        <button onclick="setCurrentAsStart()">Set Current as Start</button>
-                        <button onclick="setCurrentAsEnd()">Set Current as End</button>
-                    </div>
                 </div>
 
                 <div class="control-group">
@@ -305,8 +302,9 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <!-- your main script here -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script>
         let scene, camera, renderer;
         let imageLayers = [];
@@ -327,7 +325,6 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('container').appendChild(renderer.domElement);
 
-            // Initialize animation system
             clock = new THREE.Clock();
 
             // Add lights
@@ -346,9 +343,7 @@
             const axesHelper = new THREE.AxesHelper(5);
             scene.add(axesHelper);
 
-            // Mouse controls
             addMouseControls();
-
             animate();
         }
 
@@ -418,7 +413,6 @@
                     texture.minFilter = THREE.LinearFilter;
                     texture.magFilter = THREE.LinearFilter;
 
-                    // Calculate aspect ratio
                     const aspect = img.width / img.height;
                     const geometry = new THREE.PlaneGeometry(2 * aspect, 2);
                     const material = new THREE.MeshBasicMaterial({
@@ -441,9 +435,11 @@
                         originalScale: { x: 1, y: 1, z: 1 },
                         originalOpacity: 1,
                         animation: null,
-                        animationType: 'none',
+                        enableCustomAnimation: false,
+                        specialEffect: 'none',
                         animationSpeed: 1,
                         animationDuration: 2,
+                        loopAnimation: false,
                         customAnimation: {
                             start: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotation: 0 },
                             end: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotation: 0 }
@@ -502,7 +498,6 @@
         function selectLayer(layer) {
             selectedLayer = layer;
 
-            // Update UI
             document.querySelectorAll('.layer-item').forEach(item => {
                 item.classList.remove('selected');
             });
@@ -526,9 +521,11 @@
             document.getElementById('rotZ').value = rot.z * 180 / Math.PI;
             document.getElementById('scale').value = scale;
             document.getElementById('alpha').value = alpha;
-            document.getElementById('animationType').value = layer.animationType;
+            document.getElementById('enableCustomAnimation').checked = layer.enableCustomAnimation;
+            document.getElementById('specialEffect').value = layer.specialEffect;
             document.getElementById('animationSpeed').value = layer.animationSpeed;
             document.getElementById('animationDuration').value = layer.animationDuration;
+            document.getElementById('loopAnimation').checked = layer.loopAnimation;
 
             // Update custom animation controls
             const custom = layer.customAnimation;
@@ -546,11 +543,26 @@
             document.getElementById('endOpacity').value = custom.end.opacity;
             document.getElementById('endRotation').value = custom.end.rotation;
 
-            // Show/hide custom animation controls
-            const customControls = document.getElementById('customAnimationControls');
-            customControls.style.display = layer.animationType === 'custom' ? 'block' : 'none';
-
+            toggleCustomControls();
             updateControlValues();
+        }
+
+        // Toggle custom controls visibility
+        function toggleCustomControls() {
+            const customControls = document.getElementById('customAnimationControls');
+            const enableCustom = document.getElementById('enableCustomAnimation').checked;
+            customControls.style.display = enableCustom ? 'block' : 'none';
+
+            if (selectedLayer) {
+                selectedLayer.enableCustomAnimation = enableCustom;
+            }
+        }
+
+        // Update special effect
+        function updateSpecialEffect() {
+            if (selectedLayer) {
+                selectedLayer.specialEffect = document.getElementById('specialEffect').value;
+            }
         }
 
         // Update control value displays
@@ -566,7 +578,6 @@
             document.getElementById('speedValue').textContent = document.getElementById('animationSpeed').value;
             document.getElementById('durationValue').textContent = document.getElementById('animationDuration').value;
 
-            // Update custom animation values
             updateCustomValues();
         }
 
@@ -586,7 +597,6 @@
             document.getElementById('endOpacityValue').textContent = document.getElementById('endOpacity').value;
             document.getElementById('endRotationValue').textContent = document.getElementById('endRotation').value;
 
-            // Update selected layer's custom animation data
             if (selectedLayer) {
                 selectedLayer.customAnimation = {
                     start: {
@@ -607,36 +617,6 @@
                     }
                 };
             }
-        }
-
-        // Set current position/properties as start
-        function setCurrentAsStart() {
-            if (!selectedLayer) return;
-
-            const mesh = selectedLayer.mesh;
-            document.getElementById('startX').value = mesh.position.x;
-            document.getElementById('startY').value = mesh.position.y;
-            document.getElementById('startZ').value = mesh.position.z;
-            document.getElementById('startScale').value = mesh.scale.x;
-            document.getElementById('startOpacity').value = mesh.material.opacity;
-            document.getElementById('startRotation').value = mesh.rotation.z * 180 / Math.PI;
-
-            updateCustomValues();
-        }
-
-        // Set current position/properties as end
-        function setCurrentAsEnd() {
-            if (!selectedLayer) return;
-
-            const mesh = selectedLayer.mesh;
-            document.getElementById('endX').value = mesh.position.x;
-            document.getElementById('endY').value = mesh.position.y;
-            document.getElementById('endZ').value = mesh.position.z;
-            document.getElementById('endScale').value = mesh.scale.x;
-            document.getElementById('endOpacity').value = mesh.material.opacity;
-            document.getElementById('endRotation').value = mesh.rotation.z * 180 / Math.PI;
-
-            updateCustomValues();
         }
 
         // Update position
@@ -699,36 +679,31 @@
             updateControlValues();
         }
 
-        // Apply animation
-        function applyAnimation() {
+        // Save current layer settings (including loop)
+        function saveCurrentLayerSettings() {
             if (!selectedLayer) return;
 
-            const animationType = document.getElementById('animationType').value;
-            selectedLayer.animationType = animationType;
+            selectedLayer.loopAnimation = document.getElementById('loopAnimation').checked;
+            selectedLayer.enableCustomAnimation = document.getElementById('enableCustomAnimation').checked;
+            selectedLayer.specialEffect = document.getElementById('specialEffect').value;
+            selectedLayer.animationSpeed = parseFloat(document.getElementById('animationSpeed').value);
+            selectedLayer.animationDuration = parseFloat(document.getElementById('animationDuration').value);
+        }
 
-            // Show/hide custom animation controls
-            const customControls = document.getElementById('customAnimationControls');
-            customControls.style.display = animationType === 'custom' ? 'block' : 'none';
-
-            if (animationType === 'none') {
-                stopAnimation();
-                return;
+        // Create animation for a specific layer
+        function createAnimationForLayer(layer) {
+            if (!layer.enableCustomAnimation && layer.specialEffect === 'none') {
+                return null;
             }
 
-            const mesh = selectedLayer.mesh;
-            const duration = selectedLayer.animationDuration;
-            const speed = selectedLayer.animationSpeed;
-            const loop = document.getElementById('loopAnimation').checked;
+            const mesh = layer.mesh;
+            const duration = layer.animationDuration;
+            const speed = layer.animationSpeed;
+            const loop = layer.loopAnimation;
 
-            // Stop existing animation
-            if (selectedLayer.animation) {
-                selectedLayer.animation.stop();
-            }
-
-            // Create animation based on type
             const startTime = Date.now();
-            selectedLayer.animation = {
-                stop: () => { selectedLayer.animation = null; },
+            return {
+                stop: () => { layer.animation = null; },
                 update: (currentTime) => {
                     const elapsed = (currentTime - startTime) / 1000 * speed;
                     let progress = (elapsed % duration) / duration;
@@ -737,114 +712,217 @@
                         progress = 1;
                     }
 
-                    // Smooth easing function
                     const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
                     const easedProgress = easeInOut(progress);
 
-                    if (animationType === 'custom') {
-                        const start = selectedLayer.customAnimation.start;
-                        const end = selectedLayer.customAnimation.end;
+                    // Start with original position/properties
+                    let finalX = layer.originalPosition.x;
+                    let finalY = layer.originalPosition.y;
+                    let finalZ = layer.originalPosition.z;
+                    let finalRotX = layer.originalRotation.x;
+                    let finalRotY = layer.originalRotation.y;
+                    let finalRotZ = layer.originalRotation.z;
+                    let finalScaleX = layer.originalScale.x;
+                    let finalScaleY = layer.originalScale.y;
+                    let finalScaleZ = layer.originalScale.z;
+                    let finalOpacity = layer.originalOpacity;
 
-                        // Interpolate position
-                        mesh.position.x = start.x + (end.x - start.x) * easedProgress;
-                        mesh.position.y = start.y + (end.y - start.y) * easedProgress;
-                        mesh.position.z = start.z + (end.z - start.z) * easedProgress;
+                    // Apply custom animation if enabled
+                    if (layer.enableCustomAnimation) {
+                        const start = layer.customAnimation.start;
+                        const end = layer.customAnimation.end;
 
-                        // Interpolate scale
-                        const scale = start.scale + (end.scale - start.scale) * easedProgress;
-                        mesh.scale.set(scale, scale, scale);
+                        // Interpolate custom position
+                        finalX = start.x + (end.x - start.x) * easedProgress;
+                        finalY = start.y + (end.y - start.y) * easedProgress;
+                        finalZ = start.z + (end.z - start.z) * easedProgress;
 
-                        // Interpolate opacity
-                        mesh.material.opacity = start.opacity + (end.opacity - start.opacity) * easedProgress;
+                        // Interpolate custom scale
+                        const customScale = start.scale + (end.scale - start.scale) * easedProgress;
+                        finalScaleX = finalScaleY = finalScaleZ = customScale;
 
-                        // Interpolate rotation
-                        const rotation = (start.rotation + (end.rotation - start.rotation) * easedProgress) * Math.PI / 180;
-                        mesh.rotation.z = rotation;
+                        // Interpolate custom opacity
+                        finalOpacity = start.opacity + (end.opacity - start.opacity) * easedProgress;
 
-                    } else {
-                        // Reset to original state first
-                        mesh.position.copy(selectedLayer.originalPosition);
-                        mesh.rotation.copy(selectedLayer.originalRotation);
-                        mesh.scale.copy(selectedLayer.originalScale);
-                        mesh.material.opacity = selectedLayer.originalOpacity;
+                        // Interpolate custom rotation
+                        finalRotZ = (start.rotation + (end.rotation - start.rotation) * easedProgress) * Math.PI / 180;
+                    }
 
-                        // Apply preset animations
-                        switch (animationType) {
+                    // Apply special effects on top of custom animation
+                    if (layer.specialEffect !== 'none') {
+                        switch (layer.specialEffect) {
+                            case 'swingToTarget':
+                                // Add swing rotation effect
+                                const swingFrequency = 8;
+                                const swingAmplitude = (1 - easedProgress) * 90;
+                                const swingAngle = Math.sin(progress * swingFrequency * Math.PI) * swingAmplitude;
+                                finalRotZ += (swingAngle * Math.PI / 180);
+
+                                // If no custom animation, move to a target
+                                if (!layer.enableCustomAnimation) {
+                                    finalX += 5 * easedProgress;
+                                }
+                                break;
+
+                            case 'zigzagToTarget':
+                                // Add zigzag movement
+                                const zigzagFrequency = 6;
+                                const zigzagAmplitude = (1 - easedProgress) * 2;
+                                const zigzagOffset = Math.sin(progress * zigzagFrequency * Math.PI) * zigzagAmplitude;
+                                finalX += zigzagOffset;
+
+                                // If no custom animation, move to a target
+                                if (!layer.enableCustomAnimation) {
+                                    finalX += 5 * easedProgress;
+                                    finalY += 3 * easedProgress;
+                                }
+                                break;
+
+                            case 'pendulumMove':
+                                // Pendulum swinging
+                                const pendulumAmplitude = 60;
+                                const pendulumAngle = Math.sin(elapsed * 2) * pendulumAmplitude;
+                                finalRotZ += (pendulumAngle * Math.PI / 180);
+                                break;
+
+                            case 'waveToTarget':
+                                // Wave effect
+                                const waveAmplitude = 1.5;
+                                const waveFrequency = 4;
+                                const waveY = Math.sin(progress * waveFrequency * Math.PI) * waveAmplitude * (1 - easedProgress);
+                                finalY += waveY;
+                                finalRotZ += (waveY * 0.2);
+
+                                // If no custom animation, move to a target
+                                if (!layer.enableCustomAnimation) {
+                                    finalX += 4 * easedProgress;
+                                    finalY += 2 * easedProgress;
+                                }
+                                break;
+
+                            case 'elasticMove':
+                                // Elastic effect
+                                const scaleElastic = 1 + Math.sin(progress * 10) * 0.1 * (1 - progress);
+                                finalScaleX *= scaleElastic;
+                                finalScaleY *= scaleElastic;
+                                finalScaleZ *= scaleElastic;
+
+                                // If no custom animation, move to a target with elastic easing
+                                if (!layer.enableCustomAnimation) {
+                                    const elasticEase = (t) => {
+                                        if (t === 0) return 0;
+                                        if (t === 1) return 1;
+                                        const c4 = (2 * Math.PI) / 3;
+                                        return t < 0.5
+                                            ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * c4)) / 2
+                                            : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * c4)) / 2 + 1;
+                                    };
+                                    const elasticProgress = elasticEase(progress);
+                                    finalX += 3 * elasticProgress;
+                                    finalY += 3 * elasticProgress;
+                                }
+                                break;
+
                             case 'slideDown':
-                                mesh.position.y = selectedLayer.originalPosition.y + 10 * (1 - easedProgress);
+                                finalY += 10 * (1 - easedProgress);
                                 break;
                             case 'slideUp':
-                                mesh.position.y = selectedLayer.originalPosition.y - 10 * (1 - easedProgress);
+                                finalY -= 10 * (1 - easedProgress);
                                 break;
                             case 'slideLeft':
-                                mesh.position.x = selectedLayer.originalPosition.x + 10 * (1 - easedProgress);
+                                finalX += 10 * (1 - easedProgress);
                                 break;
                             case 'slideRight':
-                                mesh.position.x = selectedLayer.originalPosition.x - 10 * (1 - easedProgress);
+                                finalX -= 10 * (1 - easedProgress);
                                 break;
                             case 'fadeIn':
-                                mesh.material.opacity = selectedLayer.originalOpacity * easedProgress;
+                                finalOpacity *= easedProgress;
                                 break;
                             case 'scaleIn':
-                                const scale = selectedLayer.originalScale.x * easedProgress;
-                                mesh.scale.set(scale, scale, scale);
+                                const scaleInFactor = easedProgress;
+                                finalScaleX *= scaleInFactor;
+                                finalScaleY *= scaleInFactor;
+                                finalScaleZ *= scaleInFactor;
                                 break;
                             case 'rotate':
-                                mesh.rotation.z = selectedLayer.originalRotation.z + easedProgress * Math.PI * 2;
+                                finalRotZ += easedProgress * Math.PI * 2;
                                 break;
                             case 'bounce':
                                 const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
-                                mesh.position.y = selectedLayer.originalPosition.y + bounceY;
+                                finalY += bounceY;
                                 break;
                             case 'spiral':
                                 const spiralRadius = 3 * (1 - easedProgress);
                                 const spiralAngle = easedProgress * Math.PI * 6;
-                                mesh.position.x = selectedLayer.originalPosition.x + spiralRadius * Math.cos(spiralAngle);
-                                mesh.position.y = selectedLayer.originalPosition.y + spiralRadius * Math.sin(spiralAngle);
+                                finalX += spiralRadius * Math.cos(spiralAngle);
+                                finalY += spiralRadius * Math.sin(spiralAngle);
                                 break;
                         }
                     }
+
+                    // Apply final transformations
+                    mesh.position.set(finalX, finalY, finalZ);
+                    mesh.rotation.set(finalRotX, finalRotY, finalRotZ);
+                    mesh.scale.set(finalScaleX, finalScaleY, finalScaleZ);
+                    mesh.material.opacity = finalOpacity;
                 }
             };
+        }
+
+        // Apply animation
+        function applyAnimation() {
+            if (!selectedLayer) return;
+
+            // Save current settings to the layer
+            saveCurrentLayerSettings();
+
+            if (selectedLayer.animation) {
+                selectedLayer.animation.stop();
+            }
+
+            selectedLayer.animation = createAnimationForLayer(selectedLayer);
         }
 
         // Preview animation (single run)
         function previewAnimation() {
             if (!selectedLayer) return;
 
-            const originalLoop = document.getElementById('loopAnimation').checked;
-            document.getElementById('loopAnimation').checked = false;
+            // Save current loop setting and temporarily disable it
+            const originalLoop = selectedLayer.loopAnimation;
+            selectedLayer.loopAnimation = false;
 
             applyAnimation();
 
-            // Restore original loop setting after animation
+            // Restore original loop setting after animation completes
             setTimeout(() => {
-                document.getElementById('loopAnimation').checked = originalLoop;
+                selectedLayer.loopAnimation = originalLoop;
             }, selectedLayer.animationDuration * 1000);
         }
 
         // Stop animation for selected layer
         function stopAnimation() {
             if (!selectedLayer || !selectedLayer.animation) return;
-
             selectedLayer.animation.stop();
-            selectedLayer.animationType = 'none';
-            document.getElementById('animationType').value = 'none';
-
-            // Reset to original state
-            const mesh = selectedLayer.mesh;
-            mesh.position.copy(selectedLayer.originalPosition);
-            mesh.rotation.copy(selectedLayer.originalRotation);
-            mesh.scale.copy(selectedLayer.originalScale);
-            mesh.material.opacity = selectedLayer.originalOpacity;
         }
 
-        // Play all animations
+        // Play all animations - now uses each layer's individual settings
         function playAllAnimations() {
             imageLayers.forEach(layer => {
-                if (layer.animationType !== 'none') {
-                    selectLayer(layer);
-                    applyAnimation();
+                if (layer.enableCustomAnimation || layer.specialEffect !== 'none') {
+                    // Stop any existing animation for this layer
+                    if (layer.animation) {
+                        layer.animation.stop();
+                    }
+
+                    // Create and start new animation using the layer's own settings
+                    layer.animation = createAnimationForLayer(layer);
+                    console.log('Playing animation for layer:', layer.name, 'with settings:', {
+                        enableCustomAnimation: layer.enableCustomAnimation,
+                        specialEffect: layer.specialEffect,
+                        duration: layer.animationDuration,
+                        speed: layer.animationSpeed,
+                        loop: layer.loopAnimation
+                    });
                 }
             });
         }
@@ -852,17 +930,11 @@
         // Stop all animations
         function stopAllAnimations() {
             imageLayers.forEach(layer => {
+                console.log('Stopping animation for layer:', layer.name);
                 if (layer.animation) {
                     layer.animation.stop();
                 }
-                layer.animationType = 'none';
 
-                // Reset to original state
-                const mesh = layer.mesh;
-                mesh.position.copy(layer.originalPosition);
-                mesh.rotation.copy(layer.originalRotation);
-                mesh.scale.copy(layer.originalScale);
-                mesh.material.opacity = layer.originalOpacity;
             });
         }
 
@@ -870,6 +942,341 @@
         function resetCamera() {
             camera.position.set(0, 0, 5);
             camera.lookAt(0, 0, 0);
+        }
+
+        // Export as AR.js
+        function exportAsAR() {
+            exportPackage();
+        }
+        function generateHTMLContent() {
+            const name = (document.getElementById('projectName').value || 'AR_Project').trim();
+            const bgColor = document.getElementById('bgColor').value;
+
+            let htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${name} - AR Experience</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"><\/script>
+    <style>
+        .ar-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+
+        .ar-controls button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            background: #0066cc;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .ar-controls button:hover {
+            background: #0052a3;
+        }
+
+        .ar-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            max-width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ar-info">
+        <h3>${name}</h3>
+        <p>Point your camera at a surface to see the AR content</p>
+    </div>
+
+    <div class="ar-controls">
+        <button onclick="playAllAnimations()">Play All Animations</button>
+        <button onclick="stopAllAnimations()">Stop Animations</button>
+        <button onclick="resetPositions()">Reset Positions</button>
+    </div>
+
+    <a-scene vr-mode-ui="enabled: false" embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+        background="color: #000000; transparent: true">
+
+        <a-assets>`;
+
+            // Add image assets
+            imageLayers.forEach(layer => {
+                htmlContent += `
+            <img id="img-${layer.id}" src="images/${layer.name}" crossorigin="anonymous">`;
+            });
+
+            htmlContent += `
+        </a-assets>
+
+        <a-marker type="pattern" url="pattern-${name}-qr-code.patt">`;
+
+            // Add each layer as A-Frame entities
+            imageLayers.forEach(layer => {
+                const pos = layer.originalPosition;
+                const rot = layer.originalRotation;
+                const scale = layer.originalScale;
+                const opacity = layer.originalOpacity;
+
+                // Convert rotation from radians to degrees
+                const rotX = (rot.x * 180 / Math.PI).toFixed(2);
+                const rotY = (rot.y * 180 / Math.PI).toFixed(2);
+                const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
+
+                // Properly escape JSON data for HTML attributes
+                const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
+                const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
+
+                htmlContent += `
+            <a-plane id="layer-${layer.id}" src="#img-${layer.id}"
+                position="${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}"
+                rotation="${rotX} ${rotY} ${rotZ}"
+                scale="${scale.x.toFixed(2)} ${scale.y.toFixed(2)} ${scale.z.toFixed(2)}"
+                material="transparent: true; opacity: ${opacity.toFixed(2)}"
+                data-animation-enabled="${layer.enableCustomAnimation}" 
+                data-special-effect="${layer.specialEffect}"
+                data-animation-speed="${layer.animationSpeed}" 
+                data-animation-duration="${layer.animationDuration}"
+                data-loop-animation="${layer.loopAnimation}"
+                data-custom-start="${customStartJSON}"
+                data-custom-end="${customEndJSON}">
+            </a-plane>`;
+            });
+
+            htmlContent += `
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+    let animationIntervals = [];
+    
+    function playAllAnimations() {
+        stopAllAnimations();
+        
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach(layer => {
+            const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
+            const specialEffect = layer.getAttribute('data-special-effect');
+            
+            if (enableCustom || specialEffect !== 'none') {
+                const speed = parseFloat(layer.getAttribute('data-animation-speed'));
+                const duration = parseFloat(layer.getAttribute('data-animation-duration'));
+                const loop = layer.getAttribute('data-loop-animation') === 'true';
+                
+                const startTime = Date.now();
+                
+                const interval = setInterval(() => {
+                    const currentTime = Date.now();
+                    const elapsed = (currentTime - startTime) / 1000 * speed;
+                    let progress = (elapsed % duration) / duration;
+                    
+                    if (!loop && elapsed > duration) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    
+                        const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                        const easedProgress = easeInOut(progress);
+
+                        const originalPos = layer.getAttribute('position');
+                        const originalRot = layer.getAttribute('rotation');
+                        const originalScale = layer.getAttribute('scale');
+                        const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
+                        const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
+                        const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
+
+                        let finalX = origX, finalY = origY, finalZ = origZ;
+                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    
+                    let finalX = origX, finalY = origY, finalZ = origZ;
+                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    
+                    if (enableCustom) {
+                        try {
+                            const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
+                            const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
+                            
+                            finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
+                            finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
+                            finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
+                            
+                            const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
+                            finalScaleX = finalScaleY = finalScaleZ = customScale;
+                            
+                            finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
+                        } catch (e) {
+                            console.error('Error parsing custom animation data:', e);
+                        }
+                    }
+                    
+                    // Apply special effects
+                    if (specialEffect !== 'none') {
+                        switch (specialEffect) {
+                            case 'slideDown':
+                                finalY += 10 * (1 - easedProgress);
+                                break;
+                            case 'slideUp':
+                                finalY -= 10 * (1 - easedProgress);
+                                break;
+                            case 'slideLeft':
+                                finalX += 10 * (1 - easedProgress);
+                                break;
+                            case 'slideRight':
+                                finalX -= 10 * (1 - easedProgress);
+                                break;
+                            case 'fadeIn':
+                                layer.setAttribute('material', 'transparent: true; opacity: ' + easedProgress);
+                                break;
+                            case 'scaleIn':
+                                finalScaleX *= easedProgress;
+                                finalScaleY *= easedProgress;
+                                finalScaleZ *= easedProgress;
+                                break;
+                            case 'rotate':
+                                finalRotZ += easedProgress * 360;
+                                break;
+                            case 'bounce':
+                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
+                                finalY += bounceY;
+                                break;
+                            case 'spiral':
+                                const spiralRadius = 3 * (1 - easedProgress);
+                                const spiralAngle = easedProgress * Math.PI * 6;
+                                finalX += spiralRadius * Math.cos(spiralAngle);
+                                finalY += spiralRadius * Math.sin(spiralAngle);
+                                break;
+                        }
+                    }
+                    
+                    // Update layer position, rotation, and scale
+                    layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
+                    layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
+                    layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
+                    
+                }, 16); // ~60fps
+                
+                animationIntervals.push(interval);
+            }
+        });
+    }
+    
+    function stopAllAnimations() {
+        animationIntervals.forEach(interval => clearInterval(interval));
+        animationIntervals = [];
+    }
+    
+    function resetPositions() {
+        stopAllAnimations();
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach(layer => {
+            // Reset to original attributes
+            const originalPos = layer.getAttribute('position');
+            const originalRot = layer.getAttribute('rotation');
+            const originalScale = layer.getAttribute('scale');
+            layer.setAttribute('position', originalPos);
+            layer.setAttribute('rotation', originalRot);
+            layer.setAttribute('scale', originalScale);
+            layer.setAttribute('material', 'transparent: true; opacity: 1');
+        });
+    }
+    <\/script>
+</body>
+</html>`;
+
+            return htmlContent;
+        }
+
+        async function exportPackage() {
+            const name = (document.getElementById('projectName').value || 'AR_Project').trim();
+            const zip = new JSZip();
+
+            zip.file(name + '.html', generateHTMLContent());
+            const imageFiles = zip.folder('images');
+            for (const layer of imageLayers) {
+                if (layer.texture.image && layer.texture.image.src) {
+                    const img = layer.texture.image;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const imgBlob = await new Promise(resolve => {
+                        canvas.toBlob(resolve, 'image/png');
+                    });
+                    imageFiles.file(layer.name + '.png', imgBlob);
+                }
+            }
+
+            const url = document.getElementById('websiteUrl').value.trim();
+            if (url) {
+                try {
+                    const qr = qrcode(0, 'M');
+                    qr.addData(url);
+                    qr.make();
+
+                    // Create canvas for QR code
+                    const qrCanvas = document.createElement('canvas');
+                    const size = 512;
+                    qrCanvas.width = size;
+                    qrCanvas.height = size;
+
+                    const ctx = qrCanvas.getContext('2d');
+                    const moduleCount = qr.getModuleCount();
+                    const moduleSize = size / moduleCount;
+
+                    // Fill white background
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, size, size);
+
+                    // Draw black modules
+                    ctx.fillStyle = '#000000';
+                    for (let row = 0; row < moduleCount; row++) {
+                        for (let col = 0; col < moduleCount; col++) {
+                            if (qr.isDark(row, col)) {
+                                ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                            }
+                        }
+                    }
+                    const qrBlob = await new Promise(resolve => {
+                        qrCanvas.toBlob(resolve, 'image/png');
+                    });
+
+                    zip.file(name + '-qr-code.png', qrBlob);
+                } catch (error) {
+                    console.error('Error generating QR code for package:', error);
+                }
+            }
+
+            // Save the zip file
+            zip.generateAsync({ type: "blob" }).then(function (content) {
+                saveAs(content, name + "_AR_Package.zip");
+            });
         }
 
         // Animation loop
@@ -897,401 +1304,6 @@
 
         // Initialize scene when page loads
         window.addEventListener('load', initScene);
-
-        function exportAsAR() {
-            const projectName = document.getElementById('projectName').value || 'project';
-            const backgroundColor = document.getElementById('bgColor').value;
-
-            const layersData = imageLayers.map(layer => ({
-                id: layer.id,
-                name: layer.name,
-                position: {
-                    x: layer.mesh.position.x,
-                    y: layer.mesh.position.y,
-                    z: layer.mesh.position.z
-                },
-                rotation: {
-                    x: layer.mesh.rotation.x,
-                    y: layer.mesh.rotation.y,
-                    z: layer.mesh.rotation.z
-                },
-                scale: {
-                    x: layer.mesh.scale.x,
-                    y: layer.mesh.scale.y,
-                    z: layer.mesh.scale.z
-                },
-                opacity: layer.mesh.material.opacity,
-                animationType: layer.animationType,
-                animationSpeed: layer.animationSpeed,
-                animationDuration: layer.animationDuration,
-                customAnimation: layer.customAnimation,
-                imageData: getImageDataURL(layer.texture.image)
-            }));
-
-            const arHtmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${projectName} - AR Experience</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-        
-        #arScene {
-            width: 100%;
-            height: 100vh;
-        }
-        
-        #controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 1000;
-            max-width: 300px;
-        }
-        
-        button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            margin: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        button:hover {
-            background: #45a049;
-        }
-        
-        .control-group {
-            margin-bottom: 10px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 12px;
-        }
-        
-        input[type="range"] {
-            width: 100%;
-            margin-bottom: 5px;
-        }
-        
-        #info {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <div id="controls">
-        <h3>${projectName} AR</h3>
-        <div class="control-group">
-            <button onclick="playAllAnimations()">Play All</button>
-            <button onclick="stopAllAnimations()">Stop All</button>
-        </div>
-        <div class="control-group">
-            <label>AR Scale: <span id="arScaleValue">1.0</span></label>
-            <input type="range" id="arScale" min="0.1" max="5" step="0.1" value="1" oninput="updateARScale()">
-        </div>
-        <div class="control-group">
-            <label>AR Height: <span id="arHeightValue">0</span></label>
-            <input type="range" id="arHeight" min="-2" max="2" step="0.1" value="0" oninput="updateARHeight()">
-        </div>
-        <div class="control-group">
-            <button onclick="toggleControls()">Hide Controls</button>
-        </div>
-    </div>
-    
-    <div id="info">
-        Point camera at marker to see AR content
-    </div>
-
-    <a-scene
-        id="arScene"
-        embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-        vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true; precision: medium;"
-        loading-screen="enabled: false"
-        gesture-detector
-    >
-        <a-assets>
-            <!-- Marker Assets -->
-            <a-marker-camera id="marker" preset="hiro" raycaster="objects: .clickable" emitevents="true" cursor="fuse: false; rayOrigin: mouse">
-                <a-entity id="arContainer" position="0 0 0" scale="1 1 1">
-                    <!-- 3D content will be added here -->
-                </a-entity>
-            </a-marker-camera>
-        </a-assets>
-
-        <a-entity camera></a-entity>
-    </a-scene>
-
-    <!-- AR.js -->
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"><\/script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"><\/script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"><\/script>
-    
-    <script>
-        let arContainer;
-        let arLayers = [];
-        let arScale = 1;
-        let arHeight = 0;
-        let controlsVisible = true;
-
-        const layersData = ${JSON.stringify(layersData)};
-
-        // Initialize AR scene
-        AFRAME.registerComponent('ar-init', {
-            init: function() {
-                arContainer = document.getElementById('arContainer');
-                loadARLayers();
-            }
-        });
-
-        // Add the component to the scene
-        document.querySelector('a-scene').setAttribute('ar-init', '');
-
-        function loadARLayers() {
-            layersData.forEach((layerData, index) => {
-                // Create image element
-                const imgEl = document.createElement('img');
-                imgEl.src = layerData.imageData;
-                imgEl.id = 'img-' + layerData.id;
-                imgEl.crossOrigin = 'anonymous';
-                
-                // Add to assets
-                const assets = document.querySelector('a-assets');
-                assets.appendChild(imgEl);
-
-                imgEl.onload = function() {
-                    // Calculate aspect ratio
-                    const aspect = imgEl.width / imgEl.height;
-                    
-                    // Create A-Frame plane
-                    const plane = document.createElement('a-plane');
-                    plane.setAttribute('id', 'layer-' + layerData.id);
-                    plane.setAttribute('src', '#img-' + layerData.id);
-                    plane.setAttribute('width', 2 * aspect);
-                    plane.setAttribute('height', 2);
-                    plane.setAttribute('position', 
-                        layerData.position.x + ' ' + 
-                        layerData.position.y + ' ' + 
-                        layerData.position.z
-                    );
-                    plane.setAttribute('rotation', 
-                        (layerData.rotation.x * 180 / Math.PI) + ' ' + 
-                        (layerData.rotation.y * 180 / Math.PI) + ' ' + 
-                        (layerData.rotation.z * 180 / Math.PI)
-                    );
-                    plane.setAttribute('scale', 
-                        layerData.scale.x + ' ' + 
-                        layerData.scale.y + ' ' + 
-                        layerData.scale.z
-                    );
-                    plane.setAttribute('opacity', layerData.opacity);
-                    plane.setAttribute('transparent', 'true');
-                    plane.setAttribute('material', 'alphaTest: 0.1');
-                    
-                    // Store layer data
-                    plane.layerData = layerData;
-                    
-                    // Add to AR container
-                    arContainer.appendChild(plane);
-                    arLayers.push(plane);
-                    
-                    // Start animation if needed
-                    if (layerData.animationType !== 'none') {
-                        startARAnimation(plane);
-                    }
-                };
-            });
-        }
-
-        function startARAnimation(plane) {
-            const layerData = plane.layerData;
-            const animationType = layerData.animationType;
-            const duration = layerData.animationDuration * 1000; // Convert to milliseconds
-            
-            if (animationType === 'custom') {
-                const start = layerData.customAnimation.start;
-                const end = layerData.customAnimation.end;
-                
-                // Position animation
-                plane.setAttribute('animation__position', {
-                    property: 'position',
-                    from: start.x + ' ' + start.y + ' ' + start.z,
-                    to: end.x + ' ' + end.y + ' ' + end.z,
-                    dur: duration,
-                    easing: 'easeInOutQuad',
-                    loop: true
-                });
-                
-                // Scale animation
-                plane.setAttribute('animation__scale', {
-                    property: 'scale',
-                    from: start.scale + ' ' + start.scale + ' ' + start.scale,
-                    to: end.scale + ' ' + end.scale + ' ' + end.scale,
-                    dur: duration,
-                    easing: 'easeInOutQuad',
-                    loop: true
-                });
-                
-                // Opacity animation
-                plane.setAttribute('animation__opacity', {
-                    property: 'opacity',
-                    from: start.opacity,
-                    to: end.opacity,
-                    dur: duration,
-                    easing: 'easeInOutQuad',
-                    loop: true
-                });
-                
-                // Rotation animation
-                plane.setAttribute('animation__rotation', {
-                    property: 'rotation',
-                    from: start.rotation + ' 0 0',
-                    to: end.rotation + ' 0 0',
-                    dur: duration,
-                    easing: 'easeInOutQuad',
-                    loop: true
-                });
-            } else {
-                // Preset animations
-                const originalPos = layerData.position;
-                switch (animationType) {
-                    case 'slideDown':
-                        plane.setAttribute('animation', {
-                            property: 'position',
-                            from: originalPos.x + ' ' + (originalPos.y + 10) + ' ' + originalPos.z,
-                            to: originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z,
-                            dur: duration,
-                            easing: 'easeInOutQuad',
-                            loop: true
-                        });
-                        break;
-                    case 'fadeIn':
-                        plane.setAttribute('animation', {
-                            property: 'opacity',
-                            from: 0,
-                            to: layerData.opacity,
-                            dur: duration,
-                            easing: 'easeInOutQuad',
-                            loop: true
-                        });
-                        break;
-                    case 'rotate':
-                        plane.setAttribute('animation', {
-                            property: 'rotation',
-                            from: '0 0 0',
-                            to: '0 0 360',
-                            dur: duration,
-                            easing: 'linear',
-                            loop: true
-                        });
-                        break;
-                    case 'bounce':
-                        plane.setAttribute('animation', {
-                            property: 'position',
-                            from: originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z,
-                            to: originalPos.x + ' ' + (originalPos.y + 2) + ' ' + originalPos.z,
-                            dur: duration / 2,
-                            easing: 'easeInOutQuad',
-                            loop: true,
-                            dir: 'alternate'
-                        });
-                        break;
-                }
-            }
-        }
-
-        function playAllAnimations() {
-            arLayers.forEach(layer => {
-                if (layer.layerData.animationType !== 'none') {
-                    startARAnimation(layer);
-                }
-            });
-        }
-
-        function stopAllAnimations() {
-            arLayers.forEach(layer => {
-                layer.removeAttribute('animation');
-                layer.removeAttribute('animation__position');
-                layer.removeAttribute('animation__scale');
-                layer.removeAttribute('animation__opacity');
-                layer.removeAttribute('animation__rotation');
-            });
-        }
-
-        function updateARScale() {
-            arScale = parseFloat(document.getElementById('arScale').value);
-            document.getElementById('arScaleValue').textContent = arScale.toFixed(1);
-            arContainer.setAttribute('scale', arScale + ' ' + arScale + ' ' + arScale);
-        }
-
-        function updateARHeight() {
-            arHeight = parseFloat(document.getElementById('arHeight').value);
-            document.getElementById('arHeightValue').textContent = arHeight.toFixed(1);
-            const currentPos = arContainer.getAttribute('position');
-            arContainer.setAttribute('position', currentPos.x + ' ' + arHeight + ' ' + currentPos.z);
-        }
-
-        function toggleControls() {
-            const controls = document.getElementById('controls');
-            const button = controls.querySelector('button:last-child');
-            if (controlsVisible) {
-                controls.style.display = 'none';
-                controlsVisible = false;
-                
-                // Create floating toggle button
-                const toggleBtn = document.createElement('button');
-                toggleBtn.innerHTML = 'Show Controls';
-                toggleBtn.style.position = 'absolute';
-                toggleBtn.style.top = '10px';
-                toggleBtn.style.left = '10px';
-                toggleBtn.style.zIndex = '1001';
-                toggleBtn.onclick = () => {
-                    controls.style.display = 'block';
-                    controlsVisible = true;
-                    document.body.removeChild(toggleBtn);
-                };
-                document.body.appendChild(toggleBtn);
-            } else {
-                controls.style.display = 'block';
-                controlsVisible = true;
-            }
-        }
-
-        // Update control values on load
-        document.getElementById('arScaleValue').textContent = '1.0';
-        document.getElementById('arHeightValue').textContent = '0.0';
-    <\/script>
-</body>
-</html>`;
-
-            const blob = new Blob([arHtmlContent], { type: 'text/html' });
-            saveAs(blob, `${projectName}_AR.html`);
-        }
-
     </script>
 </body>
 
