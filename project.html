@@ -47,22 +47,10 @@
             color: white;
             max-width: 300px;
         }
-
-        #status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: .4em .6em;
-            background: #222;
-            color: #fff;
-            font: 14px/1 sans-serif;
-            z-index: 999;
-        }
     </style>
 </head>
 
 <body>
-    <div id="status">Waiting for marker…</div>
     <div class="ar-info">
         <h3>project</h3>
         <p>Point your camera at a surface to see the AR content</p>
@@ -80,16 +68,24 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="/test/images/pattern-project-qr-code.png.png" crossorigin="anonymous">
+            <img id="img-0" src="images/317f8b4f-1a6f-4ccd-82ed-70065e3dea8e.jfif" crossorigin="anonymous">
+            <img id="img-1" src="images/hiro.png" crossorigin="anonymous">
         </a-assets>
 
-        <a-marker id="projMarker" type="pattern" url="./pattern-project-qr-code.patt" emitevents="true">
-            <a-plane id="layer-0" src="#img-0" position="3.90 0.00 0.00" rotation="0.00 0.00 0.00"
+        <a-marker type="pattern" url="pattern-marker.patt">
+            <a-plane id="layer-0" src="#img-0" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
                 scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
-                data-special-effect="zigzagToTarget" data-animation-speed="1" data-animation-duration="2"
+                data-special-effect="swingToTarget" data-animation-speed="1" data-animation-duration="2"
                 data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:6.7,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:-3.9,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
+                data-custom-start="{&quot;x&quot;:6.2,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:-3.3,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
+            </a-plane>
+            <a-plane id="layer-1" src="#img-1" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
+                scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
+                data-special-effect="slideRight" data-animation-speed="1" data-animation-duration="2"
+                data-loop-animation="true"
+                data-custom-start="{&quot;x&quot;:7.9,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:-5,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
             </a-plane>
         </a-marker>
 
@@ -99,26 +95,9 @@
     <script>
         let animationIntervals = [];
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const badge = document.getElementById('status');
-            const marker = document.querySelector('#projMarker');
-
-            if (marker) {
-                marker.addEventListener('markerFound', () => badge.textContent = 'Marker FOUND ✅');
-                marker.addEventListener('markerLost', () => badge.textContent = 'Marker LOST 🚫');
-
-                marker.addEventListener('markerFound', () => {
-                    console.log('[AR] project marker FOUND');
-                });
-
-                marker.addEventListener('markerLost', () => {
-                    console.log('[AR] project marker LOST');
-                });
-            }
-        });
-
         function playAllAnimations() {
             stopAllAnimations();
+
             const layers = document.querySelectorAll('[id^="layer-"]');
             layers.forEach(layer => {
                 const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
@@ -144,7 +123,6 @@
                         const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
                         const easedProgress = easeInOut(progress);
 
-                        // Get original position, rotation, and scale
                         const originalPos = layer.getAttribute('position');
                         const originalRot = layer.getAttribute('rotation');
                         const originalScale = layer.getAttribute('scale');
@@ -156,11 +134,12 @@
                         let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
                         let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
 
-                        // Apply custom animation
+
                         if (enableCustom) {
                             try {
                                 const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
                                 const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
+
                                 finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
                                 finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
                                 finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
