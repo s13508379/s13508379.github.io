@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,11 +7,6 @@
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
         .ar-controls {
             position: fixed;
             bottom: 20px;
@@ -72,24 +66,22 @@
         vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;" background="color: transparent">
 
         <a-assets>
-            <img id="img-0" src="images/Asset 3_depth.png" crossorigin="anonymous">
-            <img id="img-1" src="images/allimg_depth.png" crossorigin="anonymous">
+            <img id="img-0" src="images/pattern-project-qr-code.png" crossorigin="anonymous">
         </a-assets>
 
-        <!-- Replace the marker preset with a pattern marker using your custom pattern file -->
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
-            <a-plane id="layer-0" src="#img-0" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
-                scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
-                data-special-effect="swingToTarget" data-animation-speed="1" data-animation-duration="2"
+            <a-plane id="layer-0" src="#img-0"
+                position="3.90 0.00 0.00"
+                rotation="0.00 0.00 0.00"
+                scale="1.00 1.00 1.00"
+                material="transparent: true; opacity: 1.00"
+                data-animation-enabled="true" 
+                data-special-effect="zigzagToTarget"
+                data-animation-speed="1" 
+                data-animation-duration="2"
                 data-loop-animation="true"
-                data-custom-start='{"x":-4.3,"y":0,"z":-8.4,"scale":1,"opacity":1,"rotation":0}'
-                data-custom-end='{"x":0,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'>
-            </a-plane>
-            <a-plane id="layer-1" src="#img-1" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
-                scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
-                data-special-effect="spiral" data-animation-speed="1" data-animation-duration="2"
-                data-loop-animation="true" data-custom-start='{"x":6.2,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'
-                data-custom-end='{"x":-7,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'>
+                data-custom-start="{&quot;x&quot;:6.7,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:-3.9,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
             </a-plane>
         </a-marker>
 
@@ -97,134 +89,137 @@
     </a-scene>
 
     <script>
-        let animationIntervals = [];
-
-        function playAllAnimations() {
-            stopAllAnimations();
-
-            const layers = document.querySelectorAll('[id^="layer-"]');
-            layers.forEach(layer => {
-                const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
-                const specialEffect = layer.getAttribute('data-special-effect');
-
-                if (enableCustom || specialEffect !== 'none') {
-                    const speed = parseFloat(layer.getAttribute('data-animation-speed'));
-                    const duration = parseFloat(layer.getAttribute('data-animation-duration'));
-                    const loop = layer.getAttribute('data-loop-animation') === 'true';
-
-                    const startTime = Date.now();
-
-                    const interval = setInterval(() => {
-                        const currentTime = Date.now();
-                        const elapsed = (currentTime - startTime) / 1000 * speed;
-                        let progress = (elapsed % duration) / duration;
-
-                        if (!loop && elapsed > duration) {
-                            clearInterval(interval);
-                            return;
-                        }
-
-                        const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-                        const easedProgress = easeInOut(progress);
-
-                        // Get original position
-                        const originalPos = layer.getAttribute('position');
-                        const originalRot = layer.getAttribute('rotation');
-                        const originalScale = layer.getAttribute('scale');
-                        const [origX, origY, origZ] = originalPos.split(' ').map(parseFloat);
-                        const [origRotX, origRotY, origRotZ] = originalRot.split(' ').map(parseFloat);
-                        const [origScaleX, origScaleY, origScaleZ] = originalScale.split(' ').map(parseFloat);
-
-                        let finalX = origX, finalY = origY, finalZ = origZ;
-                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
-                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-
-                        // Apply custom animation
-                        if (enableCustom) {
+    let animationIntervals = [];
+    
+    function playAllAnimations() {
+        stopAllAnimations();
+        
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach(layer => {
+            const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
+            const specialEffect = layer.getAttribute('data-special-effect');
+            
+            if (enableCustom || specialEffect !== 'none') {
+                const speed = parseFloat(layer.getAttribute('data-animation-speed'));
+                const duration = parseFloat(layer.getAttribute('data-animation-duration'));
+                const loop = layer.getAttribute('data-loop-animation') === 'true';
+                
+                const startTime = Date.now();
+                
+                const interval = setInterval(() => {
+                    const currentTime = Date.now();
+                    const elapsed = (currentTime - startTime) / 1000 * speed;
+                    let progress = (elapsed % duration) / duration;
+                    
+                    if (!loop && elapsed > duration) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    
+                    const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    const easedProgress = easeInOut(progress);
+                    
+                    // Get original position, rotation, and scale
+                    const originalPos = layer.getAttribute('position');
+                    const originalRot = layer.getAttribute('rotation');
+                    const originalScale = layer.getAttribute('scale');
+                    const [origX, origY, origZ] = originalPos.split(' ').map(parseFloat);
+                    const [origRotX, origRotY, origRotZ] = originalRot.split(' ').map(parseFloat);
+                    const [origScaleX, origScaleY, origScaleZ] = originalScale.split(' ').map(parseFloat);
+                    
+                    let finalX = origX, finalY = origY, finalZ = origZ;
+                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    
+                    // Apply custom animation
+                    if (enableCustom) {
+                        try {
                             const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
                             const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
-
+                            
                             finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
                             finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
                             finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
-
+                            
                             const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
                             finalScaleX = finalScaleY = finalScaleZ = customScale;
-
+                            
                             finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
+                        } catch (e) {
+                            console.error('Error parsing custom animation data:', e);
                         }
-
-                        // Apply special effects
-                        if (specialEffect !== 'none') {
-                            switch (specialEffect) {
-                                case 'slideDown':
-                                    finalY += 10 * (1 - easedProgress);
-                                    break;
-                                case 'slideUp':
-                                    finalY -= 10 * (1 - easedProgress);
-                                    break;
-                                case 'slideLeft':
-                                    finalX += 10 * (1 - easedProgress);
-                                    break;
-                                case 'slideRight':
-                                    finalX -= 10 * (1 - easedProgress);
-                                    break;
-                                case 'fadeIn':
-                                    layer.setAttribute('material', 'transparent: true; opacity: ' + easedProgress);
-                                    break;
-                                case 'scaleIn':
-                                    finalScaleX *= easedProgress;
-                                    finalScaleY *= easedProgress;
-                                    finalScaleZ *= easedProgress;
-                                    break;
-                                case 'rotate':
-                                    finalRotZ += easedProgress * 360;
-                                    break;
-                                case 'bounce':
-                                    const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
-                                    finalY += bounceY;
-                                    break;
-                                case 'spiral':
-                                    const spiralRadius = 3 * (1 - easedProgress);
-                                    const spiralAngle = easedProgress * Math.PI * 6;
-                                    finalX += spiralRadius * Math.cos(spiralAngle);
-                                    finalY += spiralRadius * Math.sin(spiralAngle);
-                                    break;
-                            }
+                    }
+                    
+                    // Apply special effects
+                    if (specialEffect !== 'none') {
+                        switch (specialEffect) {
+                            case 'slideDown':
+                                finalY += 10 * (1 - easedProgress);
+                                break;
+                            case 'slideUp':
+                                finalY -= 10 * (1 - easedProgress);
+                                break;
+                            case 'slideLeft':
+                                finalX += 10 * (1 - easedProgress);
+                                break;
+                            case 'slideRight':
+                                finalX -= 10 * (1 - easedProgress);
+                                break;
+                            case 'fadeIn':
+                                layer.setAttribute('material', 'transparent: true; opacity: ' + easedProgress);
+                                break;
+                            case 'scaleIn':
+                                finalScaleX *= easedProgress;
+                                finalScaleY *= easedProgress;
+                                finalScaleZ *= easedProgress;
+                                break;
+                            case 'rotate':
+                                finalRotZ += easedProgress * 360;
+                                break;
+                            case 'bounce':
+                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
+                                finalY += bounceY;
+                                break;
+                            case 'spiral':
+                                const spiralRadius = 3 * (1 - easedProgress);
+                                const spiralAngle = easedProgress * Math.PI * 6;
+                                finalX += spiralRadius * Math.cos(spiralAngle);
+                                finalY += spiralRadius * Math.sin(spiralAngle);
+                                break;
                         }
-
-                        // Update layer position, rotation, and scale
-                        layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
-                        layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
-                        layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-
-                    }, 16); // ~60fps
-
-                    animationIntervals.push(interval);
-                }
-            });
-        }
-
-        function stopAllAnimations() {
-            animationIntervals.forEach(interval => clearInterval(interval));
-            animationIntervals = [];
-        }
-
-        function resetPositions() {
-            stopAllAnimations();
-            const layers = document.querySelectorAll('[id^="layer-"]');
-            layers.forEach(layer => {
-                // Reset to original attributes
-                const originalPos = layer.getAttribute('position');
-                const originalRot = layer.getAttribute('rotation');
-                const originalScale = layer.getAttribute('scale');
-                layer.setAttribute('position', originalPos);
-                layer.setAttribute('rotation', originalRot);
-                layer.setAttribute('scale', originalScale);
-                layer.setAttribute('material', 'transparent: true; opacity: 1');
-            });
-        }
+                    }
+                    
+                    // Update layer position, rotation, and scale
+                    layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
+                    layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
+                    layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
+                    
+                }, 16); // ~60fps
+                
+                animationIntervals.push(interval);
+            }
+        });
+    }
+    
+    function stopAllAnimations() {
+        animationIntervals.forEach(interval => clearInterval(interval));
+        animationIntervals = [];
+    }
+    
+    function resetPositions() {
+        stopAllAnimations();
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach(layer => {
+            // Reset to original attributes
+            const originalPos = layer.getAttribute('position');
+            const originalRot = layer.getAttribute('rotation');
+            const originalScale = layer.getAttribute('scale');
+            layer.setAttribute('position', originalPos);
+            layer.setAttribute('rotation', originalRot);
+            layer.setAttribute('scale', originalScale);
+            layer.setAttribute('material', 'transparent: true; opacity: 1');
+        });
+    }
     </script>
 </body>
-
 </html>

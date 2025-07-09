@@ -948,11 +948,11 @@
         function exportAsAR() {
             exportPackage();
         }
-        function generateHTMLContent() {
-            const name = (document.getElementById('projectName').value || 'AR_Project').trim();
-            const bgColor = document.getElementById('bgColor').value;
+     function generateHTMLContent() {
+    const name = (document.getElementById('projectName').value || 'AR_Project').trim();
+    const bgColor = document.getElementById('bgColor').value;
 
-            let htmlContent = `<!DOCTYPE html>
+    let htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -961,7 +961,6 @@
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"><\/script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"><\/script>
     <style>
-
         .ar-controls {
             position: fixed;
             bottom: 20px;
@@ -1002,114 +1001,121 @@
             max-width: 300px;
         }
     </style>
-    </head>
+</head>
 
-    <body>
-        <div class="ar-info">
-            <h3>${name}</h3>
-            <p>Point your camera at a surface to see the AR content</p>
-        </div>
+<body>
+    <div class="ar-info">
+        <h3>${name}</h3>
+        <p>Point your camera at a surface to see the AR content</p>
+    </div>
 
-        <div class="ar-controls">
-            <button onclick="playAllAnimations()">Play All Animations</button>
-            <button onclick="stopAllAnimations()">Stop Animations</button>
-            <button onclick="resetPositions()">Reset Positions</button>
-        </div>
+    <div class="ar-controls">
+        <button onclick="playAllAnimations()">Play All Animations</button>
+        <button onclick="stopAllAnimations()">Stop Animations</button>
+        <button onclick="resetPositions()">Reset Positions</button>
+    </div>
 
-        <a-scene embedded
-            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-            vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;" background="color: transparent">
+    <a-scene embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;" background="color: transparent">
 
-            <a-assets>`;
+        <a-assets>`;
 
-            // Add image assets
-            imageLayers.forEach(layer => {
-                htmlContent += `
-                <img id="img-${layer.id}" src="images/${layer.name}" crossorigin="anonymous">`;
-            });
+    // Add image assets
+    imageLayers.forEach(layer => {
+        htmlContent += `
+            <img id="img-${layer.id}" src="images/${layer.name}" crossorigin="anonymous">`;
+    });
 
-            htmlContent += `
-            </a-assets>
+    htmlContent += `
+        </a-assets>
 
-            <a-marker preset="hiro">`;
+        <a-marker type="pattern" url="pattern-${name}-qr-code.patt">`;
 
-            // Add each layer as A-Frame entities
-            imageLayers.forEach(layer => {
-                const pos = layer.originalPosition;
-                const rot = layer.originalRotation;
-                const scale = layer.originalScale;
-                const opacity = layer.originalOpacity;
+    // Add each layer as A-Frame entities
+    imageLayers.forEach(layer => {
+        const pos = layer.originalPosition;
+        const rot = layer.originalRotation;
+        const scale = layer.originalScale;
+        const opacity = layer.originalOpacity;
 
-                // Convert rotation from radians to degrees
-                const rotX = (rot.x * 180 / Math.PI).toFixed(2);
-                const rotY = (rot.y * 180 / Math.PI).toFixed(2);
-                const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
+        // Convert rotation from radians to degrees
+        const rotX = (rot.x * 180 / Math.PI).toFixed(2);
+        const rotY = (rot.y * 180 / Math.PI).toFixed(2);
+        const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
 
-                htmlContent += `
-                <a-plane id="layer-${layer.id}" src="#img-${layer.id}"
-                    position="${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}"
-                    rotation="${rotX} ${rotY} ${rotZ}"
-                    scale="${scale.x.toFixed(2)} ${scale.y.toFixed(2)} ${scale.z.toFixed(2)}"
-                    material="transparent: true; opacity: ${opacity.toFixed(2)}"
-                    data-animation-enabled="${layer.enableCustomAnimation}" data-special-effect="${layer.specialEffect}"
-                    data-animation-speed="${layer.animationSpeed}" data-animation-duration="${layer.animationDuration}"
-                    data-loop-animation="${layer.loopAnimation}"
-                    data-custom-start="${JSON.stringify(layer.customAnimation.start).replace(/" /g, '&quot;')}"
-                    data-custom-end="${JSON.stringify(layer.customAnimation.end).replace(/" /g, '&quot;')}">
-                </a-plane>`;
-            });
+        // Properly escape JSON data for HTML attributes
+        const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
+        const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
 
-            htmlContent += `
-            </a-marker>
+        htmlContent += `
+            <a-plane id="layer-${layer.id}" src="#img-${layer.id}"
+                position="${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}"
+                rotation="${rotX} ${rotY} ${rotZ}"
+                scale="${scale.x.toFixed(2)} ${scale.y.toFixed(2)} ${scale.z.toFixed(2)}"
+                material="transparent: true; opacity: ${opacity.toFixed(2)}"
+                data-animation-enabled="${layer.enableCustomAnimation}" 
+                data-special-effect="${layer.specialEffect}"
+                data-animation-speed="${layer.animationSpeed}" 
+                data-animation-duration="${layer.animationDuration}"
+                data-loop-animation="${layer.loopAnimation}"
+                data-custom-start="${customStartJSON}"
+                data-custom-end="${customEndJSON}">
+            </a-plane>`;
+    });
 
-            <a-entity camera></a-entity>
-        </a-scene>
+    htmlContent += `
+        </a-marker>
 
-        <script>
-        let animationIntervals = [];
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+    let animationIntervals = [];
+    
+    function playAllAnimations() {
+        stopAllAnimations();
         
-        function playAllAnimations() {
-            stopAllAnimations();
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach(layer => {
+            const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
+            const specialEffect = layer.getAttribute('data-special-effect');
             
-            const layers = document.querySelectorAll('[id^="layer-"]');
-            layers.forEach(layer => {
-                const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
-                const specialEffect = layer.getAttribute('data-special-effect');
+            if (enableCustom || specialEffect !== 'none') {
+                const speed = parseFloat(layer.getAttribute('data-animation-speed'));
+                const duration = parseFloat(layer.getAttribute('data-animation-duration'));
+                const loop = layer.getAttribute('data-loop-animation') === 'true';
                 
-                if (enableCustom || specialEffect !== 'none') {
-                    const speed = parseFloat(layer.getAttribute('data-animation-speed'));
-                    const duration = parseFloat(layer.getAttribute('data-animation-duration'));
-                    const loop = layer.getAttribute('data-loop-animation') === 'true';
+                const startTime = Date.now();
+                
+                const interval = setInterval(() => {
+                    const currentTime = Date.now();
+                    const elapsed = (currentTime - startTime) / 1000 * speed;
+                    let progress = (elapsed % duration) / duration;
                     
-                    const startTime = Date.now();
+                    if (!loop && elapsed > duration) {
+                        clearInterval(interval);
+                        return;
+                    }
                     
-                    const interval = setInterval(() => {
-                        const currentTime = Date.now();
-                        const elapsed = (currentTime - startTime) / 1000 * speed;
-                        let progress = (elapsed % duration) / duration;
-                        
-                        if (!loop && elapsed > duration) {
-                            clearInterval(interval);
-                            return;
-                        }
-                        
-                        const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-                        const easedProgress = easeInOut(progress);
-                        
-                        // Get original position
-                        const originalPos = layer.getAttribute('position');
-                        const originalRot = layer.getAttribute('rotation');
-                        const originalScale = layer.getAttribute('scale');
-                        const [origX, origY, origZ] = originalPos.split(' ').map(parseFloat);
-                        const [origRotX, origRotY, origRotZ] = originalRot.split(' ').map(parseFloat);
-                        const [origScaleX, origScaleY, origScaleZ] = originalScale.split(' ').map(parseFloat);
-                        
-                        let finalX = origX, finalY = origY, finalZ = origZ;
-                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
-                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-                        
-                        // Apply custom animation
-                        if (enableCustom) {
+                    const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    const easedProgress = easeInOut(progress);
+                    
+                    // Get original position, rotation, and scale
+                    const originalPos = layer.getAttribute('position');
+                    const originalRot = layer.getAttribute('rotation');
+                    const originalScale = layer.getAttribute('scale');
+                    const [origX, origY, origZ] = originalPos.split(' ').map(parseFloat);
+                    const [origRotX, origRotY, origRotZ] = originalRot.split(' ').map(parseFloat);
+                    const [origScaleX, origScaleY, origScaleZ] = originalScale.split(' ').map(parseFloat);
+                    
+                    let finalX = origX, finalY = origY, finalZ = origZ;
+                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    
+                    // Apply custom animation
+                    if (enableCustom) {
+                        try {
                             const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
                             const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
                             
@@ -1121,87 +1127,88 @@
                             finalScaleX = finalScaleY = finalScaleZ = customScale;
                             
                             finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
+                        } catch (e) {
+                            console.error('Error parsing custom animation data:', e);
                         }
-                        
-                        // Apply special effects
-                        if (specialEffect !== 'none') {
-                            switch (specialEffect) {
-                                case 'slideDown':
-                                    finalY += 10 * (1 - easedProgress);
-                                    break;
-                                case 'slideUp':
-                                    finalY -= 10 * (1 - easedProgress);
-                                    break;
-                                case 'slideLeft':
-                                    finalX += 10 * (1 - easedProgress);
-                                    break;
-                                case 'slideRight':
-                                    finalX -= 10 * (1 - easedProgress);
-                                    break;
-                                case 'fadeIn':
-                                    layer.setAttribute('material', 'transparent: true; opacity: ' + easedProgress);
-                                    break;
-                                case 'scaleIn':
-                                    finalScaleX *= easedProgress;
-                                    finalScaleY *= easedProgress;
-                                    finalScaleZ *= easedProgress;
-                                    break;
-                                case 'rotate':
-                                    finalRotZ += easedProgress * 360;
-                                    break;
-                                case 'bounce':
-                                    const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
-                                    finalY += bounceY;
-                                    break;
-                                case 'spiral':
-                                    const spiralRadius = 3 * (1 - easedProgress);
-                                    const spiralAngle = easedProgress * Math.PI * 6;
-                                    finalX += spiralRadius * Math.cos(spiralAngle);
-                                    finalY += spiralRadius * Math.sin(spiralAngle);
-                                    break;
-                            }
-                        }
-                        
-                        // Update layer position, rotation, and scale
-                        layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
-                        layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
-                        layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-                        
-                    }, 16); // ~60fps
+                    }
                     
-                    animationIntervals.push(interval);
-                }
-            });
-        }
-        
-        function stopAllAnimations() {
-            animationIntervals.forEach(interval => clearInterval(interval));
-            animationIntervals = [];
-        }
-        
-        function resetPositions() {
-            stopAllAnimations();
-            const layers = document.querySelectorAll('[id^="layer-"]');
-            layers.forEach(layer => {
-                // Reset to original attributes
-                const originalPos = layer.getAttribute('position');
-                const originalRot = layer.getAttribute('rotation');
-                const originalScale = layer.getAttribute('scale');
-                layer.setAttribute('position', originalPos);
-                layer.setAttribute('rotation', originalRot);
-                layer.setAttribute('scale', originalScale);
-                layer.setAttribute('material', 'transparent: true; opacity: 1');
-            });
-        }
-        <\/script>
-    </body>
-
+                    // Apply special effects
+                    if (specialEffect !== 'none') {
+                        switch (specialEffect) {
+                            case 'slideDown':
+                                finalY += 10 * (1 - easedProgress);
+                                break;
+                            case 'slideUp':
+                                finalY -= 10 * (1 - easedProgress);
+                                break;
+                            case 'slideLeft':
+                                finalX += 10 * (1 - easedProgress);
+                                break;
+                            case 'slideRight':
+                                finalX -= 10 * (1 - easedProgress);
+                                break;
+                            case 'fadeIn':
+                                layer.setAttribute('material', 'transparent: true; opacity: ' + easedProgress);
+                                break;
+                            case 'scaleIn':
+                                finalScaleX *= easedProgress;
+                                finalScaleY *= easedProgress;
+                                finalScaleZ *= easedProgress;
+                                break;
+                            case 'rotate':
+                                finalRotZ += easedProgress * 360;
+                                break;
+                            case 'bounce':
+                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
+                                finalY += bounceY;
+                                break;
+                            case 'spiral':
+                                const spiralRadius = 3 * (1 - easedProgress);
+                                const spiralAngle = easedProgress * Math.PI * 6;
+                                finalX += spiralRadius * Math.cos(spiralAngle);
+                                finalY += spiralRadius * Math.sin(spiralAngle);
+                                break;
+                        }
+                    }
+                    
+                    // Update layer position, rotation, and scale
+                    layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
+                    layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
+                    layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
+                    
+                }, 16); // ~60fps
+                
+                animationIntervals.push(interval);
+            }
+        });
+    }
+    
+    function stopAllAnimations() {
+        animationIntervals.forEach(interval => clearInterval(interval));
+        animationIntervals = [];
+    }
+    
+    function resetPositions() {
+        stopAllAnimations();
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach(layer => {
+            // Reset to original attributes
+            const originalPos = layer.getAttribute('position');
+            const originalRot = layer.getAttribute('rotation');
+            const originalScale = layer.getAttribute('scale');
+            layer.setAttribute('position', originalPos);
+            layer.setAttribute('rotation', originalRot);
+            layer.setAttribute('scale', originalScale);
+            layer.setAttribute('material', 'transparent: true; opacity: 1');
+        });
+    }
+    <\/script>
+</body>
 </html>`;
 
-            return htmlContent;
-        }
+    return htmlContent;
+}
 
-        // ...existing code...
         async function exportPackage() {
             const name = (document.getElementById('projectName').value || 'AR_Project').trim();
             const zip = new JSZip();
