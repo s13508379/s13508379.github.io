@@ -1226,7 +1226,7 @@
                     const imgBlob = await new Promise(resolve => {
                         canvas.toBlob(resolve, 'image/png');
                     });
-                    imageFiles.file(layer.name + '.png', imgBlob);
+                    imageFiles.file(layer.name, imgBlob);
                 }
             }
 
