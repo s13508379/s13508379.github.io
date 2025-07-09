@@ -1099,22 +1099,24 @@
                         return;
                     }
                     
-                    const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-                    const easedProgress = easeInOut(progress);
-                    
-                    // Get original position, rotation, and scale
-                    const originalPos = layer.getAttribute('position');
-                    const originalRot = layer.getAttribute('rotation');
-                    const originalScale = layer.getAttribute('scale');
-                    const [origX, origY, origZ] = originalPos.split(' ').map(parseFloat);
-                    const [origRotX, origRotY, origRotZ] = originalRot.split(' ').map(parseFloat);
-                    const [origScaleX, origScaleY, origScaleZ] = originalScale.split(' ').map(parseFloat);
+                        const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                        const easedProgress = easeInOut(progress);
+
+                        const originalPos = layer.getAttribute('position');
+                        const originalRot = layer.getAttribute('rotation');
+                        const originalScale = layer.getAttribute('scale');
+                        const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
+                        const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
+                        const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
+
+                        let finalX = origX, finalY = origY, finalZ = origZ;
+                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
                     
                     let finalX = origX, finalY = origY, finalZ = origZ;
                     let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
                     let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
                     
-                    // Apply custom animation
                     if (enableCustom) {
                         try {
                             const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));

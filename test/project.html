@@ -68,7 +68,7 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="./images/pattern-project-qr-code.png" crossorigin="anonymous">
+            <img id="img-0" src="/test/images/pattern-project-qr-code.png.png" crossorigin="anonymous">
         </a-assets>
 
         <a-marker type="pattern" url="./pattern-project-qr-code.patt">
@@ -133,7 +133,7 @@
                             try {
                                 const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
                                 const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
-
+                                console.log(customStart, customEnd);
                                 finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
                                 finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
                                 finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
