@@ -948,11 +948,11 @@
         function exportAsAR() {
             exportPackage();
         }
-     function generateHTMLContent() {
-    const name = (document.getElementById('projectName').value || 'AR_Project').trim();
-    const bgColor = document.getElementById('bgColor').value;
+        function generateHTMLContent() {
+            const name = (document.getElementById('projectName').value || 'AR_Project').trim();
+            const bgColor = document.getElementById('bgColor').value;
 
-    let htmlContent = `<!DOCTYPE html>
+            let htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1015,40 +1015,41 @@
         <button onclick="resetPositions()">Reset Positions</button>
     </div>
 
-    <a-scene embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-        vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;" background="color: transparent">
+    <a-scene vr-mode-ui="enabled: false" embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+        background="color: #000000; transparent: true">
 
         <a-assets>`;
 
-    // Add image assets
-    imageLayers.forEach(layer => {
-        htmlContent += `
+            // Add image assets
+            imageLayers.forEach(layer => {
+                htmlContent += `
             <img id="img-${layer.id}" src="images/${layer.name}" crossorigin="anonymous">`;
-    });
+            });
 
-    htmlContent += `
+            htmlContent += `
         </a-assets>
 
         <a-marker type="pattern" url="pattern-${name}-qr-code.patt">`;
 
-    // Add each layer as A-Frame entities
-    imageLayers.forEach(layer => {
-        const pos = layer.originalPosition;
-        const rot = layer.originalRotation;
-        const scale = layer.originalScale;
-        const opacity = layer.originalOpacity;
+            // Add each layer as A-Frame entities
+            imageLayers.forEach(layer => {
+                const pos = layer.originalPosition;
+                const rot = layer.originalRotation;
+                const scale = layer.originalScale;
+                const opacity = layer.originalOpacity;
 
-        // Convert rotation from radians to degrees
-        const rotX = (rot.x * 180 / Math.PI).toFixed(2);
-        const rotY = (rot.y * 180 / Math.PI).toFixed(2);
-        const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
+                // Convert rotation from radians to degrees
+                const rotX = (rot.x * 180 / Math.PI).toFixed(2);
+                const rotY = (rot.y * 180 / Math.PI).toFixed(2);
+                const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
 
-        // Properly escape JSON data for HTML attributes
-        const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
-        const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
+                // Properly escape JSON data for HTML attributes
+                const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
+                const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
 
-        htmlContent += `
+                htmlContent += `
             <a-plane id="layer-${layer.id}" src="#img-${layer.id}"
                 position="${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}"
                 rotation="${rotX} ${rotY} ${rotZ}"
@@ -1062,9 +1063,9 @@
                 data-custom-start="${customStartJSON}"
                 data-custom-end="${customEndJSON}">
             </a-plane>`;
-    });
+            });
 
-    htmlContent += `
+            htmlContent += `
         </a-marker>
 
         <a-entity camera></a-entity>
@@ -1206,8 +1207,8 @@
 </body>
 </html>`;
 
-    return htmlContent;
-}
+            return htmlContent;
+        }
 
         async function exportPackage() {
             const name = (document.getElementById('projectName').value || 'AR_Project').trim();

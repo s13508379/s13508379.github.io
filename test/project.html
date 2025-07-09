@@ -68,10 +68,10 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="images/pattern-project-qr-code.png" crossorigin="anonymous">
+            <img id="img-0" src="./images/pattern-project-qr-code.png" crossorigin="anonymous">
         </a-assets>
 
-        <a-marker type="pattern" url="pattern-project-qr-code.patt">
+        <a-marker type="pattern" url="./pattern-project-qr-code.patt">
             <a-plane id="layer-0" src="#img-0" position="3.90 0.00 0.00" rotation="0.00 0.00 0.00"
                 scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
                 data-special-effect="zigzagToTarget" data-animation-speed="1" data-animation-duration="2"
@@ -116,12 +116,13 @@
                         const easedProgress = easeInOut(progress);
 
                         // Get original position, rotation, and scale
+                        // ...inside playAllAnimations()...
                         const originalPos = layer.getAttribute('position');
                         const originalRot = layer.getAttribute('rotation');
                         const originalScale = layer.getAttribute('scale');
-                        const [origX, origY, origZ] = originalPos.split(' ').map(parseFloat);
-                        const [origRotX, origRotY, origRotZ] = originalRot.split(' ').map(parseFloat);
-                        const [origScaleX, origScaleY, origScaleZ] = originalScale.split(' ').map(parseFloat);
+                        const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
+                        const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
+                        const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
 
                         let finalX = origX, finalY = origY, finalZ = origZ;
                         let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
