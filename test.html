@@ -1,29 +1,103 @@
-<!-- Latest stable libs -->
-<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-
-<body style="margin:0; overflow:hidden">
-  <a-scene embedded
-           arjs="sourceType: webcam; debugUIEnabled: true;">
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR.js Scene</title>
     
-    <!-- 1 — preload the model -->
-    <a-assets timeout="10000">
-      <a-asset-item id="myGLB" src="scene.glb"></a-asset-item>
-    </a-assets>
+    <!-- A-Frame and AR.js -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+</head>
 
-    <!-- 2 — marker -->
-    <a-marker type="pattern"
-              url="pattern-project-qr-code.patt"
-              id="projMarker"
-              emitevents="true">
-      
-      <!-- 3 — place the model at the marker’s origin first -->
-      <a-entity gltf-model="#myGLB"
-                scale="0.2 0.2 0.2"
-                position="0 0 0">
-      </a-entity>
-    </a-marker>
+<body style="margin:0; overflow:hidden; font-family: Arial, sans-serif;">
+    <!-- Loading indicator -->
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="text-align: center;">
+            <div style="font-size: 18px; margin-bottom: 20px;">Loading AR Experience...</div>
+            <div style="font-size: 14px;">Please allow camera access</div>
+        </div>
+    </div>
 
-    <a-entity camera></a-entity>
-  </a-scene>
+    <a-scene embedded 
+             vr-mode-ui="enabled: false"
+             arjs="sourceType: webcam; 
+                   debugUIEnabled: false; 
+                   trackingMethod: best; 
+                   detectionMode: mono_and_matrix; 
+                   matrixCodeType: 3x3;">
+
+        <!-- Assets -->
+        <a-assets timeout="30000">
+            <!-- Your GLB file -->
+            <a-asset-item id="myGLB" src="scene.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Marker -->
+        <a-marker type="pattern"
+                  url="pattern-project-qr-code.patt"
+                  id="projMarker"
+                  emitevents="true"
+                  smooth="true"
+                  smoothCount="10"
+                  smoothTolerance="0.01"
+                  smoothThreshold="5">
+            
+            <!-- 3D Model -->
+            <a-entity gltf-model="#myGLB"
+                      scale="1 1 1"
+                      position="0 0 0"
+                      rotation="0 0 0"
+                      animation-mixer>
+            </a-entity>
+            
+            <!-- Optional: Add a simple cube as fallback -->
+            <a-box position="0 0.5 0" 
+                   material="color: red;" 
+                   scale="0.5 0.5 0.5"
+                   visible="false"
+                   id="fallbackCube">
+            </a-box>
+        </a-marker>
+
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        // Hide loading screen when AR is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const scene = document.querySelector('a-scene');
+            const loadingScreen = document.getElementById('loadingScreen');
+            
+            scene.addEventListener('loaded', function() {
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 2000);
+            });
+            
+            // Error handling for model loading
+            const marker = document.querySelector('#projMarker');
+            const model = document.querySelector('[gltf-model]');
+            const fallbackCube = document.querySelector('#fallbackCube');
+            
+            // Show fallback if model fails to load
+            if (model) {
+                model.addEventListener('model-error', function() {
+                    console.warn('GLB model failed to load, showing fallback cube');
+                    if (fallbackCube) fallbackCube.setAttribute('visible', true);
+                });
+            }
+            
+            // Marker detection events
+            marker.addEventListener('markerFound', function() {
+                console.log('Marker found!');
+            });
+            
+            marker.addEventListener('markerLost', function() {
+                console.log('Marker lost!');
+            });
+        });
+    </script>
 </body>
+</html>
