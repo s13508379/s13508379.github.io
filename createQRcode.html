@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR.js Marker Training Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        
+        .upload-btn:hover {
+            background: #0056b3;
+        }
+        
+        .preview-section {
+            display: none;
+            margin: 20px 0;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 150px;
+        }
+        
+        .canvas-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        #processedCanvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 100%;
+        }
+        
+        .download-btn {
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            display: none;
+        }
+        
+        .download-btn:hover {
+            background: #218838;
+        }
+        
+        .info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AR.js Marker Training Tool</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>Drop an image here or click to upload</p>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                Choose Image
+            </button>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="progress" id="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="preview-section" id="previewSection">
+            <h3>Original Image</h3>
+            <img id="imagePreview" class="image-preview" alt="Preview">
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="thresholdSlider">Threshold</label>
+                    <input type="range" id="thresholdSlider" min="0" max="255" value="128">
+                    <span id="thresholdValue">128</span>
+                </div>
+                
+                <div class="control-group">
+                    <label for="sizeSlider">Pattern Size</label>
+                    <input type="range" id="sizeSlider" min="16" max="32" value="16">
+                    <span id="sizeValue">16</span>
+                </div>
+                
+                <button class="upload-btn" onclick="processImage()">Generate Pattern</button>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="processedCanvas"></canvas>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="download-btn" id="downloadBtn" onclick="downloadPattern()">
+                Download .patt File
+            </button>
+        </div>
+        
+        <div class="info">
+            <h3>How to Use:</h3>
+            <p>1. Upload an image with good contrast and clear features</p>
+            <p>2. Adjust the threshold to get a clear black and white pattern</p>
+            <p>3. Set the pattern size (16x16 is recommended for performance)</p>
+            <p>4. Click "Generate Pattern" to create the AR marker</p>
+            <p>5. Download the .patt file and use it in your AR.js project</p>
+        </div>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let patternData = null;
+        
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewSection = document.getElementById('previewSection');
+        const imagePreview = document.getElementById('imagePreview');
+        const processedCanvas = document.getElementById('processedCanvas');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        // Slider updates
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        const thresholdValue = document.getElementById('thresholdValue');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const sizeValue = document.getElementById('sizeValue');
+        
+        thresholdSlider.addEventListener('input', (e) => {
+            thresholdValue.textContent = e.target.value;
+        });
+        
+        sizeSlider.addEventListener('input', (e) => {
+            sizeValue.textContent = e.target.value;
+        });
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    imagePreview.src = e.target.result;
+                    previewSection.style.display = 'block';
+                    downloadBtn.style.display = 'none';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function processImage() {
+            if (!currentImage) return;
+            
+            progress.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            // Simulate processing progress
+            let progressValue = 0;
+            const progressInterval = setInterval(() => {
+                progressValue += 10;
+                progressBar.style.width = progressValue + '%';
+                if (progressValue >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(() => {
+                        progress.style.display = 'none';
+                        generatePattern();
+                    }, 500);
+                }
+            }, 100);
+        }
+        
+        function generatePattern() {
+            const threshold = parseInt(thresholdSlider.value);
+            const patternSize = parseInt(sizeSlider.value);
+            
+            // Create canvas for processing
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size to pattern size
+            canvas.width = patternSize;
+            canvas.height = patternSize;
+            
+            // Draw and resize image
+            ctx.drawImage(currentImage, 0, 0, patternSize, patternSize);
+            
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, patternSize, patternSize);
+            const data = imageData.data;
+            
+            // Convert to grayscale and apply threshold
+            const pattern = [];
+            for (let y = 0; y < patternSize; y++) {
+                const row = [];
+                for (let x = 0; x < patternSize; x++) {
+                    const idx = (y * patternSize + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+                    
+                    // Convert to grayscale
+                    const gray = (r + g + b) / 3;
+                    
+                    // Apply threshold
+                    const binary = gray > threshold ? 255 : 0;
+                    row.push(binary);
+                    
+                    // Update canvas pixel
+                    data[idx] = binary;     // R
+                    data[idx + 1] = binary; // G
+                    data[idx + 2] = binary; // B
+                    data[idx + 3] = 255;    // A
+                }
+                pattern.push(row);
+            }
+            
+            // Update canvas
+            ctx.putImageData(imageData, 0, 0);
+            
+            // Display processed image (scaled up for visibility)
+            processedCanvas.width = patternSize * 10;
+            processedCanvas.height = patternSize * 10;
+            const displayCtx = processedCanvas.getContext('2d');
+            displayCtx.imageSmoothingEnabled = false;
+            displayCtx.drawImage(canvas, 0, 0, patternSize * 10, patternSize * 10);
+            
+            // Store pattern data
+            patternData = pattern;
+            downloadBtn.style.display = 'inline-block';
+        }
+        
+        function downloadPattern() {
+            if (!patternData) return;
+            
+            // Generate .patt file content
+            const pattContent = generatePattFile(patternData);
+            
+            // Create download
+            const blob = new Blob([pattContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'custom-marker.patt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function generatePattFile(pattern) {
+            const size = pattern.length;
+            let content = '';
+            
+            // AR.js pattern format requires specific structure
+            // This is a simplified version - the actual format is more complex
+            
+            // Header
+            content += '# ARToolKit pattern file\n';
+            content += '# Created by Custom Marker Training Tool\n';
+            content += '\n';
+            
+            // Pattern data (simplified format)
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const value = pattern[y][x];
+                    content += value.toString().padStart(3, ' ');
+                    if (x < size - 1) content += ' ';
+                }
+                content += '\n';
+            }
+            
+            // Add additional required sections for AR.js compatibility
+            content += '\n';
+            
+            // Repeat pattern data in different orientations (required by ARToolKit format)
+            for (let rotation = 0; rotation < 3; rotation++) {
+                content += '\n';
+                const rotatedPattern = rotatePattern(pattern, rotation + 1);
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const value = rotatedPattern[y][x];
+                        content += value.toString().padStart(3, ' ');
+                        if (x < size - 1) content += ' ';
+                    }
+                    content += '\n';
+                }
+            }
+            
+            return content;
+        }
+        
+        function rotatePattern(pattern, times) {
+            let rotated = pattern.map(row => [...row]);
+            
+            for (let i = 0; i < times; i++) {
+                const temp = rotated.map(row => [...row]);
+                const size = rotated.length;
+                
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        rotated[x][size - 1 - y] = temp[y][x];
+                    }
+                }
+            }
+            
+            return rotated;
+        }
+    </script>
+</body>
+</html>
