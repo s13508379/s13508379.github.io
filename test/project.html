@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,6 @@
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-
-            background: $ {
-                bgColor
-            }
-
-            ;
         }
 
         .ar-controls {
@@ -58,88 +53,81 @@
             max-width: 300px;
         }
     </style>
-    </head>
+</head>
 
-    <body>
-        <div class="ar-info">
-            <h3>project</h3>
-            <p>Point your camera at a surface to see the AR content</p>
-        </div>
+<body>
+    <div class="ar-info">
+        <h3>project</h3>
+        <p>Point your camera at a surface to see the AR content</p>
+    </div>
 
-        <div class="ar-controls">
-            <button onclick="playAllAnimations()">Play All Animations</button>
-            <button onclick="stopAllAnimations()">Stop Animations</button>
-            <button onclick="resetPositions()">Reset Positions</button>
-        </div>
+    <div class="ar-controls">
+        <button onclick="playAllAnimations()">Play All Animations</button>
+        <button onclick="stopAllAnimations()">Stop Animations</button>
+        <button onclick="resetPositions()">Reset Positions</button>
+    </div>
 
-        <a-scene embedded
-            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-            vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;" background="color: transparent">
+    <a-scene embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;" background="color: transparent">
 
-            <a-assets>
-                <img id="img-0" src="images/Asset 3_depth.png" crossorigin="anonymous">
-                <img id="img-1" src="images/allimg_depth.png" crossorigin="anonymous">
-            </a-assets>
+        <a-assets>
+            <img id="img-0" src="images/Asset 3_depth.png" crossorigin="anonymous">
+            <img id="img-1" src="images/allimg_depth.png" crossorigin="anonymous">
+        </a-assets>
 
-            <a-marker preset="hiro">
-                <a-plane id="layer-0" src="#img-0"
-                    position="0.00 0.00 0.00"
-                    rotation="0.00 0.00 0.00"
-                    scale="1.00 1.00 1.00"
-                    material="transparent: true; opacity: 1.00"
-                    data-animation-enabled="true" data-special-effect="swingToTarget"
-                    data-animation-speed="1" data-animation-duration="2"
-                    data-loop-animation="true"
-                    data-custom-start="{"x":-4.3,"y":0,"z":-8.4,"scale":1,"opacity":1,"rotation":0}"
-                    data-custom-end="{"x":0,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}">
-                </a-plane>
-                <a-plane id="layer-1" src="#img-1"
-                    position="0.00 0.00 0.00"
-                    rotation="0.00 0.00 0.00"
-                    scale="1.00 1.00 1.00"
-                    material="transparent: true; opacity: 1.00"
-                    data-animation-enabled="true" data-special-effect="spiral"
-                    data-animation-speed="1" data-animation-duration="2"
-                    data-loop-animation="true"
-                    data-custom-start="{"x":6.2,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}"
-                    data-custom-end="{"x":-7,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}">
-                </a-plane>
-            </a-marker>
+        <a-marker preset="hiro">
+            <a-plane id="layer-0" src="#img-0" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
+                scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
+                data-special-effect="swingToTarget" data-animation-speed="1" data-animation-duration="2"
+                data-loop-animation="true"
+                data-custom-start='{"x":-4.3,"y":0,"z":-8.4,"scale":1,"opacity":1,"rotation":0}'
+                data-custom-end='{"x":0,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'>
 
-            <a-entity camera></a-entity>
-        </a-scene>
+            </a-plane>
+            <a-plane id="layer-1" src="#img-1" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
+                scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
+                data-special-effect="spiral" data-animation-speed="1" data-animation-duration="2"
+                data-loop-animation="true"
+                data-custom-start='{"x":6.2,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'
+                data-custom-end='{"x":-7,"y":0,"z":0,"scale":1,"opacity":1,"rotation":0}'>
+            </a-plane>
+        </a-marker>
 
-        <script>
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
         let animationIntervals = [];
-        
+
         function playAllAnimations() {
             stopAllAnimations();
-            
+
             const layers = document.querySelectorAll('[id^="layer-"]');
             layers.forEach(layer => {
                 const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
                 const specialEffect = layer.getAttribute('data-special-effect');
-                
+
                 if (enableCustom || specialEffect !== 'none') {
                     const speed = parseFloat(layer.getAttribute('data-animation-speed'));
                     const duration = parseFloat(layer.getAttribute('data-animation-duration'));
                     const loop = layer.getAttribute('data-loop-animation') === 'true';
-                    
+
                     const startTime = Date.now();
-                    
+
                     const interval = setInterval(() => {
                         const currentTime = Date.now();
                         const elapsed = (currentTime - startTime) / 1000 * speed;
                         let progress = (elapsed % duration) / duration;
-                        
+
                         if (!loop && elapsed > duration) {
                             clearInterval(interval);
                             return;
                         }
-                        
+
                         const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
                         const easedProgress = easeInOut(progress);
-                        
+
                         // Get original position
                         const originalPos = layer.getAttribute('position');
                         const originalRot = layer.getAttribute('rotation');
@@ -147,26 +135,26 @@
                         const [origX, origY, origZ] = originalPos.split(' ').map(parseFloat);
                         const [origRotX, origRotY, origRotZ] = originalRot.split(' ').map(parseFloat);
                         const [origScaleX, origScaleY, origScaleZ] = originalScale.split(' ').map(parseFloat);
-                        
+
                         let finalX = origX, finalY = origY, finalZ = origZ;
                         let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
                         let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-                        
+
                         // Apply custom animation
                         if (enableCustom) {
                             const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
                             const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
-                            
+
                             finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
                             finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
                             finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
-                            
+
                             const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
                             finalScaleX = finalScaleY = finalScaleZ = customScale;
-                            
+
                             finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
                         }
-                        
+
                         // Apply special effects
                         if (specialEffect !== 'none') {
                             switch (specialEffect) {
@@ -205,24 +193,24 @@
                                     break;
                             }
                         }
-                        
+
                         // Update layer position, rotation, and scale
                         layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                         layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                         layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-                        
+
                     }, 16); // ~60fps
-                    
+
                     animationIntervals.push(interval);
                 }
             });
         }
-        
+
         function stopAllAnimations() {
             animationIntervals.forEach(interval => clearInterval(interval));
             animationIntervals = [];
         }
-        
+
         function resetPositions() {
             stopAllAnimations();
             const layers = document.querySelectorAll('[id^="layer-"]');
@@ -237,7 +225,7 @@
                 layer.setAttribute('material', 'transparent: true; opacity: 1');
             });
         }
-        </script>
-    </body>
+    </script>
+</body>
 
 </html>
