@@ -50,7 +50,7 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <audio id="background-audio" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="background-audio" src="audio/sound.mp3" loop autoplay></audio>
             <img id="img-0" src="images/Asset 7.png.png" crossorigin="anonymous">
             <img id="img-1" src="images/Asset 9.png.png" crossorigin="anonymous">
         </a-assets>
@@ -80,21 +80,13 @@
     <script>
         let animationIntervals = [];
         let markerVisible = false;
-        let audioEnabled = false;     // Is audio turned on?
-        let userInteracted = false;
 
         document.querySelector('a-marker').addEventListener('markerFound', function () {
             markerVisible = true;
             console.log('Marker found - starting animations and audio');
-
-            // Start background audio if exists
-            if (audioEnabled && userInteracted) {
-                const audio = document.querySelector('#background-audio');
-                if (audio) {
-                    audio.play().catch(e => console.log('Audio play failed:', e));
-                }
-            }
-
+            const audio = document.querySelector('#background-audio');
+            audio.play();
+            console.log('Background audio started');
             playAllAnimations();
         });
 
