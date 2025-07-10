@@ -79,11 +79,6 @@
     <script>
         let animationIntervals = [];
         let markerVisible = false;
-        
-        const audio = document.querySelector('#background-audio');
-        if (audio) {
-            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
-        }
 
         document.querySelector('a-marker').addEventListener('markerFound', function () {
             markerVisible = true;
@@ -98,13 +93,6 @@
         document.querySelector('a-marker').addEventListener('markerLost', function () {
             markerVisible = false;
             console.log('Marker lost - stopping animations and audio');
-
-            // Stop background audio if exists
-            const audio = document.querySelector('#background-audio');
-            if (audio) {
-                audio.pause();
-            }
-
         });
 
         function playAllAnimations() {
