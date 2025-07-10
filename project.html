@@ -35,30 +35,13 @@
             background: #0052a3;
         }
 
-        .ar-info {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-            max-width: 300px;
-        }
     </style>
 </head>
 
 <body>
-    <div class="ar-info">
-        <h3>project</h3>
-        <p>Point your camera at a surface to see the AR content</p>
-    </div>
 
     <div class="ar-controls">
-        <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
-        <button onclick="resetPositions()">Reset Positions</button>
     </div>
 
     <a-scene vr-mode-ui="enabled: false" embedded
@@ -67,22 +50,23 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="images/allimg.png" crossorigin="anonymous">
+            <audio id="background-audio" src="audio/sound.mp3" loop autoplay></audio>
+            <img id="img-0" src="images/pattern-project-qr-code.png" crossorigin="anonymous">
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
             <a-plane id="layer-0" src="#img-0"
-                position="0.00 0.00 0.00"
-                rotation="-88.00 3.00 5.00"
+                position="0.00 1.40 -0.10"
+                rotation="134.00 0.00 -39.00"
                 scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
+                material="transparent: true; opacity: 0.80"
                 data-animation-enabled="true" 
-                data-special-effect="zigzagToTarget"
+                data-special-effect="swingToTarget"
                 data-animation-speed="1" 
                 data-animation-duration="2"
                 data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:2.4,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:4.3,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
+                data-custom-start="{&quot;x&quot;:2,&quot;y&quot;:1.6,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:2,&quot;y&quot;:1.6,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
             </a-plane>
         </a-marker>
 
@@ -91,6 +75,34 @@
 
     <script>
     let animationIntervals = [];
+    let markerVisible = false;
+    
+    // Listen for marker events
+    document.querySelector('a-marker').addEventListener('markerFound', function() {
+        markerVisible = true;
+        console.log('Marker found - starting animations and audio');
+        
+        // Start background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
+        }
+        
+        playAllAnimations();
+    });
+    
+    document.querySelector('a-marker').addEventListener('markerLost', function() {
+        markerVisible = false;
+        console.log('Marker lost - stopping animations and audio');
+        
+        // Stop background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.pause();
+        }
+        
+        stopAllAnimations();
+    });
     
     function playAllAnimations() {
         stopAllAnimations();
@@ -108,6 +120,11 @@
                 const startTime = Date.now();
                 
                 const interval = setInterval(() => {
+                    if (!markerVisible) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    
                     const currentTime = Date.now();
                     const elapsed = (currentTime - startTime) / 1000 * speed;
                     let progress = (elapsed % duration) / duration;
@@ -117,20 +134,20 @@
                         return;
                     }
                     
-                        const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-                        const easedProgress = easeInOut(progress);
+                    const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    const easedProgress = easeInOut(progress);
 
-                        const originalPos = layer.getAttribute('position');
-                        const originalRot = layer.getAttribute('rotation');
-                        const originalScale = layer.getAttribute('scale');
-                        const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
-                        const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
-                        const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
+                    const originalPos = layer.getAttribute('position');
+                    const originalRot = layer.getAttribute('rotation');
+                    const originalScale = layer.getAttribute('scale');
+                    const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
+                    const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
+                    const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
 
-                        let finalX = origX, finalY = origY, finalZ = origZ;
-                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
-                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-                
+                    let finalX = origX, finalY = origY, finalZ = origZ;
+                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    let finalOpacity = 1;
                     
                     if (enableCustom) {
                         try {
@@ -144,6 +161,7 @@
                             const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
                             finalScaleX = finalScaleY = finalScaleZ = customScale;
                             
+                            finalOpacity = customStart.opacity + (customEnd.opacity - customStart.opacity) * easedProgress;
                             finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
                         } catch (e) {
                             console.error('Error parsing custom animation data:', e);
@@ -152,66 +170,52 @@
                     
                     // Apply special effects
                     if (specialEffect !== 'none') {
-                        console.log(`Applying special effect: ${specialEffect} for layer ${layer.id}`);
                         switch (specialEffect) {
                             case 'swingToTarget':
-                                // Add swing rotation effect
                                 const swingFrequency = 8;
                                 const swingAmplitude = (1 - easedProgress) * 90;
                                 const swingAngle = Math.sin(progress * swingFrequency * Math.PI) * swingAmplitude;
-                                finalRotZ += (swingAngle * Math.PI / 180);
-
-                                // If no custom animation, move to a target
-                                if (!layer.enableCustomAnimation) {
+                                finalRotZ += swingAngle;
+                                if (!enableCustom) {
                                     finalX += 5 * easedProgress;
                                 }
                                 break;
 
                             case 'zigzagToTarget':
-                                // Add zigzag movement
                                 const zigzagFrequency = 6;
                                 const zigzagAmplitude = (1 - easedProgress) * 2;
                                 const zigzagOffset = Math.sin(progress * zigzagFrequency * Math.PI) * zigzagAmplitude;
                                 finalX += zigzagOffset;
-
-                                // If no custom animation, move to a target
-                                if (!layer.enableCustomAnimation) {
+                                if (!enableCustom) {
                                     finalX += 5 * easedProgress;
                                     finalY += 3 * easedProgress;
                                 }
                                 break;
 
                             case 'pendulumMove':
-                                // Pendulum swinging
                                 const pendulumAmplitude = 60;
                                 const pendulumAngle = Math.sin(elapsed * 2) * pendulumAmplitude;
-                                finalRotZ += (pendulumAngle * Math.PI / 180);
+                                finalRotZ += pendulumAngle;
                                 break;
 
                             case 'waveToTarget':
-                                // Wave effect
                                 const waveAmplitude = 1.5;
                                 const waveFrequency = 4;
                                 const waveY = Math.sin(progress * waveFrequency * Math.PI) * waveAmplitude * (1 - easedProgress);
                                 finalY += waveY;
                                 finalRotZ += (waveY * 0.2);
-
-                                // If no custom animation, move to a target
-                                if (!layer.enableCustomAnimation) {
+                                if (!enableCustom) {
                                     finalX += 4 * easedProgress;
                                     finalY += 2 * easedProgress;
                                 }
                                 break;
 
                             case 'elasticMove':
-                                // Elastic effect
                                 const scaleElastic = 1 + Math.sin(progress * 10) * 0.1 * (1 - progress);
                                 finalScaleX *= scaleElastic;
                                 finalScaleY *= scaleElastic;
                                 finalScaleZ *= scaleElastic;
-
-                                // If no custom animation, move to a target with elastic easing
-                                if (!layer.enableCustomAnimation) {
+                                if (!enableCustom) {
                                     const elasticEase = (t) => {
                                         if (t === 0) return 0;
                                         if (t === 1) return 1;
@@ -248,7 +252,7 @@
                                 finalScaleZ *= scaleInFactor;
                                 break;
                             case 'rotate':
-                                finalRotZ += easedProgress * Math.PI * 2;
+                                finalRotZ += easedProgress * 360;
                                 break;
                             case 'bounce':
                                 const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
@@ -267,6 +271,7 @@
                     layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                     layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                     layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
+                    layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
                     
                 }, 16); // ~60fps
                 
@@ -278,21 +283,6 @@
     function stopAllAnimations() {
         animationIntervals.forEach(interval => clearInterval(interval));
         animationIntervals = [];
-    }
-    
-    function resetPositions() {
-        stopAllAnimations();
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        layers.forEach(layer => {
-            // Reset to original attributes
-            const originalPos = layer.getAttribute('position');
-            const originalRot = layer.getAttribute('rotation');
-            const originalScale = layer.getAttribute('scale');
-            layer.setAttribute('position', originalPos);
-            layer.setAttribute('rotation', originalRot);
-            layer.setAttribute('scale', originalScale);
-            layer.setAttribute('material', 'transparent: true; opacity: 1');
-        });
     }
     </script>
 </body>

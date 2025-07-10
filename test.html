@@ -53,6 +53,7 @@
 
         .control-group input[type="text"],
         .control-group input[type="color"],
+        .control-group input[type="url"],
         .control-group select {
             width: 100%;
             padding: 5px;
@@ -119,6 +120,12 @@
             margin: 0 0 10px 0;
             color: #fff;
         }
+
+        .audio-preview {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 
@@ -137,10 +144,16 @@
                 <input type="url" id="websiteUrl" placeholder="https://your-website.com" value="">
             </div>
 
-
             <div class="control-group">
                 <label>Background Color:</label>
                 <input type="color" id="bgColor" value="#000000" onchange="updateBackgroundColor()">
+            </div>
+
+            <div class="control-group">
+                <label>Add MP3 Background Audio:</label>
+                <input type="file" id="audioFile" accept="audio/mp3,audio/wav,audio/ogg">
+                <button onclick="addAudioBackground()">Set Audio Background</button>
+                <audio id="audioPreview" class="audio-preview" style="display: none;" controls loop></audio>
             </div>
 
             <div class="control-group">
@@ -312,6 +325,8 @@
         let layerCounter = 0;
         let animationMixer;
         let clock;
+        let backgroundAudio = null;
+        let audioBlob = null;
 
         // Initialize Three.js scene
         function initScene() {
@@ -387,6 +402,42 @@
                 camera.position.multiplyScalar(scale);
                 camera.position.clampLength(1, 50);
             });
+        }
+
+        // Add audio background
+        function addAudioBackground() {
+            const fileInput = document.getElementById('audioFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select an audio file first');
+                return;
+            }
+
+            if (!file.type.startsWith('audio/')) {
+                alert('Please select a valid audio file');
+                return;
+            }
+
+            const audio = document.createElement('audio');
+            const preview = document.getElementById('audioPreview');
+            
+            audio.src = URL.createObjectURL(file);
+            preview.src = audio.src;
+            preview.style.display = 'block';
+            
+            audio.loop = true;
+            audio.volume = 0.5;
+            
+            // Store audio blob for export
+            audioBlob = file;
+            backgroundAudio = {
+                element: audio,
+                fileName: file.name,
+                blob: file
+            };
+
+            fileInput.value = '';
         }
 
         // Update background color
@@ -752,26 +803,20 @@
                     if (layer.specialEffect !== 'none') {
                         switch (layer.specialEffect) {
                             case 'swingToTarget':
-                                // Add swing rotation effect
                                 const swingFrequency = 8;
                                 const swingAmplitude = (1 - easedProgress) * 90;
                                 const swingAngle = Math.sin(progress * swingFrequency * Math.PI) * swingAmplitude;
                                 finalRotZ += (swingAngle * Math.PI / 180);
-
-                                // If no custom animation, move to a target
                                 if (!layer.enableCustomAnimation) {
                                     finalX += 5 * easedProgress;
                                 }
                                 break;
 
                             case 'zigzagToTarget':
-                                // Add zigzag movement
                                 const zigzagFrequency = 6;
                                 const zigzagAmplitude = (1 - easedProgress) * 2;
                                 const zigzagOffset = Math.sin(progress * zigzagFrequency * Math.PI) * zigzagAmplitude;
                                 finalX += zigzagOffset;
-
-                                // If no custom animation, move to a target
                                 if (!layer.enableCustomAnimation) {
                                     finalX += 5 * easedProgress;
                                     finalY += 3 * easedProgress;
@@ -779,21 +824,17 @@
                                 break;
 
                             case 'pendulumMove':
-                                // Pendulum swinging
                                 const pendulumAmplitude = 60;
                                 const pendulumAngle = Math.sin(elapsed * 2) * pendulumAmplitude;
                                 finalRotZ += (pendulumAngle * Math.PI / 180);
                                 break;
 
                             case 'waveToTarget':
-                                // Wave effect
                                 const waveAmplitude = 1.5;
                                 const waveFrequency = 4;
                                 const waveY = Math.sin(progress * waveFrequency * Math.PI) * waveAmplitude * (1 - easedProgress);
                                 finalY += waveY;
                                 finalRotZ += (waveY * 0.2);
-
-                                // If no custom animation, move to a target
                                 if (!layer.enableCustomAnimation) {
                                     finalX += 4 * easedProgress;
                                     finalY += 2 * easedProgress;
@@ -801,13 +842,10 @@
                                 break;
 
                             case 'elasticMove':
-                                // Elastic effect
                                 const scaleElastic = 1 + Math.sin(progress * 10) * 0.1 * (1 - progress);
                                 finalScaleX *= scaleElastic;
                                 finalScaleY *= scaleElastic;
                                 finalScaleZ *= scaleElastic;
-
-                                // If no custom animation, move to a target with elastic easing
                                 if (!layer.enableCustomAnimation) {
                                     const elasticEase = (t) => {
                                         if (t === 0) return 0;
@@ -872,28 +910,19 @@
         // Apply animation
         function applyAnimation() {
             if (!selectedLayer) return;
-
-            // Save current settings to the layer
             saveCurrentLayerSettings();
-
             if (selectedLayer.animation) {
                 selectedLayer.animation.stop();
             }
-
             selectedLayer.animation = createAnimationForLayer(selectedLayer);
         }
 
         // Preview animation (single run)
         function previewAnimation() {
             if (!selectedLayer) return;
-
-            // Save current loop setting and temporarily disable it
             const originalLoop = selectedLayer.loopAnimation;
             selectedLayer.loopAnimation = false;
-
             applyAnimation();
-
-            // Restore original loop setting after animation completes
             setTimeout(() => {
                 selectedLayer.loopAnimation = originalLoop;
             }, selectedLayer.animationDuration * 1000);
@@ -905,24 +934,14 @@
             selectedLayer.animation.stop();
         }
 
-        // Play all animations - now uses each layer's individual settings
+        // Play all animations
         function playAllAnimations() {
             imageLayers.forEach(layer => {
                 if (layer.enableCustomAnimation || layer.specialEffect !== 'none') {
-                    // Stop any existing animation for this layer
                     if (layer.animation) {
                         layer.animation.stop();
                     }
-
-                    // Create and start new animation using the layer's own settings
                     layer.animation = createAnimationForLayer(layer);
-                    console.log('Playing animation for layer:', layer.name, 'with settings:', {
-                        enableCustomAnimation: layer.enableCustomAnimation,
-                        specialEffect: layer.specialEffect,
-                        duration: layer.animationDuration,
-                        speed: layer.animationSpeed,
-                        loop: layer.loopAnimation
-                    });
                 }
             });
         }
@@ -930,11 +949,9 @@
         // Stop all animations
         function stopAllAnimations() {
             imageLayers.forEach(layer => {
-                console.log('Stopping animation for layer:', layer.name);
                 if (layer.animation) {
                     layer.animation.stop();
                 }
-
             });
         }
 
@@ -948,6 +965,7 @@
         function exportAsAR() {
             exportPackage();
         }
+
         function generateHTMLContent() {
             const name = (document.getElementById('projectName').value || 'AR_Project').trim();
             const bgColor = document.getElementById('bgColor').value;
@@ -989,30 +1007,13 @@
             background: #0052a3;
         }
 
-        .ar-info {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-            max-width: 300px;
-        }
     </style>
 </head>
 
 <body>
-    <div class="ar-info">
-        <h3>${name}</h3>
-        <p>Point your camera at a surface to see the AR content</p>
-    </div>
 
     <div class="ar-controls">
-        <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
-        <button onclick="resetPositions()">Reset Positions</button>
     </div>
 
     <a-scene vr-mode-ui="enabled: false" embedded
@@ -1021,6 +1022,12 @@
         background="color: #000000; transparent: true">
 
         <a-assets>`;
+
+            // Add audio asset if exists
+            if (backgroundAudio) {
+                htmlContent += `
+            <audio id="background-audio" src="audio/${backgroundAudio.fileName}" loop autoplay></audio>`;
+            }
 
             // Add image assets
             imageLayers.forEach(layer => {
@@ -1032,7 +1039,6 @@
         </a-assets>
 
         <a-marker type="pattern" url="pattern-${name}-qr-code.patt">`;
-
             // Add each layer as A-Frame entities
             imageLayers.forEach(layer => {
                 const pos = layer.originalPosition;
@@ -1040,12 +1046,10 @@
                 const scale = layer.originalScale;
                 const opacity = layer.originalOpacity;
 
-                // Convert rotation from radians to degrees
                 const rotX = (rot.x * 180 / Math.PI).toFixed(2);
                 const rotY = (rot.y * 180 / Math.PI).toFixed(2);
                 const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
 
-                // Properly escape JSON data for HTML attributes
                 const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
                 const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
 
@@ -1073,6 +1077,34 @@
 
     <script>
     let animationIntervals = [];
+    let markerVisible = false;
+    
+    // Listen for marker events
+    document.querySelector('a-marker').addEventListener('markerFound', function() {
+        markerVisible = true;
+        console.log('Marker found - starting animations and audio');
+        
+        // Start background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
+        }
+        
+        playAllAnimations();
+    });
+    
+    document.querySelector('a-marker').addEventListener('markerLost', function() {
+        markerVisible = false;
+        console.log('Marker lost - stopping animations and audio');
+        
+        // Stop background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.pause();
+        }
+        
+        stopAllAnimations();
+    });
     
     function playAllAnimations() {
         stopAllAnimations();
@@ -1090,6 +1122,11 @@
                 const startTime = Date.now();
                 
                 const interval = setInterval(() => {
+                    if (!markerVisible) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    
                     const currentTime = Date.now();
                     const elapsed = (currentTime - startTime) / 1000 * speed;
                     let progress = (elapsed % duration) / duration;
@@ -1099,20 +1136,20 @@
                         return;
                     }
                     
-                        const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-                        const easedProgress = easeInOut(progress);
+                    const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    const easedProgress = easeInOut(progress);
 
-                        const originalPos = layer.getAttribute('position');
-                        const originalRot = layer.getAttribute('rotation');
-                        const originalScale = layer.getAttribute('scale');
-                        const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
-                        const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
-                        const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
+                    const originalPos = layer.getAttribute('position');
+                    const originalRot = layer.getAttribute('rotation');
+                    const originalScale = layer.getAttribute('scale');
+                    const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
+                    const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
+                    const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
 
-                        let finalX = origX, finalY = origY, finalZ = origZ;
-                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
-                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-                
+                    let finalX = origX, finalY = origY, finalZ = origZ;
+                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    let finalOpacity = 1;
                     
                     if (enableCustom) {
                         try {
@@ -1126,6 +1163,7 @@
                             const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
                             finalScaleX = finalScaleY = finalScaleZ = customScale;
                             
+                            finalOpacity = customStart.opacity + (customEnd.opacity - customStart.opacity) * easedProgress;
                             finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
                         } catch (e) {
                             console.error('Error parsing custom animation data:', e);
@@ -1136,63 +1174,50 @@
                     if (specialEffect !== 'none') {
                         switch (specialEffect) {
                             case 'swingToTarget':
-                                // Add swing rotation effect
                                 const swingFrequency = 8;
                                 const swingAmplitude = (1 - easedProgress) * 90;
                                 const swingAngle = Math.sin(progress * swingFrequency * Math.PI) * swingAmplitude;
-                                finalRotZ += (swingAngle * Math.PI / 180);
-
-                                // If no custom animation, move to a target
-                                if (!layer.enableCustomAnimation) {
+                                finalRotZ += swingAngle;
+                                if (!enableCustom) {
                                     finalX += 5 * easedProgress;
                                 }
                                 break;
 
                             case 'zigzagToTarget':
-                                // Add zigzag movement
                                 const zigzagFrequency = 6;
                                 const zigzagAmplitude = (1 - easedProgress) * 2;
                                 const zigzagOffset = Math.sin(progress * zigzagFrequency * Math.PI) * zigzagAmplitude;
                                 finalX += zigzagOffset;
-
-                                // If no custom animation, move to a target
-                                if (!layer.enableCustomAnimation) {
+                                if (!enableCustom) {
                                     finalX += 5 * easedProgress;
                                     finalY += 3 * easedProgress;
                                 }
                                 break;
 
                             case 'pendulumMove':
-                                // Pendulum swinging
                                 const pendulumAmplitude = 60;
                                 const pendulumAngle = Math.sin(elapsed * 2) * pendulumAmplitude;
-                                finalRotZ += (pendulumAngle * Math.PI / 180);
+                                finalRotZ += pendulumAngle;
                                 break;
 
                             case 'waveToTarget':
-                                // Wave effect
                                 const waveAmplitude = 1.5;
                                 const waveFrequency = 4;
                                 const waveY = Math.sin(progress * waveFrequency * Math.PI) * waveAmplitude * (1 - easedProgress);
                                 finalY += waveY;
                                 finalRotZ += (waveY * 0.2);
-
-                                // If no custom animation, move to a target
-                                if (!layer.enableCustomAnimation) {
+                                if (!enableCustom) {
                                     finalX += 4 * easedProgress;
                                     finalY += 2 * easedProgress;
                                 }
                                 break;
 
                             case 'elasticMove':
-                                // Elastic effect
                                 const scaleElastic = 1 + Math.sin(progress * 10) * 0.1 * (1 - progress);
                                 finalScaleX *= scaleElastic;
                                 finalScaleY *= scaleElastic;
                                 finalScaleZ *= scaleElastic;
-
-                                // If no custom animation, move to a target with elastic easing
-                                if (!layer.enableCustomAnimation) {
+                                if (!enableCustom) {
                                     const elasticEase = (t) => {
                                         if (t === 0) return 0;
                                         if (t === 1) return 1;
@@ -1229,7 +1254,7 @@
                                 finalScaleZ *= scaleInFactor;
                                 break;
                             case 'rotate':
-                                finalRotZ += easedProgress * Math.PI * 2;
+                                finalRotZ += easedProgress * 360;
                                 break;
                             case 'bounce':
                                 const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
@@ -1248,6 +1273,7 @@
                     layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                     layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                     layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
+                    layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
                     
                 }, 16); // ~60fps
                 
@@ -1259,21 +1285,6 @@
     function stopAllAnimations() {
         animationIntervals.forEach(interval => clearInterval(interval));
         animationIntervals = [];
-    }
-    
-    function resetPositions() {
-        stopAllAnimations();
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        layers.forEach(layer => {
-            // Reset to original attributes
-            const originalPos = layer.getAttribute('position');
-            const originalRot = layer.getAttribute('rotation');
-            const originalScale = layer.getAttribute('scale');
-            layer.setAttribute('position', originalPos);
-            layer.setAttribute('rotation', originalRot);
-            layer.setAttribute('scale', originalScale);
-            layer.setAttribute('material', 'transparent: true; opacity: 1');
-        });
     }
     <\/script>
 </body>
@@ -1287,6 +1298,8 @@
             const zip = new JSZip();
 
             zip.file(name + '.html', generateHTMLContent());
+            
+            // Add images folder
             const imageFiles = zip.folder('images');
             for (const layer of imageLayers) {
                 if (layer.texture.image && layer.texture.image.src) {
@@ -1303,6 +1316,13 @@
                 }
             }
 
+            // Add audio folder if audio exists
+            if (backgroundAudio) {
+                const audioFiles = zip.folder('audio');
+                audioFiles.file(backgroundAudio.fileName, backgroundAudio.blob);
+            }
+
+            // Generate QR code if URL provided
             const url = document.getElementById('websiteUrl').value.trim();
             if (url) {
                 try {
@@ -1310,7 +1330,6 @@
                     qr.addData(url);
                     qr.make();
 
-                    // Create canvas for QR code
                     const qrCanvas = document.createElement('canvas');
                     const size = 512;
                     qrCanvas.width = size;
@@ -1320,11 +1339,9 @@
                     const moduleCount = qr.getModuleCount();
                     const moduleSize = size / moduleCount;
 
-                    // Fill white background
                     ctx.fillStyle = '#FFFFFF';
                     ctx.fillRect(0, 0, size, size);
 
-                    // Draw black modules
                     ctx.fillStyle = '#000000';
                     for (let row = 0; row < moduleCount; row++) {
                         for (let col = 0; col < moduleCount; col++) {
@@ -1339,7 +1356,7 @@
 
                     zip.file(name + '-qr-code.png', qrBlob);
                 } catch (error) {
-                    console.error('Error generating QR code for package:', error);
+                    console.error('Error generating QR code:', error);
                 }
             }
 
