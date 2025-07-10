@@ -60,7 +60,7 @@
             <a-plane id="layer-0" src="#img-0" position="0.00 0.00 0.00" rotation="0.00 0.00 0.00"
                 scale="1.00 1.00 1.00" material="transparent: true; opacity: 1.00" data-animation-enabled="true"
                 data-special-effect="pendulumMove" data-animation-speed="1" data-animation-duration="2"
-                data-loop-animation="false"
+                data-loop-animation="true"
                 data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:5,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
                 data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:5,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
             </a-plane>
@@ -80,6 +80,11 @@
         let animationIntervals = [];
         let markerVisible = false;
 
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
+        }
+
         document.querySelector('a-marker').addEventListener('markerFound', function () {
             markerVisible = true;
             console.log('Marker found - starting animations and audio');
@@ -92,7 +97,7 @@
 
         document.querySelector('a-marker').addEventListener('markerLost', function () {
             markerVisible = false;
-            console.log('Marker lost - stopping animations and audio');
+            console.log('Marker lost - stopping animations');
         });
 
         function playAllAnimations() {
