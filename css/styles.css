@@ -1,0 +1,133 @@
+      body {
+          margin: 0;
+          padding: 0;
+          font-family: Arial, sans-serif;
+          overflow: hidden;
+          background: #222;
+          color: #fff;
+      }
+
+      #container {
+          position: relative;
+          width: 100vw;
+          height: 100vh;
+      }
+
+      #controls {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          width: 300px;
+          max-height: 90vh;
+          overflow-y: auto;
+          background: rgba(0, 0, 0, 0.8);
+          padding: 20px;
+          border-radius: 10px;
+          border: 1px solid #444;
+          z-index: 100;
+      }
+
+      .control-group {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(140px, 1fr));
+          gap: 6px;
+          max-width: 300px;
+          margin-bottom: 15px;
+      }
+
+      .control-group label {
+          display: block;
+          margin-bottom: 5px;
+          font-size: 12px;
+          color: #ccc;
+      }
+
+      .control-group input[type="range"] {
+          width: 100%;
+          margin-bottom: 10px;
+      }
+
+      .control-group input[type="text"],
+      .control-group input[type="color"],
+      .control-group select {
+          width: 100%;
+          padding: 5px;
+          border: 1px solid #555;
+          background: #333;
+          color: #fff;
+          border-radius: 3px;
+      }
+
+      .control-group button {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 8px 15px;
+          margin: 0;
+          border: none;
+          background: #0066cc;
+          color: #fff;
+          border-radius: 3px;
+          font-size: 12px;
+          cursor: pointer;
+      }
+
+      .control-group button:hover {
+          background: #0052a3;
+      }
+
+      .layer-item {
+          padding: 8px;
+          margin: 5px 0;
+          background: #333;
+          border-radius: 5px;
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border: 2px solid transparent;
+      }
+
+      .layer-item.selected {
+          border-color: #0066cc;
+          background: #444;
+      }
+
+      .delete-btn {
+          background: #cc0000 !important;
+          color: white;
+          border: none;
+          padding: 2px 8px;
+          border-radius: 3px;
+          cursor: pointer;
+      }
+
+      .delete-btn:hover {
+          background: #aa0000 !important;
+      }
+
+      .animation-controls {
+          border-top: 1px solid #555;
+          padding-top: 15px;
+          margin-top: 15px;
+      }
+
+      .special-effect-controls {
+          border: 1px solid #444;
+          padding: 10px;
+          margin-top: 10px;
+          border-radius: 5px;
+          background: rgba(0, 0, 0, 0.3);
+      }
+
+      h3,
+      h4,
+      h5 {
+          margin: 0 0 10px 0;
+          color: #fff;
+      }
+
+      .audio-preview {
+          max-width: 100%;
+          margin-top: 10px;
+          border-radius: 5px;
+      }
