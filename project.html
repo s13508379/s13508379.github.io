@@ -116,7 +116,8 @@
             stopAllAnimations();
         });
         function playAllAnimations() {
-
+            stopAllAnimations();
+            const layers = document.querySelectorAll('[id^="layer-"]');
             const bases = {};
             layers.forEach(layer => {
                 bases[layer.id] = {
@@ -128,8 +129,7 @@
             });
 
 
-            stopAllAnimations();
-            const layers = document.querySelectorAll('[id^="layer-"]');
+
             layers.forEach(layer => {
                 const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
                 const specialEffect = layer.getAttribute('data-special-effect');
