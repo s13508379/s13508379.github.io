@@ -110,7 +110,19 @@
         function playAllAnimations() {
             stopAllAnimations();
 
+
             const layers = document.querySelectorAll('[id^="layer-"]');
+            const bases = {};
+            layers.forEach(layer => {
+                bases[layer.id] = {
+                    position: layer.getAttribute('position'),
+                    rotation: layer.getAttribute('rotation'),
+                    scale: layer.getAttribute('scale'),
+                    opacity: 1
+                };
+            });
+
+
             layers.forEach(layer => {
                 const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
                 const specialEffect = layer.getAttribute('data-special-effect');
@@ -135,16 +147,12 @@
                         const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
                         const easedProgress = easeInOut(progress);
 
-                        const originalPos = layer.getAttribute('position');
-                        const originalRot = layer.getAttribute('rotation');
-                        const originalScale = layer.getAttribute('scale');
-                        const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
-                        const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
-                        const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
+                        const base = bases[layer.id];
 
-                        let finalX = origX, finalY = origY, finalZ = origZ;
-                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
-                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                        let finalX = base.pos.x, finalY = base.pos.y, finalZ = base.pos.z;
+                        let finalRotX = base.rot.x, finalRotY = base.rot.y, finalRotZ = base.rot.z;
+                        let finalScaleX = base.scale.x, finalScaleY = base.scale.y, finalScaleZ = base.scale.z;
+                        let finalOpacity = base.opacity;
 
 
                         if (enableCustom) {
