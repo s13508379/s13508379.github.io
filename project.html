@@ -34,31 +34,15 @@
         .ar-controls button:hover {
             background: #0052a3;
         }
-
-        .ar-info {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-            max-width: 300px;
-        }
+            
     </style>
 </head>
 
 <body>
-    <div class="ar-info">
-        <h3>project</h3>
-        <p>Point your camera at a surface to see the AR content</p>
-    </div>
 
     <div class="ar-controls">
         <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
-        <button onclick="resetPositions()">Reset Positions</button>
     </div>
 
     <a-scene vr-mode-ui="enabled: false" embedded
@@ -67,8 +51,9 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="images/cat.png.png" crossorigin="anonymous">
-            <img id="img-1" src="images/allimg.png" crossorigin="anonymous">
+            <audio id="background-audio" src="audio/sound.mp3" loop autoplay></audio>
+            <img id="img-0" src="images/allimg.png.png" crossorigin="anonymous">
+            <img id="img-1" src="images/cat.png.png" crossorigin="anonymous">
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
@@ -78,25 +63,25 @@
                 scale="1.00 1.00 1.00"
                 material="transparent: true; opacity: 1.00"
                 data-animation-enabled="true" 
-                data-special-effect="zigzagToTarget"
-                data-animation-speed="1.5" 
-                data-animation-duration="2.6"
-                data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:2,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:2,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
+                data-special-effect="pendulumMove"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="false"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:5,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:5,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
             </a-plane>
             <a-plane id="layer-1" src="#img-1"
-                position="-0.30 4.00 0.00"
+                position="0.00 0.90 1.70"
                 rotation="0.00 0.00 0.00"
-                scale="3.40 3.40 3.40"
+                scale="1.00 1.00 1.00"
                 material="transparent: true; opacity: 1.00"
-                data-animation-enabled="true" 
+                data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
                 data-animation-duration="2"
-                data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:0.8,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:5,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0.2,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:5,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
+                data-loop-animation="false"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}">
             </a-plane>
         </a-marker>
 
@@ -105,6 +90,33 @@
 
     <script>
     let animationIntervals = [];
+    let markerVisible = false;
+
+    document.querySelector('a-marker').addEventListener('markerFound', function() {
+        markerVisible = true;
+        console.log('Marker found - starting animations and audio');
+        
+        // Start background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
+        }
+        
+        playAllAnimations();
+    });
+
+       
+    document.querySelector('a-marker').addEventListener('markerLost', function() {
+        markerVisible = false;
+        console.log('Marker lost - stopping animations and audio');
+        
+        // Stop background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.pause();
+        }
+        
+    });
     
     function playAllAnimations() {
         stopAllAnimations();
@@ -293,20 +305,6 @@
         animationIntervals = [];
     }
     
-    function resetPositions() {
-        stopAllAnimations();
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        layers.forEach(layer => {
-            // Reset to original attributes
-            const originalPos = layer.getAttribute('position');
-            const originalRot = layer.getAttribute('rotation');
-            const originalScale = layer.getAttribute('scale');
-            layer.setAttribute('position', originalPos);
-            layer.setAttribute('rotation', originalRot);
-            layer.setAttribute('scale', originalScale);
-            layer.setAttribute('material', 'transparent: true; opacity: 1');
-        });
-    }
     </script>
 </body>
 </html>

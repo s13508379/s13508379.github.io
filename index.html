@@ -323,7 +323,7 @@
         let imageLayers = [];
         let selectedLayer = null;
         let layerCounter = 0;
-        let animationMixer;
+        let backgroundAudio = null;
         let clock;
 
         // Initialize Three.js scene
@@ -1033,31 +1033,15 @@
         .ar-controls button:hover {
             background: #0052a3;
         }
-
-        .ar-info {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-            max-width: 300px;
-        }
+            
     </style>
 </head>
 
 <body>
-    <div class="ar-info">
-        <h3>${name}</h3>
-        <p>Point your camera at a surface to see the AR content</p>
-    </div>
 
     <div class="ar-controls">
         <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
-        <button onclick="resetPositions()">Reset Positions</button>
     </div>
 
     <a-scene vr-mode-ui="enabled: false" embedded
@@ -1066,6 +1050,12 @@
         background="color: #000000; transparent: true">
 
         <a-assets>`;
+
+            // Add audio asset if exists
+            if (backgroundAudio) {
+                htmlContent += `
+            <audio id="background-audio" src="audio/${backgroundAudio.fileName}" loop autoplay></audio>`;
+            }
 
             // Add image assets
             imageLayers.forEach(layer => {
@@ -1118,6 +1108,33 @@
 
     <script>
     let animationIntervals = [];
+    let markerVisible = false;
+
+    document.querySelector('a-marker').addEventListener('markerFound', function() {
+        markerVisible = true;
+        console.log('Marker found - starting animations and audio');
+        
+        // Start background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
+        }
+        
+        playAllAnimations();
+    });
+
+       
+    document.querySelector('a-marker').addEventListener('markerLost', function() {
+        markerVisible = false;
+        console.log('Marker lost - stopping animations and audio');
+        
+        // Stop background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.pause();
+        }
+        
+    });
     
     function playAllAnimations() {
         stopAllAnimations();
@@ -1306,20 +1323,6 @@
         animationIntervals = [];
     }
     
-    function resetPositions() {
-        stopAllAnimations();
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        layers.forEach(layer => {
-            // Reset to original attributes
-            const originalPos = layer.getAttribute('position');
-            const originalRot = layer.getAttribute('rotation');
-            const originalScale = layer.getAttribute('scale');
-            layer.setAttribute('position', originalPos);
-            layer.setAttribute('rotation', originalRot);
-            layer.setAttribute('scale', originalScale);
-            layer.setAttribute('material', 'transparent: true; opacity: 1');
-        });
-    }
     <\/script>
 </body>
 </html>`;
