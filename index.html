@@ -119,6 +119,12 @@
             margin: 0 0 10px 0;
             color: #fff;
         }
+
+        .audio-preview {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 
@@ -141,6 +147,13 @@
             <div class="control-group">
                 <label>Background Color:</label>
                 <input type="color" id="bgColor" value="#000000" onchange="updateBackgroundColor()">
+            </div>
+
+            <div class="control-group">
+                <label>Add MP3 Background Audio:</label>
+                <input type="file" id="audioFile" accept="audio/mp3,audio/wav,audio/ogg">
+                <button onclick="addAudioBackground()">Set Audio Background</button>
+                <audio id="audioPreview" class="audio-preview" style="display: none;" controls loop></audio>
             </div>
 
             <div class="control-group">
@@ -387,6 +400,41 @@
                 camera.position.multiplyScalar(scale);
                 camera.position.clampLength(1, 50);
             });
+        }
+
+        function addAudioBackground() {
+            const fileInput = document.getElementById('audioFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select an audio file first');
+                return;
+            }
+
+            if (!file.type.startsWith('audio/')) {
+                alert('Please select a valid audio file');
+                return;
+            }
+
+            const audio = document.createElement('audio');
+            const preview = document.getElementById('audioPreview');
+
+            audio.src = URL.createObjectURL(file);
+            preview.src = audio.src;
+            preview.style.display = 'block';
+
+            audio.loop = true;
+            audio.volume = 0.5;
+
+            // Store audio blob for export
+            audioBlob = file;
+            backgroundAudio = {
+                element: audio,
+                fileName: file.name,
+                blob: file
+            };
+
+            fileInput.value = '';
         }
 
         // Update background color
@@ -944,10 +992,7 @@
             camera.lookAt(0, 0, 0);
         }
 
-        // Export as AR.js
-        function exportAsAR() {
-            exportPackage();
-        }
+
         function generateHTMLContent() {
             const name = (document.getElementById('projectName').value || 'AR_Project').trim();
             const bgColor = document.getElementById('bgColor').value;
@@ -1282,7 +1327,7 @@
             return htmlContent;
         }
 
-        async function exportPackage() {
+        async function exportAsAR() {
             const name = (document.getElementById('projectName').value || 'AR_Project').trim();
             const zip = new JSZip();
 
@@ -1301,6 +1346,11 @@
                     });
                     imageFiles.file(layer.name, imgBlob);
                 }
+            }
+
+            if (backgroundAudio) {
+                const audioFiles = zip.folder('audio');
+                audioFiles.file(backgroundAudio.fileName, backgroundAudio.blob);
             }
 
             const url = document.getElementById('websiteUrl').value.trim();
