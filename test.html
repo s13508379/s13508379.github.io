@@ -816,7 +816,7 @@
         // Update special effect settings
         function updateSpecialEffectSettings() {
             if (!selectedLayer) return;
-              
+
             const settings = selectedLayer.specialEffectSettings;
             settings.swingRange = parseFloat(document.getElementById('swingRange').value);
             settings.swingFreq = parseFloat(document.getElementById('swingFreq').value);
@@ -1342,16 +1342,29 @@
 
     document.querySelector('a-marker').addEventListener('markerFound', function() {
         markerVisible = true;
-        console.log('Marker found - starting animations');
+        console.log('Marker found - starting animations and audio');
+        
+        // Start background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
+        }
+        
         playAllAnimations();
     });
 
+       
     document.querySelector('a-marker').addEventListener('markerLost', function() {
         markerVisible = false;
-        console.log('Marker lost - stopping animations');
-        stopAllAnimations();
+        console.log('Marker lost - stopping animations and audio');
+        
+        // Stop background audio if exists
+        const audio = document.querySelector('#background-audio');
+        if (audio) {
+            audio.pause();
+        }
+        
     });
-    
     function playAllAnimations() {
         const layers = document.querySelectorAll('[id^="layer-"]');
         layers.forEach(layer => {
