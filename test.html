@@ -53,7 +53,6 @@
 
         .control-group input[type="text"],
         .control-group input[type="color"],
-        .control-group input[type="url"],
         .control-group select {
             width: 100%;
             padding: 5px;
@@ -112,6 +111,14 @@
             border-top: 1px solid #555;
             padding-top: 15px;
             margin-top: 15px;
+        }
+
+        .special-effect-controls {
+            border: 1px solid #444;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.3);
         }
 
         h3,
@@ -215,12 +222,111 @@
                         <option value="rotate">Rotate</option>
                         <option value="bounce">Bounce</option>
                         <option value="spiral">Spiral</option>
-                        <option value="swingToTarget">Swing to Target (90°↔0°)</option>
-                        <option value="zigzagToTarget">Zigzag to Target (L↔R)</option>
+                        <option value="swingToTarget">Swing to Target</option>
+                        <option value="zigzagToTarget">Zigzag to Target</option>
                         <option value="pendulumMove">Pendulum Movement</option>
                         <option value="waveToTarget">Wave to Target</option>
                         <option value="elasticMove">Elastic Movement</option>
                     </select>
+                </div>
+
+                <div class="special-effect-controls" id="specialEffectControls" style="display: none;">
+                    <h5>Special Effect Settings</h5>
+
+                    <div id="swingControls" style="display: none;">
+                        <label>Swing Range (degrees): <span id="swingRangeValue">90</span></label>
+                        <br>
+                        <input type="range" id="swingRange" min="10" max="180" step="5" value="90"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Swing Frequency: <span id="swingFreqValue">8</span></label>
+                        <br>
+                        <input type="range" id="swingFreq" min="2" max="16" step="1" value="8"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target Distance X: <span id="swingTargetXValue">5</span></label>
+                        <br>
+                        <input type="range" id="swingTargetX" min="0" max="10" step="0.5" value="5"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="zigzagControls" style="display: none;">
+                        <label>Zigzag Amplitude: <span id="zigzagAmpValue">2</span></label>
+                        <input type="range" id="zigzagAmp" min="0.5" max="5" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Zigzag Frequency: <span id="zigzagFreqValue">6</span></label>
+                        <input type="range" id="zigzagFreq" min="2" max="12" step="1" value="6"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Target X: <span id="zigzagTargetXValue">5</span></label>
+                        <input type="range" id="zigzagTargetX" min="0" max="10" step="0.5" value="5"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Target Y: <span id="zigzagTargetYValue">3</span></label>
+                        <input type="range" id="zigzagTargetY" min="0" max="10" step="0.5" value="3"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="pendulumControls" style="display: none;">
+                        <label>Pendulum Range (degrees): <span id="pendulumRangeValue">60</span></label>
+                        <input type="range" id="pendulumRange" min="10" max="120" step="5" value="60"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Pendulum Speed: <span id="pendulumSpeedValue">2</span></label>
+                        <input type="range" id="pendulumSpeed" min="0.5" max="5" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="waveControls" style="display: none;">
+                        <label>Wave Amplitude: <span id="waveAmpValue">1.5</span></label>
+                        <input type="range" id="waveAmp" min="0.5" max="5" step="0.1" value="1.5"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Wave Frequency: <span id="waveFreqValue">4</span></label>
+                        <input type="range" id="waveFreq" min="1" max="10" step="1" value="4"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Target X: <span id="waveTargetXValue">4</span></label>
+                        <input type="range" id="waveTargetX" min="0" max="10" step="0.5" value="4"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Target Y: <span id="waveTargetYValue">2</span></label>
+                        <input type="range" id="waveTargetY" min="0" max="10" step="0.5" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="bounceControls" style="display: none;">
+                        <label>Bounce Height: <span id="bounceHeightValue">2</span></label>
+                        <input type="range" id="bounceHeight" min="0.5" max="10" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Bounce Frequency: <span id="bounceFreqValue">4</span></label>
+                        <input type="range" id="bounceFreq" min="1" max="10" step="1" value="4"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="spiralControls" style="display: none;">
+                        <label>Spiral Radius: <span id="spiralRadiusValue">3</span></label>
+                        <input type="range" id="spiralRadius" min="1" max="10" step="0.1" value="3"
+                            oninput="updateSpecialEffectSettings()">
+
+                        <label>Spiral Rotations: <span id="spiralRotationsValue">6</span></label>
+                        <input type="range" id="spiralRotations" min="1" max="15" step="1" value="6"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="slideControls" style="display: none;">
+                        <label>Slide Distance: <span id="slideDistanceValue">10</span></label>
+                        <input type="range" id="slideDistance" min="2" max="20" step="0.5" value="10"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="rotateControls" style="display: none;">
+                        <label>Rotation Cycles: <span id="rotateCyclesValue">1</span></label>
+                        <input type="range" id="rotateCycles" min="0.25" max="5" step="0.25" value="1"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
                 </div>
 
                 <div class="control-group" id="customAnimationControls" style="display: none;">
@@ -323,10 +429,8 @@
         let imageLayers = [];
         let selectedLayer = null;
         let layerCounter = 0;
-        let animationMixer;
-        let clock;
         let backgroundAudio = null;
-        let audioBlob = null;
+        let clock;
 
         // Initialize Three.js scene
         function initScene() {
@@ -404,7 +508,6 @@
             });
         }
 
-        // Add audio background
         function addAudioBackground() {
             const fileInput = document.getElementById('audioFile');
             const file = fileInput.files[0];
@@ -421,14 +524,14 @@
 
             const audio = document.createElement('audio');
             const preview = document.getElementById('audioPreview');
-            
+
             audio.src = URL.createObjectURL(file);
             preview.src = audio.src;
             preview.style.display = 'block';
-            
+
             audio.loop = true;
             audio.volume = 0.5;
-            
+
             // Store audio blob for export
             audioBlob = file;
             backgroundAudio = {
@@ -494,6 +597,27 @@
                         customAnimation: {
                             start: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotation: 0 },
                             end: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotation: 0 }
+                        },
+                        specialEffectSettings: {
+                            swingRange: 90,
+                            swingFreq: 8,
+                            swingTargetX: 5,
+                            zigzagAmp: 2,
+                            zigzagFreq: 6,
+                            zigzagTargetX: 5,
+                            zigzagTargetY: 3,
+                            pendulumRange: 60,
+                            pendulumSpeed: 2,
+                            waveAmp: 1.5,
+                            waveFreq: 4,
+                            waveTargetX: 4,
+                            waveTargetY: 2,
+                            bounceHeight: 2,
+                            bounceFreq: 4,
+                            spiralRadius: 3,
+                            spiralRotations: 6,
+                            slideDistance: 10,
+                            rotateCycles: 1
                         }
                     };
 
@@ -594,7 +718,30 @@
             document.getElementById('endOpacity').value = custom.end.opacity;
             document.getElementById('endRotation').value = custom.end.rotation;
 
+            // Update special effect settings
+            const settings = layer.specialEffectSettings;
+            document.getElementById('swingRange').value = settings.swingRange;
+            document.getElementById('swingFreq').value = settings.swingFreq;
+            document.getElementById('swingTargetX').value = settings.swingTargetX;
+            document.getElementById('zigzagAmp').value = settings.zigzagAmp;
+            document.getElementById('zigzagFreq').value = settings.zigzagFreq;
+            document.getElementById('zigzagTargetX').value = settings.zigzagTargetX;
+            document.getElementById('zigzagTargetY').value = settings.zigzagTargetY;
+            document.getElementById('pendulumRange').value = settings.pendulumRange;
+            document.getElementById('pendulumSpeed').value = settings.pendulumSpeed;
+            document.getElementById('waveAmp').value = settings.waveAmp;
+            document.getElementById('waveFreq').value = settings.waveFreq;
+            document.getElementById('waveTargetX').value = settings.waveTargetX;
+            document.getElementById('waveTargetY').value = settings.waveTargetY;
+            document.getElementById('bounceHeight').value = settings.bounceHeight;
+            document.getElementById('bounceFreq').value = settings.bounceFreq;
+            document.getElementById('spiralRadius').value = settings.spiralRadius;
+            document.getElementById('spiralRotations').value = settings.spiralRotations;
+            document.getElementById('slideDistance').value = settings.slideDistance;
+            document.getElementById('rotateCycles').value = settings.rotateCycles;
+
             toggleCustomControls();
+            updateSpecialEffect();
             updateControlValues();
         }
 
@@ -609,11 +756,89 @@
             }
         }
 
-        // Update special effect
+        // Update special effect and show relevant controls
         function updateSpecialEffect() {
-            if (selectedLayer) {
-                selectedLayer.specialEffect = document.getElementById('specialEffect').value;
+            const specialEffect = document.getElementById('specialEffect').value;
+            const specialControls = document.getElementById('specialEffectControls');
+
+            // Hide all effect-specific controls
+            document.getElementById('swingControls').style.display = 'none';
+            document.getElementById('zigzagControls').style.display = 'none';
+            document.getElementById('pendulumControls').style.display = 'none';
+            document.getElementById('waveControls').style.display = 'none';
+            document.getElementById('bounceControls').style.display = 'none';
+            document.getElementById('spiralControls').style.display = 'none';
+            document.getElementById('slideControls').style.display = 'none';
+            document.getElementById('rotateControls').style.display = 'none';
+
+            if (specialEffect === 'none') {
+                specialControls.style.display = 'none';
+            } else {
+                specialControls.style.display = 'block';
+
+                // Show relevant controls based on effect
+                switch (specialEffect) {
+                    case 'swingToTarget':
+                        document.getElementById('swingControls').style.display = 'block';
+                        break;
+                    case 'zigzagToTarget':
+                        document.getElementById('zigzagControls').style.display = 'block';
+                        break;
+                    case 'pendulumMove':
+                        document.getElementById('pendulumControls').style.display = 'block';
+                        break;
+                    case 'waveToTarget':
+                        document.getElementById('waveControls').style.display = 'block';
+                        break;
+                    case 'bounce':
+                        document.getElementById('bounceControls').style.display = 'block';
+                        break;
+                    case 'spiral':
+                        document.getElementById('spiralControls').style.display = 'block';
+                        break;
+                    case 'slideDown':
+                    case 'slideUp':
+                    case 'slideLeft':
+                    case 'slideRight':
+                        document.getElementById('slideControls').style.display = 'block';
+                        break;
+                    case 'rotate':
+                        document.getElementById('rotateControls').style.display = 'block';
+                        break;
+                }
             }
+
+            if (selectedLayer) {
+                selectedLayer.specialEffect = specialEffect;
+            }
+        }
+
+        // Update special effect settings
+        function updateSpecialEffectSettings() {
+            if (!selectedLayer) return;
+              
+            const settings = selectedLayer.specialEffectSettings;
+            settings.swingRange = parseFloat(document.getElementById('swingRange').value);
+            settings.swingFreq = parseFloat(document.getElementById('swingFreq').value);
+            settings.swingTargetX = parseFloat(document.getElementById('swingTargetX').value);
+            settings.zigzagAmp = parseFloat(document.getElementById('zigzagAmp').value);
+            settings.zigzagFreq = parseFloat(document.getElementById('zigzagFreq').value);
+            settings.zigzagTargetX = parseFloat(document.getElementById('zigzagTargetX').value);
+            settings.zigzagTargetY = parseFloat(document.getElementById('zigzagTargetY').value);
+            settings.pendulumRange = parseFloat(document.getElementById('pendulumRange').value);
+            settings.pendulumSpeed = parseFloat(document.getElementById('pendulumSpeed').value);
+            settings.waveAmp = parseFloat(document.getElementById('waveAmp').value);
+            settings.waveFreq = parseFloat(document.getElementById('waveFreq').value);
+            settings.waveTargetX = parseFloat(document.getElementById('waveTargetX').value);
+            settings.waveTargetY = parseFloat(document.getElementById('waveTargetY').value);
+            settings.bounceHeight = parseFloat(document.getElementById('bounceHeight').value);
+            settings.bounceFreq = parseFloat(document.getElementById('bounceFreq').value);
+            settings.spiralRadius = parseFloat(document.getElementById('spiralRadius').value);
+            settings.spiralRotations = parseFloat(document.getElementById('spiralRotations').value);
+            settings.slideDistance = parseFloat(document.getElementById('slideDistance').value);
+            settings.rotateCycles = parseFloat(document.getElementById('rotateCycles').value);
+
+            updateControlValues();
         }
 
         // Update control value displays
@@ -630,6 +855,30 @@
             document.getElementById('durationValue').textContent = document.getElementById('animationDuration').value;
 
             updateCustomValues();
+            updateSpecialEffectValues();
+        }
+
+        // Update special effect value displays
+        function updateSpecialEffectValues() {
+            document.getElementById('swingRangeValue').textContent = document.getElementById('swingRange').value;
+            document.getElementById('swingFreqValue').textContent = document.getElementById('swingFreq').value;
+            document.getElementById('swingTargetXValue').textContent = document.getElementById('swingTargetX').value;
+            document.getElementById('zigzagAmpValue').textContent = document.getElementById('zigzagAmp').value;
+            document.getElementById('zigzagFreqValue').textContent = document.getElementById('zigzagFreq').value;
+            document.getElementById('zigzagTargetXValue').textContent = document.getElementById('zigzagTargetX').value;
+            document.getElementById('zigzagTargetYValue').textContent = document.getElementById('zigzagTargetY').value;
+            document.getElementById('pendulumRangeValue').textContent = document.getElementById('pendulumRange').value;
+            document.getElementById('pendulumSpeedValue').textContent = document.getElementById('pendulumSpeed').value;
+            document.getElementById('waveAmpValue').textContent = document.getElementById('waveAmp').value;
+            document.getElementById('waveFreqValue').textContent = document.getElementById('waveFreq').value;
+            document.getElementById('waveTargetXValue').textContent = document.getElementById('waveTargetX').value;
+            document.getElementById('waveTargetYValue').textContent = document.getElementById('waveTargetY').value;
+            document.getElementById('bounceHeightValue').textContent = document.getElementById('bounceHeight').value;
+            document.getElementById('bounceFreqValue').textContent = document.getElementById('bounceFreq').value;
+            document.getElementById('spiralRadiusValue').textContent = document.getElementById('spiralRadius').value;
+            document.getElementById('spiralRotationsValue').textContent = document.getElementById('spiralRotations').value;
+            document.getElementById('slideDistanceValue').textContent = document.getElementById('slideDistance').value;
+            document.getElementById('rotateCyclesValue').textContent = document.getElementById('rotateCycles').value;
         }
 
         // Update custom animation values
@@ -751,6 +1000,7 @@
             const duration = layer.animationDuration;
             const speed = layer.animationSpeed;
             const loop = layer.loopAnimation;
+            const settings = layer.specialEffectSettings;
 
             const startTime = Date.now();
             return {
@@ -799,45 +1049,43 @@
                         finalRotZ = (start.rotation + (end.rotation - start.rotation) * easedProgress) * Math.PI / 180;
                     }
 
-                    // Apply special effects on top of custom animation
+                    // Apply special effects on top of custom animation with user-controlled settings
                     if (layer.specialEffect !== 'none') {
                         switch (layer.specialEffect) {
                             case 'swingToTarget':
-                                const swingFrequency = 8;
-                                const swingAmplitude = (1 - easedProgress) * 90;
-                                const swingAngle = Math.sin(progress * swingFrequency * Math.PI) * swingAmplitude;
+                                const swingAmplitude = (1 - easedProgress) * settings.swingRange;
+                                const swingAngle = Math.sin(progress * settings.swingFreq * Math.PI) * swingAmplitude;
                                 finalRotZ += (swingAngle * Math.PI / 180);
+
                                 if (!layer.enableCustomAnimation) {
-                                    finalX += 5 * easedProgress;
+                                    finalX += settings.swingTargetX * easedProgress;
                                 }
                                 break;
 
                             case 'zigzagToTarget':
-                                const zigzagFrequency = 6;
-                                const zigzagAmplitude = (1 - easedProgress) * 2;
-                                const zigzagOffset = Math.sin(progress * zigzagFrequency * Math.PI) * zigzagAmplitude;
+                                const zigzagAmplitude = (1 - easedProgress) * settings.zigzagAmp;
+                                const zigzagOffset = Math.sin(progress * settings.zigzagFreq * Math.PI) * zigzagAmplitude;
                                 finalX += zigzagOffset;
+
                                 if (!layer.enableCustomAnimation) {
-                                    finalX += 5 * easedProgress;
-                                    finalY += 3 * easedProgress;
+                                    finalX += settings.zigzagTargetX * easedProgress;
+                                    finalY += settings.zigzagTargetY * easedProgress;
                                 }
                                 break;
 
                             case 'pendulumMove':
-                                const pendulumAmplitude = 60;
-                                const pendulumAngle = Math.sin(elapsed * 2) * pendulumAmplitude;
+                                const pendulumAngle = Math.sin(elapsed * settings.pendulumSpeed) * settings.pendulumRange;
                                 finalRotZ += (pendulumAngle * Math.PI / 180);
                                 break;
 
                             case 'waveToTarget':
-                                const waveAmplitude = 1.5;
-                                const waveFrequency = 4;
-                                const waveY = Math.sin(progress * waveFrequency * Math.PI) * waveAmplitude * (1 - easedProgress);
+                                const waveY = Math.sin(progress * settings.waveFreq * Math.PI) * settings.waveAmp * (1 - easedProgress);
                                 finalY += waveY;
                                 finalRotZ += (waveY * 0.2);
+
                                 if (!layer.enableCustomAnimation) {
-                                    finalX += 4 * easedProgress;
-                                    finalY += 2 * easedProgress;
+                                    finalX += settings.waveTargetX * easedProgress;
+                                    finalY += settings.waveTargetY * easedProgress;
                                 }
                                 break;
 
@@ -846,6 +1094,7 @@
                                 finalScaleX *= scaleElastic;
                                 finalScaleY *= scaleElastic;
                                 finalScaleZ *= scaleElastic;
+
                                 if (!layer.enableCustomAnimation) {
                                     const elasticEase = (t) => {
                                         if (t === 0) return 0;
@@ -862,16 +1111,16 @@
                                 break;
 
                             case 'slideDown':
-                                finalY += 10 * (1 - easedProgress);
+                                finalY += settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'slideUp':
-                                finalY -= 10 * (1 - easedProgress);
+                                finalY -= settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'slideLeft':
-                                finalX += 10 * (1 - easedProgress);
+                                finalX += settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'slideRight':
-                                finalX -= 10 * (1 - easedProgress);
+                                finalX -= settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'fadeIn':
                                 finalOpacity *= easedProgress;
@@ -883,15 +1132,15 @@
                                 finalScaleZ *= scaleInFactor;
                                 break;
                             case 'rotate':
-                                finalRotZ += easedProgress * Math.PI * 2;
+                                finalRotZ += easedProgress * Math.PI * 2 * settings.rotateCycles;
                                 break;
                             case 'bounce':
-                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
+                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * settings.bounceFreq)) * settings.bounceHeight;
                                 finalY += bounceY;
                                 break;
                             case 'spiral':
-                                const spiralRadius = 3 * (1 - easedProgress);
-                                const spiralAngle = easedProgress * Math.PI * 6;
+                                const spiralRadius = settings.spiralRadius * (1 - easedProgress);
+                                const spiralAngle = easedProgress * Math.PI * settings.spiralRotations;
                                 finalX += spiralRadius * Math.cos(spiralAngle);
                                 finalY += spiralRadius * Math.sin(spiralAngle);
                                 break;
@@ -910,19 +1159,29 @@
         // Apply animation
         function applyAnimation() {
             if (!selectedLayer) return;
+
+            // Save current settings to the layer
             saveCurrentLayerSettings();
+            updateSpecialEffectSettings();
+
             if (selectedLayer.animation) {
                 selectedLayer.animation.stop();
             }
+
             selectedLayer.animation = createAnimationForLayer(selectedLayer);
         }
 
         // Preview animation (single run)
         function previewAnimation() {
             if (!selectedLayer) return;
+
+            // Save current loop setting and temporarily disable it
             const originalLoop = selectedLayer.loopAnimation;
             selectedLayer.loopAnimation = false;
+
             applyAnimation();
+
+            // Restore original loop setting after animation completes
             setTimeout(() => {
                 selectedLayer.loopAnimation = originalLoop;
             }, selectedLayer.animationDuration * 1000);
@@ -934,13 +1193,16 @@
             selectedLayer.animation.stop();
         }
 
-        // Play all animations
+        // Play all animations - now uses each layer's individual settings
         function playAllAnimations() {
             imageLayers.forEach(layer => {
                 if (layer.enableCustomAnimation || layer.specialEffect !== 'none') {
+                    // Stop any existing animation for this layer
                     if (layer.animation) {
                         layer.animation.stop();
                     }
+
+                    // Create and start new animation using the layer's own settings
                     layer.animation = createAnimationForLayer(layer);
                 }
             });
@@ -959,11 +1221,6 @@
         function resetCamera() {
             camera.position.set(0, 0, 5);
             camera.lookAt(0, 0, 0);
-        }
-
-        // Export as AR.js
-        function exportAsAR() {
-            exportPackage();
         }
 
         function generateHTMLContent() {
@@ -1006,13 +1263,12 @@
         .ar-controls button:hover {
             background: #0052a3;
         }
-
     </style>
 </head>
 
 <body>
-
     <div class="ar-controls">
+        <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
     </div>
 
@@ -1039,19 +1295,23 @@
         </a-assets>
 
         <a-marker type="pattern" url="pattern-${name}-qr-code.patt">`;
-            // Add each layer as A-Frame entities
+
+            // Add each layer as A-Frame entities with all settings
             imageLayers.forEach(layer => {
                 const pos = layer.originalPosition;
                 const rot = layer.originalRotation;
                 const scale = layer.originalScale;
                 const opacity = layer.originalOpacity;
 
+                // Convert rotation from radians to degrees
                 const rotX = (rot.x * 180 / Math.PI).toFixed(2);
                 const rotY = (rot.y * 180 / Math.PI).toFixed(2);
                 const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
 
+                // Properly escape JSON data for HTML attributes
                 const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
                 const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
+                const specialEffectSettingsJSON = JSON.stringify(layer.specialEffectSettings).replace(/"/g, '&quot;');
 
                 htmlContent += `
             <a-plane id="layer-${layer.id}" src="#img-${layer.id}"
@@ -1065,7 +1325,8 @@
                 data-animation-duration="${layer.animationDuration}"
                 data-loop-animation="${layer.loopAnimation}"
                 data-custom-start="${customStartJSON}"
-                data-custom-end="${customEndJSON}">
+                data-custom-end="${customEndJSON}"
+                data-special-settings="${specialEffectSettingsJSON}">
             </a-plane>`;
             });
 
@@ -1078,37 +1339,20 @@
     <script>
     let animationIntervals = [];
     let markerVisible = false;
-    
-    // Listen for marker events
+
     document.querySelector('a-marker').addEventListener('markerFound', function() {
         markerVisible = true;
-        console.log('Marker found - starting animations and audio');
-        
-        // Start background audio if exists
-        const audio = document.querySelector('#background-audio');
-        if (audio) {
-            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
-        }
-        
+        console.log('Marker found - starting animations');
         playAllAnimations();
     });
-    
+
     document.querySelector('a-marker').addEventListener('markerLost', function() {
         markerVisible = false;
-        console.log('Marker lost - stopping animations and audio');
-        
-        // Stop background audio if exists
-        const audio = document.querySelector('#background-audio');
-        if (audio) {
-            audio.pause();
-        }
-        
+        console.log('Marker lost - stopping animations');
         stopAllAnimations();
     });
     
     function playAllAnimations() {
-        stopAllAnimations();
-        
         const layers = document.querySelectorAll('[id^="layer-"]');
         layers.forEach(layer => {
             const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
@@ -1119,14 +1363,27 @@
                 const duration = parseFloat(layer.getAttribute('data-animation-duration'));
                 const loop = layer.getAttribute('data-loop-animation') === 'true';
                 
+                // Parse special effect settings
+                let settings = {};
+                try {
+                    settings = JSON.parse(layer.getAttribute('data-special-settings').replace(/&quot;/g, '"'));
+                } catch (e) {
+                    console.error('Error parsing special effect settings:', e);
+                    // Fallback to default settings
+                    settings = {
+                        swingRange: 90, swingFreq: 8, swingTargetX: 5,
+                        zigzagAmp: 2, zigzagFreq: 6, zigzagTargetX: 5, zigzagTargetY: 3,
+                        pendulumRange: 60, pendulumSpeed: 2,
+                        waveAmp: 1.5, waveFreq: 4, waveTargetX: 4, waveTargetY: 2,
+                        bounceHeight: 2, bounceFreq: 4,
+                        spiralRadius: 3, spiralRotations: 6,
+                        slideDistance: 10, rotateCycles: 1
+                    };
+                }
+                
                 const startTime = Date.now();
                 
                 const interval = setInterval(() => {
-                    if (!markerVisible) {
-                        clearInterval(interval);
-                        return;
-                    }
-                    
                     const currentTime = Date.now();
                     const elapsed = (currentTime - startTime) / 1000 * speed;
                     let progress = (elapsed % duration) / duration;
@@ -1150,7 +1407,8 @@
                     let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
                     let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
                     let finalOpacity = 1;
-                    
+                
+                    // Apply custom animation if enabled
                     if (enableCustom) {
                         try {
                             const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
@@ -1170,45 +1428,43 @@
                         }
                     }
                     
-                    // Apply special effects
+                    // Apply special effects with user-controlled settings
                     if (specialEffect !== 'none') {
                         switch (specialEffect) {
                             case 'swingToTarget':
-                                const swingFrequency = 8;
-                                const swingAmplitude = (1 - easedProgress) * 90;
-                                const swingAngle = Math.sin(progress * swingFrequency * Math.PI) * swingAmplitude;
+                                const swingAmplitude = (1 - easedProgress) * settings.swingRange;
+                                const swingAngle = Math.sin(progress * settings.swingFreq * Math.PI) * swingAmplitude;
                                 finalRotZ += swingAngle;
+
                                 if (!enableCustom) {
-                                    finalX += 5 * easedProgress;
+                                    finalX += settings.swingTargetX * easedProgress;
                                 }
                                 break;
 
                             case 'zigzagToTarget':
-                                const zigzagFrequency = 6;
-                                const zigzagAmplitude = (1 - easedProgress) * 2;
-                                const zigzagOffset = Math.sin(progress * zigzagFrequency * Math.PI) * zigzagAmplitude;
+                                const zigzagAmplitude = (1 - easedProgress) * settings.zigzagAmp;
+                                const zigzagOffset = Math.sin(progress * settings.zigzagFreq * Math.PI) * zigzagAmplitude;
                                 finalX += zigzagOffset;
+
                                 if (!enableCustom) {
-                                    finalX += 5 * easedProgress;
-                                    finalY += 3 * easedProgress;
+                                    finalX += settings.zigzagTargetX * easedProgress;
+                                    finalY += settings.zigzagTargetY * easedProgress;
                                 }
                                 break;
 
                             case 'pendulumMove':
-                                const pendulumAmplitude = 60;
-                                const pendulumAngle = Math.sin(elapsed * 2) * pendulumAmplitude;
+                                const pendulumAngle = Math.sin(elapsed * settings.pendulumSpeed) * settings.pendulumRange;
                                 finalRotZ += pendulumAngle;
                                 break;
 
                             case 'waveToTarget':
-                                const waveAmplitude = 1.5;
-                                const waveFrequency = 4;
-                                const waveY = Math.sin(progress * waveFrequency * Math.PI) * waveAmplitude * (1 - easedProgress);
+                                const waveY = Math.sin(progress * settings.waveFreq * Math.PI) * settings.waveAmp * (1 - easedProgress);
                                 finalY += waveY;
                                 finalRotZ += (waveY * 0.2);
+
                                 if (!enableCustom) {
-                                    finalX += 4 * easedProgress;
-                                    finalY += 2 * easedProgress;
+                                    finalX += settings.waveTargetX * easedProgress;
+                                    finalY += settings.waveTargetY * easedProgress;
                                 }
                                 break;
 
@@ -1217,6 +1473,7 @@
                                 finalScaleX *= scaleElastic;
                                 finalScaleY *= scaleElastic;
                                 finalScaleZ *= scaleElastic;
+
                                 if (!enableCustom) {
                                     const elasticEase = (t) => {
                                         if (t === 0) return 0;
@@ -1233,16 +1490,16 @@
                                 break;
 
                             case 'slideDown':
-                                finalY += 10 * (1 - easedProgress);
+                                finalY += settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'slideUp':
-                                finalY -= 10 * (1 - easedProgress);
+                                finalY -= settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'slideLeft':
-                                finalX += 10 * (1 - easedProgress);
+                                finalX += settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'slideRight':
-                                finalX -= 10 * (1 - easedProgress);
+                                finalX -= settings.slideDistance * (1 - easedProgress);
                                 break;
                             case 'fadeIn':
                                 finalOpacity *= easedProgress;
@@ -1254,15 +1511,15 @@
                                 finalScaleZ *= scaleInFactor;
                                 break;
                             case 'rotate':
-                                finalRotZ += easedProgress * 360;
+                                finalRotZ += easedProgress * 360 * settings.rotateCycles;
                                 break;
                             case 'bounce':
-                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * 4)) * 2;
+                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * settings.bounceFreq)) * settings.bounceHeight;
                                 finalY += bounceY;
                                 break;
                             case 'spiral':
-                                const spiralRadius = 3 * (1 - easedProgress);
-                                const spiralAngle = easedProgress * Math.PI * 6;
+                                const spiralRadius = settings.spiralRadius * (1 - easedProgress);
+                                const spiralAngle = easedProgress * Math.PI * settings.spiralRotations;
                                 finalX += spiralRadius * Math.cos(spiralAngle);
                                 finalY += spiralRadius * Math.sin(spiralAngle);
                                 break;
@@ -1273,7 +1530,11 @@
                     layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                     layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                     layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-                    layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
+                    
+                    // Update opacity if needed
+                    if (specialEffect === 'fadeIn' || enableCustom) {
+                        layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
+                    }
                     
                 }, 16); // ~60fps
                 
@@ -1286,6 +1547,7 @@
         animationIntervals.forEach(interval => clearInterval(interval));
         animationIntervals = [];
     }
+    
     <\/script>
 </body>
 </html>`;
@@ -1293,13 +1555,11 @@
             return htmlContent;
         }
 
-        async function exportPackage() {
+        async function exportAsAR() {
             const name = (document.getElementById('projectName').value || 'AR_Project').trim();
             const zip = new JSZip();
 
             zip.file(name + '.html', generateHTMLContent());
-            
-            // Add images folder
             const imageFiles = zip.folder('images');
             for (const layer of imageLayers) {
                 if (layer.texture.image && layer.texture.image.src) {
@@ -1316,13 +1576,11 @@
                 }
             }
 
-            // Add audio folder if audio exists
             if (backgroundAudio) {
                 const audioFiles = zip.folder('audio');
                 audioFiles.file(backgroundAudio.fileName, backgroundAudio.blob);
             }
 
-            // Generate QR code if URL provided
             const url = document.getElementById('websiteUrl').value.trim();
             if (url) {
                 try {
@@ -1330,6 +1588,7 @@
                     qr.addData(url);
                     qr.make();
 
+                    // Create canvas for QR code
                     const qrCanvas = document.createElement('canvas');
                     const size = 512;
                     qrCanvas.width = size;
@@ -1339,9 +1598,11 @@
                     const moduleCount = qr.getModuleCount();
                     const moduleSize = size / moduleCount;
 
+                    // Fill white background
                     ctx.fillStyle = '#FFFFFF';
                     ctx.fillRect(0, 0, size, size);
 
+                    // Draw black modules
                     ctx.fillStyle = '#000000';
                     for (let row = 0; row < moduleCount; row++) {
                         for (let col = 0; col < moduleCount; col++) {
@@ -1356,7 +1617,7 @@
 
                     zip.file(name + '-qr-code.png', qrBlob);
                 } catch (error) {
-                    console.error('Error generating QR code:', error);
+                    console.error('Error generating QR code for package:', error);
                 }
             }
 
