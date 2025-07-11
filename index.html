@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D PNG Layer Animator</title>
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body>
+    <div id="container">
+        <div id="controls">
+            <h3>3D PNG Layer Animator</h3>
+
+            <div class="control-group">
+                <label>Project Name:</label>
+                <input type="text" id="projectName" placeholder="Enter project name" value="project">
+            </div>
+
+            <div class="control-group">
+                <label>Website URL (for QR Code):</label>
+                <input type="url" id="websiteUrl" placeholder="https://your-website.com" value="">
+            </div>
+
+            <div class="control-group">
+                <label>Background Color:</label>
+                <input type="color" id="bgColor" value="#000000" onchange="updateBackgroundColor()">
+            </div>
+
+            <div class="control-group">
+                <label>Add MP3 Background Audio:</label>
+                <input type="file" id="audioFile" accept="audio/mp3,audio/wav,audio/ogg">
+                <button onclick="addAudioBackground()">Set Audio</button>
+                <audio id="audioPreview" class="audio-preview" style="display: none;" controls loop></audio>
+            </div>
+
+            <div class="control-group">
+                <label>Add PNG Image:</label>
+                <input type="file" id="imageFile" accept="image/png,image/jpg,image/jpeg" multiple>
+                <button onclick="addImageLayer()">Add Layer</button>
+            </div>
+
+            <div class="control-group">
+                <label>Position X: <span id="xValue">0</span></label>
+                <input type="range" id="xPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+
+                <label>Position Y: <span id="yValue">0</span></label>
+                <input type="range" id="yPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+
+                <label>Position Z (Depth): <span id="zValue">0</span></label>
+                <input type="range" id="zPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+            </div>
+
+            <div class="control-group">
+                <label>Transparency: <span id="alphaValue">1.0</span></label>
+                <input type="range" id="alpha" min="0" max="1" step="0.1" value="1" oninput="updateTransparency()">
+
+                <label>Scale: <span id="scaleValue">1.0</span></label>
+                <input type="range" id="scale" min="0.1" max="5" step="0.1" value="1" oninput="updateScale()">
+            </div>
+
+            <div class="control-group">
+                <label>Rotation X: <span id="rotXValue">0</span></label>
+                <input type="range" id="rotX" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+                <label>Rotation Y: <span id="rotYValue">0</span></label>
+                <input type="range" id="rotY" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+                <label>Rotation Z: <span id="rotZValue">0</span></label>
+                <input type="range" id="rotZ" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+            </div>
+
+            <div class="animation-controls">
+                <h4>Animation Controls</h4>
+
+                <div class="control-group">
+                    <label>Special Effect:</label>
+                    <select id="specialEffect" onchange="updateSpecialEffect()">
+                        <option value="none">None</option>
+                        <option value="slideDown">Slide Down</option>
+                        <option value="slideUp">Slide Up</option>
+                        <option value="slideLeft">Slide Left</option>
+                        <option value="slideRight">Slide Right</option>
+                        <option value="fadeIn">Fade In</option>
+                        <option value="scaleIn">Scale In</option>
+                        <option value="rotate">Rotate</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="spiral">Spiral</option>
+                        <option value="swingToTarget">Swing to Target</option>
+                        <option value="zigzagToTarget">Zigzag to Target</option>
+                        <option value="pendulumMove">Pendulum Movement</option>
+                        <option value="waveToTarget">Wave to Target</option>
+                        <option value="elasticMove">Elastic Movement</option>
+                    </select>
+                </div>
+
+                <div class="special-effect-controls" id="specialEffectControls" style="display: none;">
+                    <h5>Special Effect Settings</h5>
+
+                    <div id="swingControls" style="display: none;">
+                        <label>Swing Range (degrees): <span id="swingRangeValue">90</span></label>
+                        <br>
+                        <input type="range" id="swingRange" min="10" max="180" step="5" value="90"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Swing Frequency: <span id="swingFreqValue">8</span></label>
+                        <br>
+                        <input type="range" id="swingFreq" min="2" max="16" step="1" value="8"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target Distance X: <span id="swingTargetXValue">5</span></label>
+                        <br>
+                        <input type="range" id="swingTargetX" min="0" max="10" step="0.5" value="5"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="zigzagControls" style="display: none;">
+                        <label>Zigzag Amplitude: <span id="zigzagAmpValue">2</span></label>
+                        <br>
+                        <input type="range" id="zigzagAmp" min="0.5" max="5" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Zigzag Frequency: <span id="zigzagFreqValue">6</span></label>
+                        <br>
+                        <input type="range" id="zigzagFreq" min="2" max="12" step="1" value="6"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target X: <span id="zigzagTargetXValue">5</span></label>
+                        <br>
+                        <input type="range" id="zigzagTargetX" min="0" max="10" step="0.5" value="5"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target Y: <span id="zigzagTargetYValue">3</span></label>
+                        <br>
+                        <input type="range" id="zigzagTargetY" min="0" max="10" step="0.5" value="3"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="pendulumControls" style="display: none;">
+                        <label>Pendulum Range (degrees): <span id="pendulumRangeValue">60</span></label>
+                        <br>
+                        <input type="range" id="pendulumRange" min="10" max="120" step="5" value="60"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Pendulum Speed: <span id="pendulumSpeedValue">2</span></label>
+                        <br>
+                        <input type="range" id="pendulumSpeed" min="0.5" max="5" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="waveControls" style="display: none;">
+                        <label>Wave Amplitude: <span id="waveAmpValue">1.5</span></label>
+                        <br>
+                        <input type="range" id="waveAmp" min="0.5" max="5" step="0.1" value="1.5"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Wave Frequency: <span id="waveFreqValue">4</span></label>
+                        <br>
+                        <input type="range" id="waveFreq" min="1" max="10" step="1" value="4"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target X: <span id="waveTargetXValue">4</span></label>
+                        <br>
+                        <input type="range" id="waveTargetX" min="0" max="10" step="0.5" value="4"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target Y: <span id="waveTargetYValue">2</span></label>
+                        <br>
+                        <input type="range" id="waveTargetY" min="0" max="10" step="0.5" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="bounceControls" style="display: none;">
+                        <label>Bounce Height: <span id="bounceHeightValue">2</span></label>
+                        <br>
+                        <input type="range" id="bounceHeight" min="0.5" max="10" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Bounce Frequency: <span id="bounceFreqValue">4</span></label>
+                        <br>
+                        <input type="range" id="bounceFreq" min="1" max="10" step="1" value="4"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+
+                    <div id="spiralControls" style="display: none;">
+                        <label>Spiral Radius: <span id="spiralRadiusValue">3</span></label>
+                        <br>
+                        <input type="range" id="spiralRadius" min="1" max="10" step="0.1" value="3"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Spiral Rotations: <span id="spiralRotationsValue">6</span></label>
+                        <br>
+                        <input type="range" id="spiralRotations" min="1" max="15" step="1" value="6"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="slideControls" style="display: none;">
+                        <label>Slide Distance: <span id="slideDistanceValue">10</span></label>
+                        <br>
+                        <input type="range" id="slideDistance" min="2" max="20" step="0.5" value="10"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="rotateControls" style="display: none;">
+                        <label>Rotation Cycles: <span id="rotateCyclesValue">1</span></label>
+                        <br>
+                        <input type="range" id="rotateCycles" min="0.25" max="5" step="0.25" value="1"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+                </div>
+
+
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="enableCustomAnimation" onchange="toggleCustomControls()">Layer Animation
+                    </label>
+                    <label>
+                        <input type="checkbox" id="loopAnimation"> Loop Animation
+                    </label>
+                </div>
+                
+                <div class="control-group" id="customAnimationControls" style="display: none;">
+                    <h5>Custom Animation Settings</h5>
+
+                    <h5>Start Position:</h5>
+                    <label>Start X: <span id="startXValue">0</span></label>
+                    <input type="range" id="startX" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>Start Y: <span id="startYValue">0</span></label>
+                    <input type="range" id="startY" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>Start Z: <span id="startZValue">0</span></label>
+                    <input type="range" id="startZ" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+
+                    <h5>End Position:</h5>
+                    <label>End X: <span id="endXValue">0</span></label>
+                    <input type="range" id="endX" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>End Y: <span id="endYValue">0</span></label>
+                    <input type="range" id="endY" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>End Z: <span id="endZValue">0</span></label>
+                    <input type="range" id="endZ" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+
+                    <h5>Start Properties:</h5>
+                    <label>Start Scale: <span id="startScaleValue">1.0</span></label>
+                    <input type="range" id="startScale" min="0.1" max="5" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>Start Opacity: <span id="startOpacityValue">1.0</span></label>
+                    <input type="range" id="startOpacity" min="0" max="1" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>Start Rotation: <span id="startRotationValue">0</span>°</label>
+                    <input type="range" id="startRotation" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+
+                    <h5>End Properties:</h5>
+                    <label>End Scale: <span id="endScaleValue">1.0</span></label>
+                    <input type="range" id="endScale" min="0.1" max="5" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>End Opacity: <span id="endOpacityValue">1.0</span></label>
+                    <input type="range" id="endOpacity" min="0" max="1" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>End Rotation: <span id="endRotationValue">0</span>°</label>
+                    <input type="range" id="endRotation" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+                </div>
+
+                <div class="control-group">
+                    <label>Animation Speed: <span id="speedValue">1.0</span></label>
+                    <input type="range" id="animationSpeed" min="0.1" max="3" step="0.1" value="1"
+                        oninput="updateAnimationSpeed()">
+                </div>
+
+                <div class="control-group">
+                    <label>Animation Duration: <span id="durationValue">2.0</span>s</label>
+                    <input type="range" id="animationDuration" min="0.5" max="5" step="0.1" value="2"
+                        oninput="updateAnimationDuration()">
+                </div>
+
+                <div class="control-group">
+                    <button onclick="applyAnimation()">Apply Animation</button>
+                    <button onclick="stopAnimation()">Stop Animation</button>
+                    <button onclick="previewAnimation()">Preview Animation</button>
+                    <button onclick="resetCamera()">Reset Camera</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+
+                <button onclick="playAllAnimations()">Play All Animations</button>
+                <button onclick="stopAllAnimations()">Stop All Animations</button>
+            </div>
+
+            <div class="control-group">
+                <h4>Export Options</h4>
+                <button onclick="exportAsAR()">Export as AR.js</button>
+            </div>
+
+            <div id="layersList">
+                <h4>Layers:</h4>
+                <div id="layers"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script src="./js/script.js"></script>
+</body>
+
+</html>
