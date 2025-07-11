@@ -64,9 +64,13 @@
                 data-animation-speed="1" 
                 data-animation-duration="2"
                 data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:3,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-start="{&quot;x&quot;:0.8,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
                 data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}">
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-rotation="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
+                data-original-opacity="1.00">
             </a-plane>
         </a-marker>
 
@@ -104,21 +108,7 @@
     });
     function playAllAnimations() {
        stopAllAnimations();
-        
-       
-       const layers = document.querySelectorAll('[id^="layer-"]');
-            const bases = {};
-            layers.forEach(layer => {
-                bases[layer.id] = {
-                    position: layer.getAttribute('position'),
-                    rotation: layer.getAttribute('rotation'),
-                    scale: layer.getAttribute('scale'),
-                    opacity: 1
-                };
-            });
-
-
-
+        const layers = document.querySelectorAll('[id^="layer-"]');
         layers.forEach(layer => {
             const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
             const specialEffect = layer.getAttribute('data-special-effect');
@@ -160,13 +150,18 @@
                     
                     const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
                     const easedProgress = easeInOut(progress);
-                        
-                    const base = bases[layer.id];
 
-                    let finalX = base.pos.x, finalY = base.pos.y, finalZ = base.pos.z;
-                    let finalRotX = base.rot.x, finalRotY = base.rot.y, finalRotZ = base.rot.z;
-                    let finalScaleX = base.scale.x, finalScaleY = base.scale.y, finalScaleZ = base.scale.z;
-                    let finalOpacity = base.opacity;
+                    const originalPos = layer.getAttribute('position');
+                    const originalRot = layer.getAttribute('rotation');
+                    const originalScale = layer.getAttribute('scale');
+                    const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
+                    const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
+                    const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
+
+                    let finalX = origX, finalY = origY, finalZ = origZ;
+                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    let finalOpacity = 1;
                 
                     // Apply custom animation if enabled
                     if (enableCustom) {
