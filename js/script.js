@@ -3,15 +3,30 @@ let imageLayers = [];
 let selectedLayer = null;
 let layerCounter = 0;
 let backgroundAudio = null;
+let audioTracks = [];
 let clock;
+
+let sequentialPlayback = {
+    isPlaying: false,
+    currentIndex: 0,
+    tracks: []
+};
+
+let backgroundMusic = {
+    trackId: null,
+    isPlaying: false,
+    originalVolume: 0.8,
+    fadeVolume: 0.3
+};
 
 // Initialize Three.js scene
 function initScene() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+    scene.background = new THREE.Color('#000000');
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 5);
+    camera.position.set(0, 4, 0);
+    camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -20,15 +35,15 @@ function initScene() {
     clock = new THREE.Clock();
 
     // Add lights
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    const ambientLight = new THREE.AmbientLight("#404040", 0.6);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight("#ffffff", 0.8);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
     // Add grid helper
-    const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x444444);
+    const gridHelper = new THREE.GridHelper(20, 20, "#444444", "#444444");
     scene.add(gridHelper);
 
     // Add axes helper
@@ -37,15 +52,23 @@ function initScene() {
 
     const planeGeometry = new THREE.PlaneGeometry(4, 4);
     const planeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x444444,           // 深灰色
-        transparent: true,         // 启用透明度
-        opacity: 0.2,             // 20% 不透明度
-        side: THREE.DoubleSide     // 双面显示
+        color: "#444444",
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.DoubleSide
     });
+
     const referencePlane = new THREE.Mesh(planeGeometry, planeMaterial);
-    referencePlane.rotation.x = -Math.PI / 2;  // 旋转90度使其水平
-    referencePlane.position.y = 0;             // 放置在Y=0位置
+    referencePlane.rotation.x = -Math.PI / 2;
+    referencePlane.position.y = 0;
     scene.add(referencePlane);
+
+    const phoneGeometry = new THREE.BoxGeometry(0.1, 1, 2);
+    const phoneMaterial = new THREE.MeshBasicMaterial({ color: "#2c3e50" });
+    const phoneIcon = new THREE.Mesh(phoneGeometry, phoneMaterial);
+    phoneIcon.position.set(0, 4, 0);
+    phoneIcon.rotation.z = Math.PI / 2;
+    scene.add(phoneIcon);
 
     addMouseControls();
     animate();
@@ -133,6 +156,252 @@ function updateBackgroundColor() {
     const color = document.getElementById('bgColor').value;
     scene.background = new THREE.Color(color);
 }
+
+function addAudioTracks(files) {
+    for (let file of files) {
+        const trackId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const audioElement = new Audio();
+        audioElement.src = URL.createObjectURL(file);
+        audioElement.loop = false;
+        audioElement.volume = 0.8;
+
+        const track = {
+            id: trackId,
+            name: file.name,
+            audio: audioElement,
+            isPlaying: false,
+            loop: false,
+            startTime: 0,
+            endTime: null,
+            timelineMode: false,
+            originalDuration: null,
+            playOrder: audioTracks.length + 1,
+            autoNext: false,
+            isBackground: false
+        };
+
+        audioTracks.push(track);
+        createAudioTrackUI(track);
+    }
+}
+
+function createAudioTrackUI(track) {
+    const tracksContainer = document.getElementById('audioTracks');
+    const trackDiv = document.createElement('div');
+    trackDiv.className = 'audio-track';
+    trackDiv.id = track.id;
+    trackDiv.innerHTML = `
+    <div class="audio-track-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="number" min="1" max="99" value="${track.playOrder}" readonly id="playOrder-${track.id}"
+                    data-track="${track.id}" style="width:40px; padding:4px; background:#333; border:1px solid #555;
+                color:#fff; border-radius:4px; text-align:center;" title="Play Order">
+            <button onclick="moveTrackUp('${track.id}')" 
+                    style="width: 24px; height: 24px; background: #555; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px;"
+                    title="Move Up">↑</button>
+            <button onclick="moveTrackDown('${track.id}')" 
+                    style="width: 24px; height: 24px; background: #555; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px;"
+                    title="Move Down">↓</button>
+        </div>
+        <div class="audio-track-name" style="flex: 1;">${track.name}</div>
+        <div class="audio-controls-group">
+            <button class="play-btn" onclick="toggleAudioTrack('${track.id}')" title="Play / Pause">▶</button>
+            <button class="loop-toggle" onclick="toggleLoop('${track.id}')" title="Loop">🔁</button>
+            <input type="range" class="volume-control" min="0" max="1" step="0.1" value="0.8" 
+                   onchange="updateTrackVolume('${track.id}', this.value)" title="Volume">
+            <div class="time-display">0:00</div>
+            <button class="delete-track-btn" onclick="deleteAudioTrack('${track.id}')" title="Delete">✕</button>
+        </div>
+    </div>
+    <div class="audio-timeline-controls" style="display: flex; gap: 8px; align-items: center; font-size: 11px; color: #ccc;">
+        <label style="min-width: 60px;">Start Time:</label>
+        <input type="number" min="0" max="999" step="0.1" value="0" 
+               onchange="updateTimeSettings('${track.id}', 'start', this.value)"
+               style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;">
+        <span>sec</span>
+        
+        <label style="min-width: 60px; margin-left: 12px;">End Time:</label>
+        <input type="number" min="0" max="999" step="0.1" value="0" 
+               onchange="updateTimeSettings('${track.id}', 'end', this.value)"
+               style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;">
+        <span>sec</span>
+        
+        <button onclick="toggleTimelineMode('${track.id}')" 
+                style="margin-left: 12px; padding: 4px 8px; background: #555; border: none; color: #fff; border-radius: 4px; font-size: 10px; cursor: pointer;"
+                title="Enable / Disable Timeline Control">Timeline</button>
+                
+        <label style="margin-left: 12px; font-size: 10px;">
+            <input type="checkbox" onchange="updateAutoNext('${track.id}', this.checked)" style="margin-right: 4px;">
+            Auto-play next after finished
+        </label>
+        
+        <label style="margin-left: 12px; font-size: 10px;">
+            <input type="checkbox" onchange="toggleBackgroundMusic('${track.id}', this.checked)" style="margin-right: 4px;">
+            Set as background music
+        </label>
+    </div>
+`;
+
+
+    tracksContainer.appendChild(trackDiv);
+
+    // Add event listeners for time updates
+    track.audio.addEventListener('timeupdate', () => updateTimeDisplay(track.id));
+    track.audio.addEventListener('ended', () => onTrackEnded(track.id));
+
+    // Load duration when metadata is loaded
+    track.audio.addEventListener('loadedmetadata', () => {
+        const endInput = trackDiv.querySelector('input[onchange*="end"]');
+        endInput.max = Math.floor(track.audio.duration);
+        endInput.value = Math.floor(track.audio.duration);
+        track.endTime = track.audio.duration;
+    });
+
+    reorderAudioDisplay();
+}
+
+
+function reorderAudioDisplay() {
+    const tracksContainer = document.getElementById('audioTracks');
+
+    const sortedTracks = audioTracks.sort((a, b) => a.playOrder - b.playOrder);
+
+    sortedTracks.forEach(track => {
+        const element = document.getElementById(track.id);
+
+        if (element) {
+            tracksContainer.appendChild(element);
+        }
+    });
+}
+
+//Change track to top     
+function moveTrackUp(trackId) {
+    const track = audioTracks.find(t => t.id === trackId);
+    if (!track || track.playOrder <= 1) return;
+
+    const prevTrack = audioTracks.find(t => t.playOrder === track.playOrder - 1);
+    if (prevTrack) {
+        prevTrack.playOrder++;
+        track.playOrder--;
+        updateOrderInputs();
+        reorderAudioDisplay();
+    }
+}
+
+//Change  track to down 
+function moveTrackDown(trackId) {
+    const track = audioTracks.find(t => t.id === trackId);
+    if (!track) return;
+
+    const maxOrder = Math.max(...audioTracks.map(t => t.playOrder));
+    if (track.playOrder >= maxOrder) return;
+
+    const nextTrack = audioTracks.find(t => t.playOrder === track.playOrder + 1);
+    if (nextTrack) {
+        nextTrack.playOrder--;
+        track.playOrder++;
+        updateOrderInputs();
+        reorderAudioDisplay();
+    }
+}
+
+function updateOrderInputs() {
+    audioTracks.forEach(track => {
+        const input = document.getElementById(`playOrder-${track.id}`);
+        if (input) {
+            input.value = track.playOrder;
+        }
+    });
+}
+
+function toggleAudioTrack(trackId) {
+    const track = audioTracks.find(t => t.id === trackId);
+    const button = document.querySelector(`#${trackId} .play-btn`);
+
+    if (track.isPlaying) {
+        track.audio.pause();
+        track.isPlaying = false;
+        button.textContent = '▶';
+        button.classList.remove('playing');
+
+        if (track.isBackground) {
+            backgroundMusic.isPlaying = false;
+        }
+    } else {
+        if (!track.isBackground && backgroundMusic.isPlaying) {
+            fadeBackgroundMusic(true);
+        }
+
+        if (track.timelineMode && track.startTime > 0) {
+            track.audio.currentTime = track.startTime;
+        }
+
+        track.audio.play();
+        track.isPlaying = true;
+        button.textContent = '⏸';
+        button.classList.add('playing');
+
+        if (track.isBackground) {
+            backgroundMusic.isPlaying = true;
+        }
+    }
+}
+
+function toggleLoop(trackId) {
+    const track = audioTracks.find(t => t.id === trackId);
+    const button = document.querySelector(`#${trackId} .loop-toggle`);
+
+    track.loop = !track.loop;
+
+    if (track.loop) {
+        button.classList.add('active');
+        button.title = 'stop loop';
+    } else {
+        button.classList.remove('active');
+        button.title = 'Loop';
+    }
+}
+
+function updateTrackVolume(trackId, volume) {
+    const track = audioTracks.find(t => t.id === trackId);
+    track.audio.volume = parseFloat(volume);
+}
+
+function deleteAudioTrack(trackId) {
+    const trackIndex = audioTracks.findIndex(t => t.id === trackId);
+    if (trackIndex > -1) {
+        const track = audioTracks[trackIndex];
+        track.audio.pause();
+        URL.revokeObjectURL(track.audio.src);
+        audioTracks.splice(trackIndex, 1);
+
+        const trackElement = document.getElementById(trackId);
+        trackElement.remove();
+    }
+}
+
+function updateTimeSettings(trackId, type, value) {
+    const track = audioTracks.find(t => t.id === trackId);
+    if (!track) return;
+
+    const numValue = parseFloat(value);
+
+    if (type === 'start') {
+        track.startTime = numValue;
+    } else if (type === 'end') {
+        track.endTime = numValue > 0 ? numValue : track.audio.duration;
+    }
+
+    if (track.startTime >= track.endTime) {
+        track.startTime = Math.max(0, track.endTime - 0.1);
+        const startInput = document.querySelector(`#${trackId} input[onchange*="start"]`);
+        if (startInput) startInput.value = track.startTime;
+        track.timelineMode = !track.timelineMode;
+    }
+}
+
+
 
 // Add image layer
 function addImageLayer() {
@@ -804,7 +1073,7 @@ function stopAllAnimations() {
 
 // Reset camera
 function resetCamera() {
-    camera.position.set(0, 10, 0);
+    camera.position.set(0, 4, 0);
     camera.lookAt(0, 0, 0);
 }
 

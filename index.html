@@ -214,13 +214,14 @@
 
                 <div class="control-group">
                     <label>
-                        <input type="checkbox" id="enableCustomAnimation" onchange="toggleCustomControls()">Layer Animation
+                        <input type="checkbox" id="enableCustomAnimation" onchange="toggleCustomControls()">Layer
+                        Animation
                     </label>
                     <label>
                         <input type="checkbox" id="loopAnimation"> Loop Animation
                     </label>
                 </div>
-                
+
                 <div class="control-group" id="customAnimationControls" style="display: none;">
                     <h5>Custom Animation Settings</h5>
 
@@ -305,13 +306,64 @@
                 <div id="layers"></div>
             </div>
         </div>
-    </div>
+        <div id="canvasContainer">
+            <canvas id="threeCanvas" style=" bottom:auto;top:  -100px; ; position: absolute;"></canvas>
+        </div>
+        <!-- Adobe-style Audio Controls -->
+        <div id="audioControls">
+            <div class="audio-header">
+                <div class="audio-title">
+                    <span class="audio-icon">🎵</span>
+                    Audio Timeline
+                </div>
+                <button class="add-audio-btn" onclick="document.getElementById('audioFileInput').click()">
+                    + Add Audio Track
+                </button>
+                <input type="file" id="audioFileInput" class="audio-file-input" accept="audio/mp3,audio/wav,audio/ogg"
+                    multiple onchange="addAudioTracks(this.files)">
+            </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-    <script src="./js/script.js"></script>
+            <div class="audio-tracks" id="audioTracks">
+
+
+            </div>
+
+            <div class="audio-master-controls"
+                style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #404040;">
+                <div style="display: flex; gap: 8px;">
+                    <button class="play-btn" onclick="playAllAudio()" title="Play All">▶</button>
+                    <button class="play-btn" onclick="pauseAllAudio()" title="Pause All"
+                        style="background: #666;">⏸</button>
+                    <button class="play-btn" onclick="stopAllAudio()" title="Stop All"
+                        style="background: #ff4444;">⏹</button>
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="play-btn" onclick="playSequential()" title="Play in sequence"
+                        style="background: #00aa44;">📋</button>
+                    <button class="play-btn" onclick="stopSequential()" title="Stop sequence"
+                        style="background: #aa4400;">⏹</button>
+                    <button class="play-btn" onclick="stopBackgroundMusic()" title="Pause background music"
+                        style="background: #666;">⏸</button>
+                    <button class="play-btn" onclick="resumeBackgroundMusic()" title="Resume background music"
+                        style="background: #0066ff;">▶</button>
+                    <label style="font-size: 11px; color: #ccc;">
+                        <input type="checkbox" id="loopSequence" style="margin-right: 4px;">
+                        Loop sequence
+                    </label>
+                </div>
+
+
+                <span style="font-size: 12px; color: #999;">Master Controls</span>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+        <script src="./js/script.js"></script>
+        <script src="./js/audioScript.js"></script>
 </body>
 
 </html>

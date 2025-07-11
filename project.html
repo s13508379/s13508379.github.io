@@ -1,326 +1,1932 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>project - AR Experience</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <title>3D PNG Layer Animator</title>
     <style>
-        .ar-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            color: white;
-            text-align: center;
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            background: #1e1e1e;
+            color: #f0f0f0;
         }
 
-        .ar-controls button {
-            padding: 10px 20px;
-            margin: 5px;
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #controls {
+            position: absolute;
+            width: 17%;
+            max-height: 79.5%;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #2b2b2b 0%, #1e1e1e 100%);
+            padding: 24px;
+            border: 1px solid #3a3a3a;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        #controls::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #controls::-webkit-scrollbar-track {
+            background: #2b2b2b;
+            border-radius: 4px;
+        }
+
+        #controls::-webkit-scrollbar-thumb {
+            background: #505050;
+            border-radius: 4px;
+        }
+
+        #controls::-webkit-scrollbar-thumb:hover {
+            background: #606060;
+        }
+
+        /* Adobe-style Audio Controls */
+        #audioControls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 95%;
+            background: linear-gradient(180deg, #2b2b2b 0%, #1e1e1e 100%);
+            border-top: 1px solid #3a3a3a;
+            box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.4);
+            z-index: 200;
+            padding: 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .audio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .audio-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-icon {
+            font-size: 16px;
+        }
+
+        .add-audio-btn {
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
             border: none;
-            background: #0066cc;
             color: white;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3);
+        }
+
+        .add-audio-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.4);
+        }
+
+        .audio-tracks {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .audio-track {
+            background: rgba(45, 45, 45, 0.8);
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .audio-track:hover {
+            background: rgba(55, 55, 55, 0.8);
+            border-color: #505050;
+        }
+
+        .audio-track-name {
+            flex: 1;
+            font-size: 13px;
+            color: #e0e0e0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .audio-controls-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .play-btn {
+            background: #0066ff;
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
             font-size: 14px;
         }
 
-        .ar-controls button:hover {
-            background: #0052a3;
+        .play-btn:hover {
+            background: #0052cc;
+            transform: scale(1.05);
+        }
+
+        .play-btn.playing {
+            background: #ff6b35;
+        }
+
+        .play-btn.playing:hover {
+            background: #e55a2b;
+        }
+
+        .loop-toggle {
+            background: transparent;
+            border: 1px solid #505050;
+            color: #c0c0c0;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 12px;
+        }
+
+        .loop-toggle.active {
+            background: #0066ff;
+            color: white;
+            border-color: #0066ff;
+        }
+
+        .volume-control {
+            width: 80px;
+            height: 4px;
+            background: #404040;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .volume-control::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #0066ff;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 102, 255, 0.3);
+        }
+
+        .time-display {
+            font-size: 11px;
+            color: #999;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .delete-track-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .delete-track-btn:hover {
+            background: #ff4444;
+            color: white;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(140px, 1fr));
+            gap: 8px;
+            max-width: 320px;
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #d0d0d0;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #404040;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-bottom: 12px;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 102, 255, 0.3);
+        }
+
+        .control-group input[type="text"],
+        .control-group input[type="color"],
+        .control-group input[type="url"],
+        .control-group select {
+            width: 80%;
+            height: 16px;
+            padding: 8px 12px;
+            border: 1px solid #404040;
+            background: #2b2b2b;
+            color: #f0f0f0;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #0066ff;
+            box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+        }
+
+        .control-group button {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 16px;
+            margin: 0;
+            border: none;
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-group button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+        }
+
+        .layer-item {
+            padding: 12px;
+            margin: 6px 0;
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #404040;
+            transition: all 0.2s ease;
+        }
+
+        .layer-item:hover {
+            background: rgba(55, 55, 55, 0.8);
+            border-color: #505050;
+        }
+
+        .layer-item.selected {
+            border-color: #0066ff;
+            background: rgba(0, 102, 255, 0.1);
+            box-shadow: 0 0 0 1px rgba(0, 102, 255, 0.3);
+        }
+
+        .delete-btn {
+            background: #ff4444 !important;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background: #cc3333 !important;
+            transform: translateY(-1px);
+        }
+
+        .animation-controls {
+            border-top: 1px solid #404040;
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        .special-effect-controls {
+            border: 1px solid #404040;
+            padding: 16px;
+            margin-top: 12px;
+            border-radius: 8px;
+            background: rgba(30, 30, 30, 0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        h3 {
+            margin: 0 0 20px 0;
+            color: #f0f0f0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        h4 {
+            margin: 0 0 12px 0;
+            color: #e0e0e0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        h5 {
+            margin: 0 0 8px 0;
+            color: #d0d0d0;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Hidden file input */
+        .audio-file-input {
+            display: none;
         }
     </style>
 </head>
 
 <body>
-    <div class="ar-controls">
-        <button onclick="playAllAnimations()">Play All Animations</button>
-        <button onclick="stopAllAnimations()">Stop Animations</button>
+    <div id="container">
+        <div id="controls">
+            <h3>3D PNG Layer Animator</h3>
+
+            <div class="control-group">
+                <label>Project Name:</label>
+                <input type="text" id="projectName" placeholder="Enter project name" value="project">
+            </div>
+
+            <div class="control-group">
+                <label>Website URL (for QR Code):</label>
+                <input type="url" id="websiteUrl" placeholder="https://your-website.com" value="">
+            </div>
+
+            <div class="control-group">
+                <label>Background Color:</label>
+                <input type="color" id="bgColor" value="#000000" onchange="updateBackgroundColor()">
+            </div>
+
+            <div class="control-group">
+                <label>Add PNG Image:</label>
+                <input type="file" id="imageFile" accept="image/png,image/jpg,image/jpeg" multiple>
+                <button onclick="addImageLayer()">Add Layer</button>
+            </div>
+
+            <div class="control-group">
+                <label>Position X: <span id="xValue">0</span></label>
+                <input type="range" id="xPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+
+                <label>Position Y: <span id="yValue">0</span></label>
+                <input type="range" id="yPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+
+                <label>Position Z (Depth): <span id="zValue">0</span></label>
+                <input type="range" id="zPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
+            </div>
+
+            <div class="control-group">
+                <label>Transparency: <span id="alphaValue">1.0</span></label>
+                <input type="range" id="alpha" min="0" max="1" step="0.1" value="1" oninput="updateTransparency()">
+
+                <label>Scale: <span id="scaleValue">1.0</span></label>
+                <input type="range" id="scale" min="0.1" max="5" step="0.1" value="1" oninput="updateScale()">
+            </div>
+
+            <div class="control-group">
+                <label>Rotation X: <span id="rotXValue">0</span></label>
+                <input type="range" id="rotX" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+                <label>Rotation Y: <span id="rotYValue">0</span></label>
+                <input type="range" id="rotY" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+
+                <label>Rotation Z: <span id="rotZValue">0</span></label>
+                <input type="range" id="rotZ" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
+            </div>
+
+            <div class="animation-controls">
+                <h4>Animation Controls</h4>
+
+                <div class="control-group">
+                    <label>Special Effect:</label>
+                    <select id="specialEffect" onchange="updateSpecialEffect()">
+                        <option value="none">None</option>
+                        <option value="slideDown">Slide Down</option>
+                        <option value="slideUp">Slide Up</option>
+                        <option value="slideLeft">Slide Left</option>
+                        <option value="slideRight">Slide Right</option>
+                        <option value="fadeIn">Fade In</option>
+                        <option value="scaleIn">Scale In</option>
+                        <option value="rotate">Rotate</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="spiral">Spiral</option>
+                        <option value="swingToTarget">Swing to Target</option>
+                        <option value="zigzagToTarget">Zigzag to Target</option>
+                        <option value="pendulumMove">Pendulum Movement</option>
+                        <option value="waveToTarget">Wave to Target</option>
+                        <option value="elasticMove">Elastic Movement</option>
+                    </select>
+                </div>
+
+                <div class="special-effect-controls" id="specialEffectControls" style="display: none;">
+                    <h5>Special Effect Settings</h5>
+
+                    <div id="swingControls" style="display: none;">
+                        <label>Swing Range (degrees): <span id="swingRangeValue">90</span></label>
+                        <br>
+                        <input type="range" id="swingRange" min="10" max="180" step="5" value="90"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Swing Frequency: <span id="swingFreqValue">8</span></label>
+                        <br>
+                        <input type="range" id="swingFreq" min="2" max="16" step="1" value="8"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target Distance X: <span id="swingTargetXValue">5</span></label>
+                        <br>
+                        <input type="range" id="swingTargetX" min="0" max="10" step="0.5" value="5"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="zigzagControls" style="display: none;">
+                        <label>Zigzag Amplitude: <span id="zigzagAmpValue">2</span></label>
+                        <br>
+                        <input type="range" id="zigzagAmp" min="0.5" max="5" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Zigzag Frequency: <span id="zigzagFreqValue">6</span></label>
+                        <br>
+                        <input type="range" id="zigzagFreq" min="2" max="12" step="1" value="6"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target X: <span id="zigzagTargetXValue">5</span></label>
+                        <br>
+                        <input type="range" id="zigzagTargetX" min="0" max="10" step="0.5" value="5"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target Y: <span id="zigzagTargetYValue">3</span></label>
+                        <br>
+                        <input type="range" id="zigzagTargetY" min="0" max="10" step="0.5" value="3"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="pendulumControls" style="display: none;">
+                        <label>Pendulum Range (degrees): <span id="pendulumRangeValue">60</span></label>
+                        <br>
+                        <input type="range" id="pendulumRange" min="10" max="120" step="5" value="60"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Pendulum Speed: <span id="pendulumSpeedValue">2</span></label>
+                        <br>
+                        <input type="range" id="pendulumSpeed" min="0.5" max="5" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="waveControls" style="display: none;">
+                        <label>Wave Amplitude: <span id="waveAmpValue">1.5</span></label>
+                        <br>
+                        <input type="range" id="waveAmp" min="0.5" max="5" step="0.1" value="1.5"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Wave Frequency: <span id="waveFreqValue">4</span></label>
+                        <br>
+                        <input type="range" id="waveFreq" min="1" max="10" step="1" value="4"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target X: <span id="waveTargetXValue">4</span></label>
+                        <br>
+                        <input type="range" id="waveTargetX" min="0" max="10" step="0.5" value="4"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Target Y: <span id="waveTargetYValue">2</span></label>
+                        <br>
+                        <input type="range" id="waveTargetY" min="0" max="10" step="0.5" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="bounceControls" style="display: none;">
+                        <label>Bounce Height: <span id="bounceHeightValue">2</span></label>
+                        <br>
+                        <input type="range" id="bounceHeight" min="0.5" max="10" step="0.1" value="2"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Bounce Frequency: <span id="bounceFreqValue">4</span></label>
+                        <br>
+                        <input type="range" id="bounceFreq" min="1" max="10" step="1" value="4"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="spiralControls" style="display: none;">
+                        <label>Spiral Radius: <span id="spiralRadiusValue">3</span></label>
+                        <br>
+                        <input type="range" id="spiralRadius" min="1" max="10" step="0.1" value="3"
+                            oninput="updateSpecialEffectSettings()">
+                        <br>
+                        <label>Spiral Rotations: <span id="spiralRotationsValue">6</span></label>
+                        <br>
+                        <input type="range" id="spiralRotations" min="1" max="15" step="1" value="6"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="slideControls" style="display: none;">
+                        <label>Slide Distance: <span id="slideDistanceValue">10</span></label>
+                        <br>
+                        <input type="range" id="slideDistance" min="2" max="20" step="0.5" value="10"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+
+                    <div id="rotateControls" style="display: none;">
+                        <label>Rotation Cycles: <span id="rotateCyclesValue">1</span></label>
+                        <br>
+                        <input type="range" id="rotateCycles" min="0.25" max="5" step="0.25" value="1"
+                            oninput="updateSpecialEffectSettings()">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="enableCustomAnimation" onchange="toggleCustomControls()">Layer
+                        Animation
+                    </label>
+                    <label>
+                        <input type="checkbox" id="loopAnimation"> Loop Animation
+                    </label>
+                </div>
+
+                <div class="control-group" id="customAnimationControls" style="display: none;">
+                    <h5>Custom Animation Settings</h5>
+
+                    <h5>Start Position:</h5>
+                    <label>Start X: <span id="startXValue">0</span></label>
+                    <input type="range" id="startX" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>Start Y: <span id="startYValue">0</span></label>
+                    <input type="range" id="startY" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>Start Z: <span id="startZValue">0</span></label>
+                    <input type="range" id="startZ" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+
+                    <h5>End Position:</h5>
+                    <label>End X: <span id="endXValue">0</span></label>
+                    <input type="range" id="endX" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>End Y: <span id="endYValue">0</span></label>
+                    <input type="range" id="endY" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>End Z: <span id="endZValue">0</span></label>
+                    <input type="range" id="endZ" min="-15" max="15" step="0.1" value="0"
+                        oninput="updateCustomValues()">
+
+                    <h5>Start Properties:</h5>
+                    <label>Start Scale: <span id="startScaleValue">1.0</span></label>
+                    <input type="range" id="startScale" min="0.1" max="5" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>Start Opacity: <span id="startOpacityValue">1.0</span></label>
+                    <input type="range" id="startOpacity" min="0" max="1" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>Start Rotation: <span id="startRotationValue">0</span>°</label>
+                    <input type="range" id="startRotation" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+
+                    <h5>End Properties:</h5>
+                    <label>End Scale: <span id="endScaleValue">1.0</span></label>
+                    <input type="range" id="endScale" min="0.1" max="5" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>End Opacity: <span id="endOpacityValue">1.0</span></label>
+                    <input type="range" id="endOpacity" min="0" max="1" step="0.1" value="1"
+                        oninput="updateCustomValues()">
+                    <label>End Rotation: <span id="endRotationValue">0</span>°</label>
+                    <input type="range" id="endRotation" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+                </div>
+
+                <div class="control-group">
+                    <label>Animation Speed: <span id="speedValue">1.0</span></label>
+                    <input type="range" id="animationSpeed" min="0.1" max="3" step="0.1" value="1"
+                        oninput="updateAnimationSpeed()">
+                </div>
+
+                <div class="control-group">
+                    <label>Animation Duration: <span id="durationValue">2.0</span>s</label>
+                    <input type="range" id="animationDuration" min="0.5" max="5" step="0.1" value="2"
+                        oninput="updateAnimationDuration()">
+                </div>
+
+                <div class="control-group">
+                    <button onclick="applyAnimation()">Apply Animation</button>
+                    <button onclick="stopAnimation()">Stop Animation</button>
+                    <button onclick="previewAnimation()">Preview Animation</button>
+                    <button onclick="resetCamera()">Reset Camera</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <button onclick="playAllAnimations()">Play All Animations</button>
+                <button onclick="stopAllAnimations()">Stop All Animations</button>
+            </div>
+
+            <div class="control-group">
+                <h4>Export Options</h4>
+                <button onclick="exportAsAR()">Export as AR.js</button>
+            </div>
+
+            <div id="layersList">
+                <h4>Layers:</h4>
+                <div id="layers"></div>
+            </div>
+        </div>
     </div>
 
-    <a-scene vr-mode-ui="enabled: false" embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
-        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
-        background="color: #000000; transparent: true">
+    <!-- Adobe-style Audio Controls -->
+    <div id="audioControls">
+        <div class="audio-header">
+            <div class="audio-title">
+                <span class="audio-icon">🎵</span>
+                Audio Timeline
+            </div>
+            <button class="add-audio-btn" onclick="document.getElementById('audioFileInput').click()">
+                + Add Audio Track
+            </button>
+            <input type="file" id="audioFileInput" class="audio-file-input" accept="audio/mp3,audio/wav,audio/ogg"
+                multiple onchange="handleAudioFileSelect(this.files)">
+        </div>
 
-        <a-assets>
-            <img id="img-0" src="images/girls.png" crossorigin="anonymous">
-            <img id="img-1" src="images/background_turk-01.png" crossorigin="anonymous">
-        </a-assets>
+        <div class="audio-tracks" id="audioTracks">
+            <!-- Audio tracks will be dynamically added here -->
+        </div>
 
-        <a-marker type="pattern" url="pattern-project-qr-code.patt">
-            <a-plane id="layer-0" src="#img-0"
-                position="0.00 0.20 0.00"
-                rotation="-90.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="false" 
-                data-special-effect="none"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="false"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0.2,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
-            </a-plane>
-            <a-plane id="layer-1" src="#img-1"
-                position="0.00 0.10 0.00"
-                rotation="-90.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="false" 
-                data-special-effect="none"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="false"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0.1,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
-            </a-plane>
-        </a-marker>
-
-        <a-entity camera></a-entity>
-    </a-scene>
-
-    <script>
-    let animationIntervals = [];
-    let markerVisible = false;
-
-    document.querySelector('a-marker').addEventListener('markerFound', function() {
-        markerVisible = true;
-        console.log('Marker found - starting animations and audio');
-        
-        // Start background audio if exists
-        const audio = document.querySelector('#background-audio');
-        if (audio) {
-            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
-        }
-        
-        playAllAnimations();
-    });
-
-       
-    document.querySelector('a-marker').addEventListener('markerLost', function() {
-        markerVisible = false;
-        console.log('Marker lost - stopping animations and audio');
-        
-        // Stop background audio if exists
-        const audio = document.querySelector('#background-audio');
-        if (audio) {
-            audio.pause();
-        }
-        stopAllAnimations();
-    });
-    function playAllAnimations() {
-       stopAllAnimations();
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        layers.forEach(layer => {
-            const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
-            const specialEffect = layer.getAttribute('data-special-effect');
+        <div class="audio-master-controls"
+            style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #404040;">
+            <div style="display: flex; gap: 8px;">
+                <button class="play-btn" onclick="playAllAudio()" title="Play All">▶</button>
+                <button class="play-btn" onclick="pauseAllAudio()" title="Pause All" style="background: #666;">⏸</button>
+                <button class="play-btn" onclick="stopAllAudio()" title="Stop All" style="background: #ff4444;">⏹</button>
+            </div>
             
-            if (enableCustom || specialEffect !== 'none') {
-                const speed = parseFloat(layer.getAttribute('data-animation-speed'));
-                const duration = parseFloat(layer.getAttribute('data-animation-duration'));
-                const loop = layer.getAttribute('data-loop-animation') === 'true';
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="play-btn" onclick="playSequential()" title="依順序播放" style="background: #00aa44;">📋</button>
+                <button class="play-btn" onclick="stopSequential()" title="停止順序播放" style="background: #aa4400;">⏹</button>
+                <button class="play-btn" onclick="stopBackgroundMusic()" title="暫停背景音樂" style="background: #666;">🎵⏸</button>
+                <button class="play-btn" onclick="resumeBackgroundMusic()" title="恢復背景音樂" style="background: #0066ff;">🎵▶</button>
+                <label style="font-size: 11px; color: #ccc;">
+                    <input type="checkbox" id="loopSequence" style="margin-right: 4px;">
+                    循環播放序列
+                </label>
+            </div>
+            
+            <span style="font-size: 12px; color: #999;">Master Controls</span>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script>
+        // Global variables
+        let scene, camera, renderer, clock;
+        let imageLayers = [];
+        let selectedLayer = null;
+        let audioTracks = [];
+
+        // Audio control functions
+        // 處理音頻文件選擇
+        function handleAudioFileSelect(files) {
+            addAudioTracks(files);
+        }
+
+        // 播放次序控制變數
+        let sequentialPlayback = {
+            isPlaying: false,
+            currentIndex: 0,
+            tracks: []
+        };
+
+        // 背景音樂控制
+        let backgroundMusic = {
+            trackId: null,
+            isPlaying: false,
+            originalVolume: 0.8,
+            fadeVolume: 0.3
+        };
+
+        function addAudioTracks(files) {
+            for (let file of files) {
+                const trackId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const audioElement = new Audio();
+                audioElement.src = URL.createObjectURL(file);
+                audioElement.loop = false;
+                audioElement.volume = 0.8;
                 
-                // Parse special effect settings
-                let settings = {};
-                try {
-                    settings = JSON.parse(layer.getAttribute('data-special-settings').replace(/&quot;/g, '"'));
-                } catch (e) {
-                    console.error('Error parsing special effect settings:', e);
-                    // Fallback to default settings
-                    settings = {
-                        swingRange: 90, swingFreq: 8, swingTargetX: 5,
-                        zigzagAmp: 2, zigzagFreq: 6, zigzagTargetX: 5, zigzagTargetY: 3,
-                        pendulumRange: 60, pendulumSpeed: 2,
-                        waveAmp: 1.5, waveFreq: 4, waveTargetX: 4, waveTargetY: 2,
-                        bounceHeight: 2, bounceFreq: 4,
-                        spiralRadius: 3, spiralRotations: 6,
-                        slideDistance: 10, rotateCycles: 1
-                    };
+                const track = {
+                    id: trackId,
+                    name: file.name,
+                    audio: audioElement,
+                    isPlaying: false,
+                    loop: false,
+                    startTime: 0,
+                    endTime: null,
+                    timelineMode: false,
+                    originalDuration: null,
+                    playOrder: audioTracks.length + 1,
+                    autoNext: false,
+                    isBackground: false
+                };
+                
+                audioTracks.push(track);
+                createAudioTrackUI(track);
+            }
+        }
+
+        // 音頻軌道結束處理函數 - 必須在 createAudioTrackUI 之前定義
+        function onTrackEnded(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            const button = document.querySelector(`#${trackId} .play-btn`);
+            
+            // 背景音樂特殊處理
+            if (track.isBackground) {
+                // 背景音樂永遠循環，不需要特殊處理
+                return;
+            }
+            
+            if (track.timelineMode && track.loop) {
+                // 時間軸循環模式：跳回起始時間繼續播放
+                track.audio.currentTime = track.startTime;
+                track.audio.play();
+            } else if (!track.timelineMode && track.loop) {
+                // 一般循環模式：從頭開始
+                track.audio.currentTime = 0;
+                track.audio.play();
+            } else {
+                // 停止播放
+                track.isPlaying = false;
+                if (button) {
+                    button.textContent = '▶';
+                    button.classList.remove('playing');
                 }
                 
-                const startTime = Date.now();
+                // 如果是時間軸模式，重置到起始時間
+                if (track.timelineMode) {
+                    track.audio.currentTime = track.startTime;
+                } else {
+                    track.audio.currentTime = 0;
+                }
                 
-                const interval = setInterval(() => {
-                    const currentTime = Date.now();
-                    const elapsed = (currentTime - startTime) / 1000 * speed;
-                    let progress = (elapsed % duration) / duration;
-                    
-                    if (!loop && elapsed > duration) {
-                        clearInterval(interval);
-                        return;
-                    }
-                    
-                    const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-                    const easedProgress = easeInOut(progress);
-
-                    const originalPos = layer.getAttribute('position');
-                    const originalRot = layer.getAttribute('rotation');
-                    const originalScale = layer.getAttribute('scale');
-                    const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
-                    const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
-                    const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
-
-                    let finalX = origX, finalY = origY, finalZ = origZ;
-                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
-                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-                    let finalOpacity = 1;
+                // 檢查自動播放下一個功能
+                if (track.autoNext && !sequentialPlayback.isPlaying) {
+                    playNextTrack(track.playOrder);
+                }
                 
-                    // Apply custom animation if enabled
-                    if (enableCustom) {
-                        try {
-                            const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
-                            const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
-                            
-                            finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
-                            finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
-                            finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
-                            
-                            const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
-                            finalScaleX = finalScaleY = finalScaleZ = customScale;
-                            
-                            finalOpacity = customStart.opacity + (customEnd.opacity - customStart.opacity) * easedProgress;
-                            finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
-                        } catch (e) {
-                            console.error('Error parsing custom animation data:', e);
-                        }
-                    }
-                    
-                    // Apply special effects with user-controlled settings
-                    if (specialEffect !== 'none') {
-                        switch (specialEffect) {
-                            case 'swingToTarget':
-                                const swingAmplitude = (1 - easedProgress) * settings.swingRange;
-                                const swingAngle = Math.sin(progress * settings.swingFreq * Math.PI) * swingAmplitude;
-                                finalRotZ += swingAngle;
-
-                                if (!enableCustom) {
-                                    finalX += settings.swingTargetX * easedProgress;
-                                }
-                                break;
-
-                            case 'zigzagToTarget':
-                                const zigzagAmplitude = (1 - easedProgress) * settings.zigzagAmp;
-                                const zigzagOffset = Math.sin(progress * settings.zigzagFreq * Math.PI) * zigzagAmplitude;
-                                finalX += zigzagOffset;
-
-                                if (!enableCustom) {
-                                    finalX += settings.zigzagTargetX * easedProgress;
-                                    finalY += settings.zigzagTargetY * easedProgress;
-                                }
-                                break;
-
-                            case 'pendulumMove':
-                                const pendulumAngle = Math.sin(elapsed * settings.pendulumSpeed) * settings.pendulumRange;
-                                finalRotZ += pendulumAngle;
-                                break;
-
-                            case 'waveToTarget':
-                                const waveY = Math.sin(progress * settings.waveFreq * Math.PI) * settings.waveAmp * (1 - easedProgress);
-                                finalY += waveY;
-                                finalRotZ += (waveY * 0.2);
-
-                                if (!enableCustom) {
-                                    finalX += settings.waveTargetX * easedProgress;
-                                    finalY += settings.waveTargetY * easedProgress;
-                                }
-                                break;
-
-                            case 'elasticMove':
-                                const scaleElastic = 1 + Math.sin(progress * 10) * 0.1 * (1 - progress);
-                                finalScaleX *= scaleElastic;
-                                finalScaleY *= scaleElastic;
-                                finalScaleZ *= scaleElastic;
-
-                                if (!enableCustom) {
-                                    const elasticEase = (t) => {
-                                        if (t === 0) return 0;
-                                        if (t === 1) return 1;
-                                        const c4 = (2 * Math.PI) / 3;
-                                        return t < 0.5
-                                            ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * c4)) / 2
-                                            : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * c4)) / 2 + 1;
-                                    };
-                                    const elasticProgress = elasticEase(progress);
-                                    finalX += 3 * elasticProgress;
-                                    finalY += 3 * elasticProgress;
-                                }
-                                break;
-
-                            case 'slideDown':
-                                finalY += settings.slideDistance * (1 - easedProgress);
-                                break;
-                            case 'slideUp':
-                                finalY -= settings.slideDistance * (1 - easedProgress);
-                                break;
-                            case 'slideLeft':
-                                finalX += settings.slideDistance * (1 - easedProgress);
-                                break;
-                            case 'slideRight':
-                                finalX -= settings.slideDistance * (1 - easedProgress);
-                                break;
-                            case 'fadeIn':
-                                finalOpacity *= easedProgress;
-                                break;
-                            case 'scaleIn':
-                                const scaleInFactor = easedProgress;
-                                finalScaleX *= scaleInFactor;
-                                finalScaleY *= scaleInFactor;
-                                finalScaleZ *= scaleInFactor;
-                                break;
-                            case 'rotate':
-                                finalRotZ += easedProgress * 360 * settings.rotateCycles;
-                                break;
-                            case 'bounce':
-                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * settings.bounceFreq)) * settings.bounceHeight;
-                                finalY += bounceY;
-                                break;
-                            case 'spiral':
-                                const spiralRadius = settings.spiralRadius * (1 - easedProgress);
-                                const spiralAngle = easedProgress * Math.PI * settings.spiralRotations;
-                                finalX += spiralRadius * Math.cos(spiralAngle);
-                                finalY += spiralRadius * Math.sin(spiralAngle);
-                                break;
-                        }
-                    }
-                    
-                    // Update layer position, rotation, and scale
-                    layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
-                    layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
-                    layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-                    
-                    // Update opacity if needed
-                    if (specialEffect === 'fadeIn' || enableCustom) {
-                        layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
-                    }
-                    
-                }, 16); // ~60fps
+                // 移除軌道高亮
+                const element = document.getElementById(trackId);
+                if (element && !track.isBackground) {
+                    element.style.border = '1px solid #404040';
+                }
                 
-                animationIntervals.push(interval);
+                // 當非背景音樂結束時，恢復背景音樂音量
+                if (!track.isBackground && backgroundMusic.isPlaying) {
+                    setTimeout(() => {
+                        fadeBackgroundMusic(false); // 恢復背景音樂音量
+                    }, 500);
+                }
             }
+        }
+
+        function updateTimeDisplay(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            const timeDisplay = document.querySelector(`#${trackId} .time-display`);
+            
+            if (track && timeDisplay) {
+                const currentTime = track.audio.currentTime;
+                const minutes = Math.floor(currentTime / 60);
+                const seconds = Math.floor(currentTime % 60);
+                
+                // 如果啟用時間軸模式，檢查是否超過結束時間
+                if (track.timelineMode && track.endTime && currentTime >= track.endTime) {
+                    if (track.loop) {
+                        // 循環播放：跳回起始時間
+                        track.audio.currentTime = track.startTime;
+                    } else {
+                        // 停止播放
+                        track.audio.pause();
+                        track.isPlaying = false;
+                        const button = document.querySelector(`#${trackId} .play-btn`);
+                        if (button) {
+                            button.textContent = '▶';
+                            button.classList.remove('playing');
+                        }
+                        // 重置到起始時間
+                        track.audio.currentTime = track.startTime;
+                    }
+                }
+                
+                timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // 顯示時間軸信息
+                if (track.timelineMode) {
+                    const startMin = Math.floor(track.startTime / 60);
+                    const startSec = Math.floor(track.startTime % 60);
+                    const endMin = Math.floor((track.endTime || track.audio.duration) / 60);
+                    const endSec = Math.floor((track.endTime || track.audio.duration) % 60);
+                    timeDisplay.title = `時間軸: ${startMin}:${startSec.toString().padStart(2, '0')} - ${endMin}:${endSec.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+
+        // 新增播放次序控制功能
+        function updatePlayOrder(trackId, order) {
+            const track = audioTracks.find(t => t.id === trackId);
+            if (!track) return;
+            
+            track.playOrder = parseInt(order);
+            reorderTrackDisplay();
+        }
+
+        function moveTrackUp(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            if (!track || track.playOrder <= 1) return;
+            
+            // 找到前一個軌道並交換順序
+            const prevTrack = audioTracks.find(t => t.playOrder === track.playOrder - 1);
+            if (prevTrack) {
+                prevTrack.playOrder++;
+                track.playOrder--;
+                updateOrderInputs();
+                reorderTrackDisplay();
+            }
+        }
+
+        function moveTrackDown(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            if (!track) return;
+            
+            const maxOrder = Math.max(...audioTracks.map(t => t.playOrder));
+            if (track.playOrder >= maxOrder) return;
+            
+            // 找到後一個軌道並交換順序
+            const nextTrack = audioTracks.find(t => t.playOrder === track.playOrder + 1);
+            if (nextTrack) {
+                nextTrack.playOrder--;
+                track.playOrder++;
+                updateOrderInputs();
+                reorderTrackDisplay();
+            }
+        }
+
+        function updateOrderInputs() {
+            audioTracks.forEach(track => {
+                const input = document.querySelector(`#${track.id} input[onchange*="updatePlayOrder"]`);
+                if (input) {
+                    input.value = track.playOrder;
+                }
+            });
+        }
+
+        function reorderTrackDisplay() {
+            const tracksContainer = document.getElementById('audioTracks');
+            const trackElements = [...tracksContainer.children];
+            
+            // 按播放順序排序軌道
+            const sortedTracks = audioTracks.sort((a, b) => a.playOrder - b.playOrder);
+            
+            // 重新排列DOM元素
+            sortedTracks.forEach(track => {
+                const element = document.getElementById(track.id);
+                if (element) {
+                    tracksContainer.appendChild(element);
+                }
+            });
+        }
+
+        function updateAutoNext(trackId, enabled) {
+            const track = audioTracks.find(t => t.id === trackId);
+            if (track) {
+                track.autoNext = enabled;
+            }
+        }
+
+        // 背景音樂控制功能
+        function toggleBackgroundMusic(trackId, enabled) {
+            const track = audioTracks.find(t => t.id === trackId);
+            if (!track) return;
+
+            if (enabled) {
+                // 取消其他軌道的背景音樂設定
+                audioTracks.forEach(t => {
+                    if (t.id !== trackId && t.isBackground) {
+                        t.isBackground = false;
+                        const checkbox = document.querySelector(`#${t.id} input[onchange*="toggleBackgroundMusic"]`);
+                        if (checkbox) checkbox.checked = false;
+                        
+                        // 移除背景音樂樣式
+                        const element = document.getElementById(t.id);
+                        if (element) {
+                            element.style.backgroundColor = 'rgba(45, 45, 45, 0.8)';
+                        }
+                    }
+                });
+
+                // 設定當前軌道為背景音樂
+                track.isBackground = true;
+                track.audio.loop = true; // 背景音樂自動循環
+                backgroundMusic.trackId = trackId;
+                backgroundMusic.originalVolume = track.audio.volume;
+
+                // 添加背景音樂視覺標識
+                const element = document.getElementById(trackId);
+                if (element) {
+                    element.style.backgroundColor = 'rgba(0, 102, 255, 0.2)';
+                    element.style.border = '2px solid #0066ff';
+                }
+
+                // 自動開始播放背景音樂
+                if (!track.isPlaying) {
+                    toggleAudioTrack(trackId);
+                }
+                backgroundMusic.isPlaying = true;
+
+            } else {
+                // 取消背景音樂設定
+                track.isBackground = false;
+                track.audio.loop = false;
+                backgroundMusic.trackId = null;
+                backgroundMusic.isPlaying = false;
+
+                // 移除背景音樂樣式
+                const element = document.getElementById(trackId);
+                if (element) {
+                    element.style.backgroundColor = 'rgba(45, 45, 45, 0.8)';
+                    element.style.border = '1px solid #404040';
+                }
+            }
+        }
+
+        // 背景音樂音量控制
+        function fadeBackgroundMusic(fadeOut = true) {
+            if (!backgroundMusic.trackId) return;
+
+            const track = audioTracks.find(t => t.id === backgroundMusic.trackId);
+            if (!track || !track.isPlaying) return;
+
+            const targetVolume = fadeOut ? backgroundMusic.fadeVolume : backgroundMusic.originalVolume;
+            const currentVolume = track.audio.volume;
+            const step = (targetVolume - currentVolume) / 20; // 20步驟漸變
+
+            let count = 0;
+            const fadeInterval = setInterval(() => {
+                if (count >= 20) {
+                    clearInterval(fadeInterval);
+                    track.audio.volume = targetVolume;
+                    return;
+                }
+
+                track.audio.volume = Math.max(0, Math.min(1, currentVolume + (step * count)));
+                count++;
+            }, 50); // 每50ms調整一次
+        }
+
+        function playNextTrack(currentOrder) {
+            const nextTrack = audioTracks.find(t => t.playOrder === currentOrder + 1);
+            if (nextTrack) {
+                setTimeout(() => {
+                    toggleAudioTrack(nextTrack.id);
+                }, 500); // 500ms 延遲
+            }
+        }
+
+        function stopBackgroundMusic() {
+            if (backgroundMusic.trackId) {
+                const track = audioTracks.find(t => t.id === backgroundMusic.trackId);
+                if (track && track.isPlaying) {
+                    toggleAudioTrack(backgroundMusic.trackId);
+                }
+                backgroundMusic.isPlaying = false;
+            }
+        }
+
+        function resumeBackgroundMusic() {
+            if (backgroundMusic.trackId) {
+                const track = audioTracks.find(t => t.id === backgroundMusic.trackId);
+                if (track && !track.isPlaying) {
+                    toggleAudioTrack(backgroundMusic.trackId);
+                }
+                backgroundMusic.isPlaying = true;
+            }
+        }
+
+        // 順序播放功能
+        function playSequential() {
+            const sortedTracks = audioTracks.sort((a, b) => a.playOrder - b.playOrder);
+            
+            if (sortedTracks.length === 0) {
+                alert('沒有音頻軌道可播放');
+                return;
+            }
+            
+            sequentialPlayback.isPlaying = true;
+            sequentialPlayback.currentIndex = 0;
+            sequentialPlayback.tracks = sortedTracks;
+            
+            // 停止所有當前播放
+            stopAllAudio();
+            
+            if (trick.isBackground) {
+
+            }
+            playTrackAtIndex(0);
+            
+            // 更新UI
+            const button = document.querySelector('button[onclick="playSequential()"]');
+            if (button) {
+                button.style.background = '#00ff00';
+                button.textContent = '📋▶';
+            }
+        }
+
+        function stopSequential() {
+            sequentialPlayback.isPlaying = false;
+            stopAllAudio();
+            
+            // 更新UI
+            const button = document.querySelector('button[onclick="playSequential()"]');
+            if (button) {
+                button.style.background = '#00aa44';
+                button.textContent = '📋';
+            }
+        }
+
+        function playTrackAtIndex(index) {
+            if (!sequentialPlayback.isPlaying || index >= sequentialPlayback.tracks.length) {
+                // 檢查是否需要循環播放整個序列
+                if (sequentialPlayback.isPlaying && document.getElementById('loopSequence').checked) {
+                    sequentialPlayback.currentIndex = 0;
+                    playTrackAtIndex(0);
+                } else {
+                    stopSequential();
+                }
+                return;
+            }
+            
+            const track = sequentialPlayback.tracks[index];
+            sequentialPlayback.currentIndex = index;
+            
+            // 高亮當前播放的軌道
+            audioTracks.forEach(t => {
+                const element = document.getElementById(t.id);
+                if (element) {
+                    element.style.border = t.id === track.id ? '2px solid #00ff00' : '1px solid #404040';
+                }
+            });
+            
+            // 播放當前軌道
+            toggleAudioTrack(track.id);
+            
+            // 監聽播放結束事件
+            const checkEnded = () => {
+                if (!track.isPlaying && sequentialPlayback.isPlaying && sequentialPlayback.currentIndex === index) {
+                    setTimeout(() => {
+                        playTrackAtIndex(index + 1);
+                    }, 100);
+                } else if (sequentialPlayback.isPlaying) {
+                    setTimeout(checkEnded, 100);
+                }
+            };
+            
+            setTimeout(checkEnded, 100);
+        }
+
+        // 新增時間軸控制功能
+        function updateTimeSettings(trackId, type, value) {
+            const track = audioTracks.find(t => t.id === trackId);
+            if (!track) return;
+            
+            const numValue = parseFloat(value);
+            
+            if (type === 'start') {
+                track.startTime = numValue;
+            } else if (type === 'end') {
+                track.endTime = numValue > 0 ? numValue : track.audio.duration;
+            }
+            
+            // 確保起始時間不超過結束時間
+            if (track.startTime >= track.endTime) {
+                track.startTime = Math.max(0, track.endTime - 0.1);
+                const startInput = document.querySelector(`#${trackId} input[onchange*="start"]`);
+                if (startInput) startInput.value = track.startTime;
+            }
+        }
+
+        function toggleTimelineMode(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            if (!track) return;
+            
+            track.timelineMode = !track.timelineMode;
+            const button = document.querySelector(`#${trackId} button[onclick*="toggleTimelineMode"]`);
+            
+            if (track.timelineMode) {
+                button.style.background = '#0066ff';
+                button.textContent = '時間軸✓';
+            } else {
+                button.style.background = '#555';
+                button.textContent = '時間軸';
+            }
+        }
+
+        function createAudioTrackUI(track) {
+            const tracksContainer = document.getElementById('audioTracks');
+            const trackDiv = document.createElement('div');
+            trackDiv.className = 'audio-track';
+            trackDiv.id = track.id;
+            
+            trackDiv.innerHTML = `
+                <div class="audio-track-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="number" min="1" max="99" value="${track.playOrder}" 
+                               onchange="updatePlayOrder('${track.id}', this.value)"
+                               style="width: 40px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; text-align: center;"
+                               title="播放順序">
+                        <button onclick="moveTrackUp('${track.id}')" 
+                                style="width: 24px; height: 24px; background: #555; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px;"
+                                title="上移">↑</button>
+                        <button onclick="moveTrackDown('${track.id}')" 
+                                style="width: 24px; height: 24px; background: #555; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px;"
+                                title="下移">↓</button>
+                    </div>
+                    <div class="audio-track-name" style="flex: 1;">${track.name}</div>
+                    <div class="audio-controls-group">
+                        <button class="play-btn" onclick="toggleAudioTrack('${track.id}')" title="Play/Pause">▶</button>
+                        <button class="loop-toggle" onclick="toggleLoop('${track.id}')" title="Loop">🔁</button>
+                        <input type="range" class="volume-control" min="0" max="1" step="0.1" value="0.8" 
+                               onchange="updateTrackVolume('${track.id}', this.value)" title="Volume">
+                        <div class="time-display">0:00</div>
+                        <button class="delete-track-btn" onclick="deleteAudioTrack('${track.id}')" title="Delete">✕</button>
+                    </div>
+                </div>
+                <div class="audio-timeline-controls" style="display: flex; gap: 8px; align-items: center; font-size: 11px; color: #ccc;">
+                    <label style="min-width: 60px;">起始時間:</label>
+                    <input type="number" min="0" max="999" step="0.1" value="0" 
+                           onchange="updateTimeSettings('${track.id}', 'start', this.value)"
+                           style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;">
+                    <span>秒</span>
+                    
+                    <label style="min-width: 60px; margin-left: 12px;">結束時間:</label>
+                    <input type="number" min="0" max="999" step="0.1" value="0" 
+                           onchange="updateTimeSettings('${track.id}', 'end', this.value)"
+                           style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;">
+                    <span>秒</span>
+                    
+                    <button onclick="toggleTimelineMode('${track.id}')" 
+                            style="margin-left: 12px; padding: 4px 8px; background: #555; border: none; color: #fff; border-radius: 4px; font-size: 10px; cursor: pointer;"
+                            title="啟用/禁用時間軸控制">時間軸</button>
+                            
+                    <label style="margin-left: 12px; font-size: 10px;">
+                        <input type="checkbox" onchange="updateAutoNext('${track.id}', this.checked)" style="margin-right: 4px;">
+                        播放完成後自動播放下一個
+                    </label>
+                    
+                    <label style="margin-left: 12px; font-size: 10px;">
+                        <input type="checkbox" onchange="toggleBackgroundMusic('${track.id}', this.checked)" style="margin-right: 4px;">
+                        設為背景音樂
+                    </label>
+                </div>
+            `;
+            
+            tracksContainer.appendChild(trackDiv);
+            
+            // Add event listeners for time updates
+            track.audio.addEventListener('timeupdate', () => updateTimeDisplay(track.id));
+            track.audio.addEventListener('ended', () => onTrackEnded(track.id));
+            
+            // Load duration when metadata is loaded
+            track.audio.addEventListener('loadedmetadata', () => {
+                const endInput = trackDiv.querySelector('input[onchange*="end"]');
+                endInput.max = Math.floor(track.audio.duration);
+                endInput.value = Math.floor(track.audio.duration);
+                track.endTime = track.audio.duration;
+            });
+            
+            // 重新排序軌道顯示
+            reorderTrackDisplay();
+        }
+
+        function toggleAudioTrack(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            const button = document.querySelector(`#${trackId} .play-btn`);
+            
+            if (track.isPlaying) {
+                track.audio.pause();
+                track.isPlaying = false;
+                button.textContent = '▶';
+                button.classList.remove('playing');
+                
+                // 如果暫停的是背景音樂，更新背景音樂狀態
+                if (track.isBackground) {
+                    backgroundMusic.isPlaying = false;
+                }
+            } else {
+                // 如果要播放的不是背景音樂，且有其他音樂在播放，淡出背景音樂
+                if (!track.isBackground && backgroundMusic.isPlaying) {
+                    fadeBackgroundMusic(true); // 淡出背景音樂
+                }
+                
+                // 如果啟用時間軸模式，設定起始播放位置
+                if (track.timelineMode && track.startTime > 0) {
+                    track.audio.currentTime = track.startTime;
+                }
+                
+                track.audio.play();
+                track.isPlaying = true;
+                button.textContent = '⏸';
+                button.classList.add('playing');
+                
+                // 如果播放的是背景音樂，更新背景音樂狀態
+                if (track.isBackground) {
+                    backgroundMusic.isPlaying = true;
+                }
+            }
+        }
+
+        function updateTimeDisplay(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            const timeDisplay = document.querySelector(`#${trackId} .time-display`);
+            
+            if (track && timeDisplay) {
+                const currentTime = track.audio.currentTime;
+                const minutes = Math.floor(currentTime / 60);
+                const seconds = Math.floor(currentTime % 60);
+                
+                // 如果啟用時間軸模式，檢查是否超過結束時間
+                if (track.timelineMode && track.endTime && currentTime >= track.endTime) {
+                    if (track.loop) {
+                        // 循環播放：跳回起始時間
+                        track.audio.currentTime = track.startTime;
+                    } else {
+                        // 停止播放
+                        track.audio.pause();
+                        track.isPlaying = false;
+                        const button = document.querySelector(`#${trackId} .play-btn`);
+                        if (button) {
+                            button.textContent = '▶';
+                            button.classList.remove('playing');
+                        }
+                        // 重置到起始時間
+                        track.audio.currentTime = track.startTime;
+                    }
+                }
+                
+                timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // 顯示時間軸信息
+                if (track.timelineMode) {
+                    const startMin = Math.floor(track.startTime / 60);
+                    const startSec = Math.floor(track.startTime % 60);
+                    const endMin = Math.floor((track.endTime || track.audio.duration) / 60);
+                    const endSec = Math.floor((track.endTime || track.audio.duration) % 60);
+                    timeDisplay.title = `時間軸: ${startMin}:${startSec.toString().padStart(2, '0')} - ${endMin}:${endSec.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+
+        function toggleLoop(trackId) {
+            const track = audioTracks.find(t => t.id === trackId);
+            const button = document.querySelector(`#${trackId} .loop-toggle`);
+            
+            track.loop = !track.loop;
+            // 注意：我們不直接設定 audio.loop，而是自己處理循環邏輯
+            
+            if (track.loop) {
+                button.classList.add('active');
+                button.title = track.timelineMode ? '時間軸循環' : '完整循環';
+            } else {
+                button.classList.remove('active');
+                button.title = 'Loop';
+            }
+        }
+
+        function updateTrackVolume(trackId, volume) {
+            const track = audioTracks.find(t => t.id === trackId);
+            track.audio.volume = parseFloat(volume);
+        }
+
+        function deleteAudioTrack(trackId) {
+            const trackIndex = audioTracks.findIndex(t => t.id === trackId);
+            if (trackIndex > -1) {
+                const track = audioTracks[trackIndex];
+                track.audio.pause();
+                URL.revokeObjectURL(track.audio.src);
+                audioTracks.splice(trackIndex, 1);
+                
+                const trackElement = document.getElementById(trackId);
+                trackElement.remove();
+            }
+        }
+
+        function playAllAudio() {
+            audioTracks.forEach(track => {
+                if (!track.isPlaying) {
+                    toggleAudioTrack(track.id);
+                }
+            });
+        }
+
+        function pauseAllAudio() {
+            audioTracks.forEach(track => {
+                if (track.isPlaying) {
+                    toggleAudioTrack(track.id);
+                }
+            });
+        }
+
+        function stopAllAudio() {
+            audioTracks.forEach(track => {
+                track.audio.pause();
+                track.audio.currentTime = 0;
+                track.isPlaying = false;
+                const button = document.querySelector(`#${track.id} .play-btn`);
+                if (button) {
+                    button.textContent = '▶';
+                    button.classList.remove('playing');
+                }
+            });
+        }
+
+        // Background color function
+        function updateBackgroundColor() {
+            const color = document.getElementById('bgColor').value;
+            if (scene) {
+                scene.background = new THREE.Color(color);
+            }
+        }
+
+        // Image layer functions
+        function addImageLayer() {
+            const fileInput = document.getElementById('imageFile');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                alert('Please select one or more image files first.');
+                return;
+            }
+
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const texture = new THREE.TextureLoader().load(e.target.result);
+                    const material = new THREE.MeshBasicMaterial({ 
+                        map: texture, 
+                        transparent: true,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    const geometry = new THREE.PlaneGeometry(2, 2);
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    const layer = {
+                        id: 'layer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        name: file.name,
+                        mesh: mesh,
+                        originalPosition: { x: 0, y: 0, z: 0 },
+                        animation: null
+                    };
+                    
+                    scene.add(mesh);
+                    imageLayers.push(layer);
+                    updateLayersList();
+                    selectLayer(layer.id);
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            fileInput.value = '';
+        }
+
+        function updateLayersList() {
+            const layersContainer = document.getElementById('layers');
+            layersContainer.innerHTML = '';
+            
+            imageLayers.forEach(layer => {
+                const layerDiv = document.createElement('div');
+                layerDiv.className = 'layer-item';
+                layerDiv.id = 'layer_' + layer.id;
+                
+                layerDiv.innerHTML = `
+                    <span>${layer.name}</span>
+                    <button class="delete-btn" onclick="deleteLayer('${layer.id}')">Delete</button>
+                `;
+                
+                layerDiv.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('delete-btn')) {
+                        selectLayer(layer.id);
+                    }
+                });
+                
+                layersContainer.appendChild(layerDiv);
+            });
+        }
+
+        function selectLayer(layerId) {
+            // Remove previous selection
+            document.querySelectorAll('.layer-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selection to current layer
+            const layerElement = document.getElementById('layer_' + layerId);
+            if (layerElement) {
+                layerElement.classList.add('selected');
+            }
+            
+            // Set selected layer
+            selectedLayer = imageLayers.find(layer => layer.id === layerId);
+            
+            if (selectedLayer) {
+                // Update controls to match selected layer
+                updateControlsFromLayer();
+            }
+        }
+
+        function updateControlsFromLayer() {
+            if (!selectedLayer) return;
+            
+            const mesh = selectedLayer.mesh;
+            
+            // Update position controls
+            document.getElementById('xPos').value = mesh.position.x;
+            document.getElementById('yPos').value = mesh.position.y;
+            document.getElementById('zPos').value = mesh.position.z;
+            document.getElementById('xValue').textContent = mesh.position.x.toFixed(1);
+            document.getElementById('yValue').textContent = mesh.position.y.toFixed(1);
+            document.getElementById('zValue').textContent = mesh.position.z.toFixed(1);
+            
+            // Update scale controls
+            document.getElementById('scale').value = mesh.scale.x;
+            document.getElementById('scaleValue').textContent = mesh.scale.x.toFixed(1);
+            
+            // Update transparency controls
+            document.getElementById('alpha').value = mesh.material.opacity;
+            document.getElementById('alphaValue').textContent = mesh.material.opacity.toFixed(1);
+            
+            // Update rotation controls
+            document.getElementById('rotX').value = THREE.MathUtils.radToDeg(mesh.rotation.x);
+            document.getElementById('rotY').value = THREE.MathUtils.radToDeg(mesh.rotation.y);
+            document.getElementById('rotZ').value = THREE.MathUtils.radToDeg(mesh.rotation.z);
+            document.getElementById('rotXValue').textContent = Math.round(THREE.MathUtils.radToDeg(mesh.rotation.x));
+            document.getElementById('rotYValue').textContent = Math.round(THREE.MathUtils.radToDeg(mesh.rotation.y));
+            document.getElementById('rotZValue').textContent = Math.round(THREE.MathUtils.radToDeg(mesh.rotation.z));
+        }
+
+        function deleteLayer(layerId) {
+            const layerIndex = imageLayers.findIndex(layer => layer.id === layerId);
+            if (layerIndex > -1) {
+                const layer = imageLayers[layerIndex];
+                scene.remove(layer.mesh);
+                
+                // Dispose of geometry and material to free memory
+                layer.mesh.geometry.dispose();
+                layer.mesh.material.dispose();
+                if (layer.mesh.material.map) {
+                    layer.mesh.material.map.dispose();
+                }
+                
+                imageLayers.splice(layerIndex, 1);
+                updateLayersList();
+                
+                if (selectedLayer && selectedLayer.id === layerId) {
+                    selectedLayer = null;
+                }
+            }
+        }
+
+        function updatePosition() {
+            if (!selectedLayer) return;
+            
+            const x = parseFloat(document.getElementById('xPos').value);
+            const y = parseFloat(document.getElementById('yPos').value);
+            const z = parseFloat(document.getElementById('zPos').value);
+            
+            selectedLayer.mesh.position.set(x, y, z);
+            
+            document.getElementById('xValue').textContent = x.toFixed(1);
+            document.getElementById('yValue').textContent = y.toFixed(1);
+            document.getElementById('zValue').textContent = z.toFixed(1);
+        }
+
+        function updateTransparency() {
+            if (!selectedLayer) return;
+            
+            const alpha = parseFloat(document.getElementById('alpha').value);
+            selectedLayer.mesh.material.opacity = alpha;
+            document.getElementById('alphaValue').textContent = alpha.toFixed(1);
+        }
+
+        function updateScale() {
+            if (!selectedLayer) return;
+            
+            const scale = parseFloat(document.getElementById('scale').value);
+            selectedLayer.mesh.scale.setScalar(scale);
+            document.getElementById('scaleValue').textContent = scale.toFixed(1);
+        }
+
+        function updateRotation() {
+            if (!selectedLayer) return;
+            
+            const rotX = THREE.MathUtils.degToRad(parseFloat(document.getElementById('rotX').value));
+            const rotY = THREE.MathUtils.degToRad(parseFloat(document.getElementById('rotY').value));
+            const rotZ = THREE.MathUtils.degToRad(parseFloat(document.getElementById('rotZ').value));
+            
+            selectedLayer.mesh.rotation.set(rotX, rotY, rotZ);
+            
+            document.getElementById('rotXValue').textContent = document.getElementById('rotX').value;
+            document.getElementById('rotYValue').textContent = document.getElementById('rotY').value;
+            document.getElementById('rotZValue').textContent = document.getElementById('rotZ').value;
+        }
+
+        function updateSpecialEffect() {
+            const effect = document.getElementById('specialEffect').value;
+            const controlsDiv = document.getElementById('specialEffectControls');
+
+            // Hide all specific controls
+            document.querySelectorAll('#specialEffectControls > div').forEach(div => {
+                div.style.display = 'none';
+            });
+
+            if (effect !== 'none') {
+                controlsDiv.style.display = 'block';
+
+                // Show specific controls based on effect
+                const controlMap = {
+                    'swingToTarget': 'swingControls',
+                    'zigzagToTarget': 'zigzagControls',
+                    'pendulumMove': 'pendulumControls',
+                    'waveToTarget': 'waveControls',
+                    'bounce': 'bounceControls',
+                    'spiral': 'spiralControls',
+                    'slideDown': 'slideControls',
+                    'slideUp': 'slideControls',
+                    'slideLeft': 'slideControls',
+                    'slideRight': 'slideControls',
+                    'rotate': 'rotateControls'
+                };
+
+                if (controlMap[effect]) {
+                    document.getElementById(controlMap[effect]).style.display = 'block';
+                }
+            } else {
+                controlsDiv.style.display = 'none';
+            }
+        }
+
+        function updateSpecialEffectSettings() {
+            // Update all special effect value displays
+            const controls = [
+                'swingRange', 'swingFreq', 'swingTargetX',
+                'zigzagAmp', 'zigzagFreq', 'zigzagTargetX', 'zigzagTargetY',
+                'pendulumRange', 'pendulumSpeed',
+                'waveAmp', 'waveFreq', 'waveTargetX', 'waveTargetY',
+                'bounceHeight', 'bounceFreq',
+                'spiralRadius', 'spiralRotations',
+                'slideDistance', 'rotateCycles'
+            ];
+
+            controls.forEach(control => {
+                const element = document.getElementById(control);
+                const valueElement = document.getElementById(control + 'Value');
+                if (element && valueElement) {
+                    valueElement.textContent = element.value;
+                }
+            });
+        }
+
+        function toggleCustomControls() {
+            const checkbox = document.getElementById('enableCustomAnimation');
+            const controls = document.getElementById('customAnimationControls');
+            controls.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        function updateCustomValues() {
+            const controls = [
+                'startX', 'startY', 'startZ', 'endX', 'endY', 'endZ',
+                'startScale', 'startOpacity', 'startRotation',
+                'endScale', 'endOpacity', 'endRotation'
+            ];
+
+            controls.forEach(control => {
+                const element = document.getElementById(control);
+                const valueElement = document.getElementById(control + 'Value');
+                if (element && valueElement) {
+                    valueElement.textContent = element.value;
+                }
+            });
+        }
+
+        function updateAnimationSpeed() {
+            const speed = document.getElementById('animationSpeed').value;
+            document.getElementById('speedValue').textContent = speed;
+        }
+
+        function updateAnimationDuration() {
+            const duration = document.getElementById('animationDuration').value;
+            document.getElementById('durationValue').textContent = duration;
+        }
+
+        // Animation functions
+        function applyAnimation() {
+            if (!selectedLayer) {
+                alert('Please select a layer first.');
+                return;
+            }
+
+            const effect = document.getElementById('specialEffect').value;
+            const duration = parseFloat(document.getElementById('animationDuration').value) * 1000;
+            const loop = document.getElementById('loopAnimation').checked;
+
+            if (effect === 'none') {
+                alert('Please select an animation effect.');
+                return;
+            }
+
+            createAnimation(selectedLayer, effect, duration, loop);
+        }
+
+        function createAnimation(layer, effect, duration, loop) {
+            const startTime = Date.now();
+            const originalPos = { ...layer.mesh.position };
+            const originalScale = layer.mesh.scale.x;
+            const originalOpacity = layer.mesh.material.opacity;
+            
+            layer.animation = {
+                effect,
+                duration,
+                loop,
+                startTime,
+                originalPos,
+                originalScale,
+                originalOpacity,
+                update: function(currentTime) {
+                    const elapsed = currentTime - this.startTime;
+                    let progress = Math.min(elapsed / this.duration, 1);
+                    
+                    if (this.loop && progress >= 1) {
+                        this.startTime = currentTime;
+                        progress = 0;
+                    }
+                    
+                    applyAnimationEffect(layer, this.effect, progress);
+                }
+            };
+        }
+
+        function applyAnimationEffect(layer, effect, progress) {
+            const mesh = layer.mesh;
+            const easeProgress = easeInOutCubic(progress);
+            
+            switch (effect) {
+                case 'fadeIn':
+                    mesh.material.opacity = easeProgress;
+                    break;
+                    
+                case 'scaleIn':
+                    const scale = easeProgress;
+                    mesh.scale.setScalar(scale);
+                    break;
+                    
+                case 'slideDown':
+                    const slideDistance = parseFloat(document.getElementById('slideDistance').value);
+                    mesh.position.y = slideDistance - (slideDistance * easeProgress);
+                    break;
+                    
+                case 'slideUp':
+                    const slideUpDistance = parseFloat(document.getElementById('slideDistance').value);
+                    mesh.position.y = -slideUpDistance + (slideUpDistance * easeProgress);
+                    break;
+                    
+                case 'slideLeft':
+                    const slideLeftDistance = parseFloat(document.getElementById('slideDistance').value);
+                    mesh.position.x = slideLeftDistance - (slideLeftDistance * easeProgress);
+                    break;
+                    
+                case 'slideRight':
+                    const slideRightDistance = parseFloat(document.getElementById('slideDistance').value);
+                    mesh.position.x = -slideRightDistance + (slideRightDistance * easeProgress);
+                    break;
+                    
+                case 'rotate':
+                    const cycles = parseFloat(document.getElementById('rotateCycles').value);
+                    mesh.rotation.z = progress * cycles * Math.PI * 2;
+                    break;
+                    
+                case 'bounce':
+                    const bounceHeight = parseFloat(document.getElementById('bounceHeight').value);
+                    const bounceFreq = parseFloat(document.getElementById('bounceFreq').value);
+                    mesh.position.y = Math.abs(Math.sin(progress * Math.PI * bounceFreq)) * bounceHeight;
+                    break;
+                    
+                case 'spiral':
+                    const spiralRadius = parseFloat(document.getElementById('spiralRadius').value);
+                    const spiralRotations = parseFloat(document.getElementById('spiralRotations').value);
+                    const angle = progress * spiralRotations * Math.PI * 2;
+                    const radius = spiralRadius * (1 - progress);
+                    mesh.position.x = Math.cos(angle) * radius;
+                    mesh.position.z = Math.sin(angle) * radius;
+                    break;
+            }
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function stopAnimation() {
+            if (selectedLayer && selectedLayer.animation) {
+                selectedLayer.animation = null;
+            }
+        }
+
+        function previewAnimation() {
+            applyAnimation();
+        }
+
+        function resetCamera() {
+            camera.position.set(0, 0, 5);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function playAllAnimations() {
+            imageLayers.forEach(layer => {
+                if (layer.animation) {
+                    layer.animation.startTime = Date.now();
+                }
+            });
+        }
+
+        function stopAllAnimations() {
+            imageLayers.forEach(layer => {
+                layer.animation = null;
+            });
+        }
+
+        function exportAsAR() {
+            alert('AR.js export functionality would be implemented here.');
+        }
+
+        // Three.js scene initialization
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+
+            // Add grid helper
+            const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x444444);
+            scene.add(gridHelper);
+
+            // Add axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+
+            addMouseControls();
+            animate();
+        }
+
+        // Add mouse controls for camera
+        function addMouseControls() {
+            let mouseDown = false;
+            let mouseX = 0;
+            let mouseY = 0;
+
+            renderer.domElement.addEventListener('mousedown', (event) => {
+                mouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+
+            renderer.domElement.addEventListener('mousemove', (event) => {
+                if (!mouseDown) return;
+
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+
+                const spherical = new THREE.Spherical();
+                spherical.setFromVector3(camera.position);
+                spherical.theta -= deltaX * 0.01;
+                spherical.phi += deltaY * 0.01;
+                spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+                camera.position.setFromSpherical(spherical);
+                camera.lookAt(0, 0, 0);
+
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+
+            renderer.domElement.addEventListener('mouseup', () => {
+                mouseDown = false;
+            });
+
+            renderer.domElement.addEventListener('wheel', (event) => {
+                const scale = event.deltaY > 0 ? 1.1 : 0.9;
+                camera.position.multiplyScalar(scale);
+                camera.position.clampLength(1, 50);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const currentTime = Date.now();
+
+            // Update animations
+            imageLayers.forEach(layer => {
+                if (layer.animation && layer.animation.update) {
+                    layer.animation.update(currentTime);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
-    }
-    
-    function stopAllAnimations() {
-        animationIntervals.forEach(interval => clearInterval(interval));
-        animationIntervals = [];
-    }
-    
+
+        // Initialize scene when page loads
+        window.addEventListener('load', initScene);
     </script>
 </body>
+
 </html>
