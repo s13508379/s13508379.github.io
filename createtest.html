@@ -102,8 +102,22 @@
         
         <div class="controls">
             <div class="control-group">
+                <label for="markerType">Marker Type:</label>
+                <select id="markerType" onchange="updateMarkerType()">
+                    <option value="qr">QR Code + Text</option>
+                    <option value="simple">Simple AR-Friendly Pattern</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="qrControls">
                 <label for="qrText">QR Code Content:</label>
                 <input type="text" id="qrText" placeholder="Enter URL or text for QR code" value="https://example.com">
+            </div>
+            
+            <div class="control-group" id="qrSizeControl">
+                <label for="qrSize">QR Code Size:</label>
+                <input type="range" id="qrSize" min="100" max="200" value="150">
+                <span id="qrSizeValue">150px</span>
             </div>
             
             <div class="control-group">
@@ -151,58 +165,105 @@
     <script>
         let currentMarkerData = null;
 
+        function updateMarkerType() {
+            const markerType = document.getElementById('markerType').value;
+            const qrControls = document.getElementById('qrControls');
+            const qrSizeControl = document.getElementById('qrSizeControl');
+            
+            if (markerType === 'qr') {
+                qrControls.style.display = 'block';
+                qrSizeControl.style.display = 'block';
+            } else {
+                qrControls.style.display = 'none';
+                qrSizeControl.style.display = 'none';
+            }
+        }
+
         function generateMarker() {
-            const qrText = document.getElementById('qrText').value;
+            const markerType = document.getElementById('markerType').value;
             const markerText = document.getElementById('markerText').value;
             const fontSize = document.getElementById('fontSize').value;
-            const qrSize = document.getElementById('qrSize').value;
             
             // Update font size display
             document.getElementById('fontSizeValue').textContent = fontSize + 'px';
-            document.getElementById('qrSizeValue').textContent = qrSize + 'px';
             
             // Update text display
             const textDisplay = document.getElementById('textDisplay');
             textDisplay.textContent = markerText;
             textDisplay.style.fontSize = fontSize + 'px';
             
-            // Generate QR code
             const qrCodeDiv = document.getElementById('qrCode');
             qrCodeDiv.innerHTML = '';
             
-            // Create QR code using qrcode-generator library
-            const qr = qrcode(0, 'M');
-            qr.addData(qrText);
-            qr.make();
-            
-            // Create canvas and draw QR code
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const size = parseInt(qrSize);
-            const moduleCount = qr.getModuleCount();
-            const cellSize = size / moduleCount;
-            
-            canvas.width = size;
-            canvas.height = size;
-            
-            // Fill white background
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, size, size);
-            
-            // Draw QR modules
-            ctx.fillStyle = '#000000';
-            for (let row = 0; row < moduleCount; row++) {
-                for (let col = 0; col < moduleCount; col++) {
-                    if (qr.isDark(row, col)) {
-                        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            if (markerType === 'qr') {
+                const qrText = document.getElementById('qrText').value;
+                const qrSize = document.getElementById('qrSize').value;
+                document.getElementById('qrSizeValue').textContent = qrSize + 'px';
+                
+                // Generate QR code
+                const qr = qrcode(0, 'M');
+                qr.addData(qrText);
+                qr.make();
+                
+                // Create canvas and draw QR code
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const size = parseInt(qrSize);
+                const moduleCount = qr.getModuleCount();
+                const cellSize = size / moduleCount;
+                
+                canvas.width = size;
+                canvas.height = size;
+                
+                // Fill white background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, size, size);
+                
+                // Draw QR modules
+                ctx.fillStyle = '#000000';
+                for (let row = 0; row < moduleCount; row++) {
+                    for (let col = 0; col < moduleCount; col++) {
+                        if (qr.isDark(row, col)) {
+                            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                        }
                     }
                 }
+                
+                qrCodeDiv.appendChild(canvas);
+                generatePatternData(canvas, markerText, fontSize);
+            } else {
+                // Generate simple AR-friendly pattern
+                generateSimplePattern(markerText, fontSize);
             }
+        }
+
+        function generateSimplePattern(text, fontSize) {
+            // Create a simple, AR-friendly pattern
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 150;
+            canvas.height = 150;
             
-            qrCodeDiv.appendChild(canvas);
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 150, 150);
             
-            // Generate pattern data
-            generatePatternData(canvas, markerText, fontSize);
+            // Black border
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 150, 10);
+            ctx.fillRect(0, 140, 150, 10);
+            ctx.fillRect(0, 0, 10, 150);
+            ctx.fillRect(140, 0, 10, 150);
+            
+            // Simple geometric pattern
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(30, 30, 90, 20);
+            ctx.fillRect(30, 60, 20, 60);
+            ctx.fillRect(100, 60, 20, 60);
+            ctx.fillRect(60, 100, 30, 20);
+            
+            document.getElementById('qrCode').appendChild(canvas);
+            generatePatternData(canvas, text, fontSize);
         }
 
         function generatePatternData(qrCanvas, text, fontSize) {
@@ -256,7 +317,7 @@
             
             const patterns = [];
             
-            // Generate 3 identical patterns (for different lighting conditions)
+            // Generate 3 patterns (for different lighting conditions)
             for (let p = 0; p < 3; p++) {
                 const pattern = [];
                 
@@ -267,31 +328,34 @@
                         const y = Math.floor(row * scaleY);
                         const index = (y * canvas.width + x) * 4;
                         
-                        // Convert to grayscale
-                        const r = data[index];
-                        const g = data[index + 1];
-                        const b = data[index + 2];
+                        // Convert to grayscale and ensure values are in correct range
+                        const r = data[index] || 255;
+                        const g = data[index + 1] || 255;
+                        const b = data[index + 2] || 255;
                         const gray = Math.round((r + g + b) / 3);
                         
-                        pattern.push(gray);
+                        // Clamp values between 0 and 255
+                        const clampedGray = Math.max(0, Math.min(255, gray));
+                        pattern.push(clampedGray);
                     }
                 }
                 patterns.push(pattern);
             }
             
-            // Convert to .patt format
+            // Convert to proper .patt format
             let pattContent = '';
             
+            // Each pattern should be on separate lines
             patterns.forEach((pattern, patternIndex) => {
-                for (let i = 0; i < pattern.length; i++) {
-                    if (i > 0 && i % 16 === 0) {
-                        pattContent += '\n';
+                for (let row = 0; row < patternSize; row++) {
+                    for (let col = 0; col < patternSize; col++) {
+                        const index = row * patternSize + col;
+                        if (col > 0) pattContent += ' ';
+                        pattContent += pattern[index].toString().padStart(3, ' ');
                     }
-                    pattContent += pattern[i].toString().padStart(3, ' ');
-                    if (i % 16 !== 15) {
-                        pattContent += ' ';
-                    }
+                    pattContent += '\n';
                 }
+                // Add blank line between patterns except after the last one
                 if (patternIndex < patterns.length - 1) {
                     pattContent += '\n';
                 }
