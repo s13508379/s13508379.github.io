@@ -215,7 +215,15 @@
                 // Add a small delay before restarting to prevent immediate restart
                 setTimeout(() => {
                     if (sequenceLoopActive) {
-                        playNextInSequence(tracks);
+                        const track = tracks[currentSequentialIndex];
+                        console.log('Playing track:', track.name, 'Order:', track.playOrder);
+                        
+                        playTrack(track, () => {
+                            currentSequentialIndex++;
+                            setTimeout(() => {
+                                playNextInSequence(tracks);
+                            }, 100);
+                        });
                     }
                 }, 500);
                 return;
