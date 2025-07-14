@@ -212,12 +212,17 @@
             if (hasLoopTracks) {
                 console.log('Restarting sequence due to loop tracks');
                 currentSequentialIndex = 0;
-                // Don't call playNextInSequence immediately, let it fall through
-            } else {
-                console.log('Sequential playback complete');
-                sequenceLoopActive = false;
+                // Add a small delay before restarting to prevent immediate restart
+                setTimeout(() => {
+                    if (sequenceLoopActive) {
+                        playNextInSequence(tracks);
+                    }
+                }, 500);
                 return;
             }
+            console.log('Sequential playback complete');
+            sequenceLoopActive = false;
+            return;
         }
 
         const track = tracks[currentSequentialIndex];
