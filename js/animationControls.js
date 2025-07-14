@@ -12,7 +12,7 @@ function updateSpecialEffect() {
     document.getElementById('spiralControls').style.display = 'none';
     document.getElementById('slideControls').style.display = 'none';
     document.getElementById('rotateControls').style.display = 'none';
-    
+
 
     if (specialEffect === 'none') {
         specialControls.style.display = 'none';
@@ -206,4 +206,31 @@ function updateScale() {
     selectedLayer.mesh.scale.set(scale, scale, scale);
     selectedLayer.originalScale = { x: scale, y: scale, z: scale };
     updateControlValues();
+}
+
+// Update animation speed
+function updateAnimationSpeed() {
+    if (!selectedLayer) return;
+    selectedLayer.animationSpeed = parseFloat(document.getElementById('animationSpeed').value);
+    updateControlValues();
+}
+
+// Update animation duration
+function updateAnimationDuration() {
+    if (!selectedLayer) return;
+    selectedLayer.animationDuration = parseFloat(document.getElementById('animationDuration').value);
+    updateControlValues();
+}
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    const currentTime = Date.now();
+    imageLayers.forEach(layer => {
+        if (layer.animation && layer.animation.update) {
+            layer.animation.update(currentTime);
+        }
+    });
+
+    renderer.render(scene, camera);
 }

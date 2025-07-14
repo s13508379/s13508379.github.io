@@ -19,7 +19,7 @@ body {
     max-height: 80%;
     overflow-y: auto;
     background: linear-gradient(135deg, #2b2b2b 0%, #1e1e1e 100%);
-    padding: 24px;
+    padding: 24px 24px 24px 5px;
     border: 1px solid #3a3a3a;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
@@ -272,10 +272,20 @@ body {
 
 .control-group input[type="text"],
 .control-group input[type="color"],
-.control-group input[type="url"],
-.control-group select {
+.control-group input[type="url"] {
     width: 80%;
     height: 16px;
+    padding: 8px 12px;
+    border: 1px solid #404040;
+    background: #2b2b2b;
+    color: #f0f0f0;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.control-group select {
+    width: 80%;
     padding: 8px 12px;
     border: 1px solid #404040;
     background: #2b2b2b;
@@ -391,4 +401,13 @@ h5 {
 
 .audio-file-input {
     display: none;
+}
+
+.audio-master-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #404040;
 }

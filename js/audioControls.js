@@ -90,7 +90,6 @@ function createAudioTrackUI(track) {
         if (controlsElement) {
             controlsElement.style.maxHeight = '70%';
             controlsHeightChanged = true;
-            console.log('Controls height changed to 70%');
         }
     }
 
