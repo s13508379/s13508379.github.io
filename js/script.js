@@ -157,249 +157,6 @@ function updateBackgroundColor() {
     scene.background = new THREE.Color(color);
 }
 
-function addAudioTracks(files) {
-    for (let file of files) {
-        const trackId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        const audioElement = new Audio();
-        audioElement.src = URL.createObjectURL(file);
-        audioElement.loop = false;
-        audioElement.volume = 0.8;
-
-        const track = {
-            id: trackId,
-            name: file.name,
-            audio: audioElement,
-            isPlaying: false,
-            loop: false,
-            startTime: 0,
-            endTime: null,
-            timelineMode: false,
-            originalDuration: null,
-            playOrder: audioTracks.length + 1,
-            autoNext: false,
-            isBackground: false
-        };
-
-        audioTracks.push(track);
-        createAudioTrackUI(track);
-    }
-}
-
-function createAudioTrackUI(track) {
-    const tracksContainer = document.getElementById('audioTracks');
-    const trackDiv = document.createElement('div');
-    trackDiv.className = 'audio-track';
-    trackDiv.id = track.id;
-    trackDiv.innerHTML = `
-    <div class="audio-track-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-                <input type="number" min="1" max="99" value="${track.playOrder}" readonly id="playOrder-${track.id}"
-                    data-track="${track.id}" style="width:40px; padding:4px; background:#333; border:1px solid #555;
-                color:#fff; border-radius:4px; text-align:center;" title="Play Order">
-            <button onclick="moveTrackUp('${track.id}')" 
-                    style="width: 24px; height: 24px; background: #555; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px;"
-                    title="Move Up">↑</button>
-            <button onclick="moveTrackDown('${track.id}')" 
-                    style="width: 24px; height: 24px; background: #555; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px;"
-                    title="Move Down">↓</button>
-        </div>
-        <div class="audio-track-name" style="flex: 1;">${track.name}</div>
-        <div class="audio-controls-group">
-            <button class="play-btn" onclick="toggleAudioTrack('${track.id}')" title="Play / Pause">▶</button>
-            <button class="loop-toggle" onclick="toggleLoop('${track.id}')" title="Loop">🔁</button>
-            <input type="range" class="volume-control" min="0" max="1" step="0.1" value="0.8" 
-                   onchange="updateTrackVolume('${track.id}', this.value)" title="Volume">
-            <div class="time-display">0:00</div>
-            <button class="delete-track-btn" onclick="deleteAudioTrack('${track.id}')" title="Delete">✕</button>
-        </div>
-    </div>
-    <div class="audio-timeline-controls" style="display: flex; gap: 8px; align-items: center; font-size: 11px; color: #ccc;">
-        <label style="min-width: 60px;">Start Time:</label>
-        <input type="number" min="0" max="999" step="0.1" value="0" 
-               onchange="updateTimeSettings('${track.id}', 'start', this.value)"
-               style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;">
-        <span>sec</span>
-        
-        <label style="min-width: 60px; margin-left: 12px;">End Time:</label>
-        <input type="number" min="0" max="999" step="0.1" value="0" 
-               onchange="updateTimeSettings('${track.id}', 'end', this.value)"
-               style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;">
-        <span>sec</span>
-        
-        <button onclick="toggleTimelineMode('${track.id}')" 
-                style="margin-left: 12px; padding: 4px 8px; background: #555; border: none; color: #fff; border-radius: 4px; font-size: 10px; cursor: pointer;"
-                title="Enable / Disable Timeline Control">Timeline</button>
-                
-        <label style="margin-left: 12px; font-size: 10px;">
-            <input type="checkbox" onchange="updateAutoNext('${track.id}', this.checked)" style="margin-right: 4px;">
-            Auto-play next after finished
-        </label>
-        
-        <label style="margin-left: 12px; font-size: 10px;">
-            <input type="checkbox" onchange="toggleBackgroundMusic('${track.id}', this.checked)" style="margin-right: 4px;">
-            Set as background music
-        </label>
-    </div>
-`;
-
-
-    tracksContainer.appendChild(trackDiv);
-
-    // Add event listeners for time updates
-    track.audio.addEventListener('timeupdate', () => updateTimeDisplay(track.id));
-    track.audio.addEventListener('ended', () => onTrackEnded(track.id));
-
-    // Load duration when metadata is loaded
-    track.audio.addEventListener('loadedmetadata', () => {
-        const endInput = trackDiv.querySelector('input[onchange*="end"]');
-        endInput.max = Math.floor(track.audio.duration);
-        endInput.value = Math.floor(track.audio.duration);
-        track.endTime = track.audio.duration;
-    });
-
-    reorderAudioDisplay();
-}
-
-
-function reorderAudioDisplay() {
-    const tracksContainer = document.getElementById('audioTracks');
-
-    const sortedTracks = audioTracks.sort((a, b) => a.playOrder - b.playOrder);
-
-    sortedTracks.forEach(track => {
-        const element = document.getElementById(track.id);
-
-        if (element) {
-            tracksContainer.appendChild(element);
-        }
-    });
-}
-
-//Change track to top     
-function moveTrackUp(trackId) {
-    const track = audioTracks.find(t => t.id === trackId);
-    if (!track || track.playOrder <= 1) return;
-
-    const prevTrack = audioTracks.find(t => t.playOrder === track.playOrder - 1);
-    if (prevTrack) {
-        prevTrack.playOrder++;
-        track.playOrder--;
-        updateOrderInputs();
-        reorderAudioDisplay();
-    }
-}
-
-//Change  track to down 
-function moveTrackDown(trackId) {
-    const track = audioTracks.find(t => t.id === trackId);
-    if (!track) return;
-
-    const maxOrder = Math.max(...audioTracks.map(t => t.playOrder));
-    if (track.playOrder >= maxOrder) return;
-
-    const nextTrack = audioTracks.find(t => t.playOrder === track.playOrder + 1);
-    if (nextTrack) {
-        nextTrack.playOrder--;
-        track.playOrder++;
-        updateOrderInputs();
-        reorderAudioDisplay();
-    }
-}
-
-function updateOrderInputs() {
-    audioTracks.forEach(track => {
-        const input = document.getElementById(`playOrder-${track.id}`);
-        if (input) {
-            input.value = track.playOrder;
-        }
-    });
-}
-
-function toggleAudioTrack(trackId) {
-    const track = audioTracks.find(t => t.id === trackId);
-    const button = document.querySelector(`#${trackId} .play-btn`);
-
-    if (track.isPlaying) {
-        track.audio.pause();
-        track.isPlaying = false;
-        button.textContent = '▶';
-        button.classList.remove('playing');
-
-        if (track.isBackground) {
-            backgroundMusic.isPlaying = false;
-        }
-    } else {
-        if (!track.isBackground && backgroundMusic.isPlaying) {
-            fadeBackgroundMusic(true);
-        }
-
-        if (track.timelineMode && track.startTime > 0) {
-            track.audio.currentTime = track.startTime;
-        }
-
-        track.audio.play();
-        track.isPlaying = true;
-        button.textContent = '⏸';
-        button.classList.add('playing');
-
-        if (track.isBackground) {
-            backgroundMusic.isPlaying = true;
-        }
-    }
-}
-
-function toggleLoop(trackId) {
-    const track = audioTracks.find(t => t.id === trackId);
-    const button = document.querySelector(`#${trackId} .loop-toggle`);
-
-    track.loop = !track.loop;
-
-    if (track.loop) {
-        button.classList.add('active');
-        button.title = 'stop loop';
-    } else {
-        button.classList.remove('active');
-        button.title = 'Loop';
-    }
-}
-
-function updateTrackVolume(trackId, volume) {
-    const track = audioTracks.find(t => t.id === trackId);
-    track.audio.volume = parseFloat(volume);
-}
-
-function deleteAudioTrack(trackId) {
-    const trackIndex = audioTracks.findIndex(t => t.id === trackId);
-    if (trackIndex > -1) {
-        const track = audioTracks[trackIndex];
-        track.audio.pause();
-        URL.revokeObjectURL(track.audio.src);
-        audioTracks.splice(trackIndex, 1);
-
-        const trackElement = document.getElementById(trackId);
-        trackElement.remove();
-    }
-}
-
-function updateTimeSettings(trackId, type, value) {
-    const track = audioTracks.find(t => t.id === trackId);
-    if (!track) return;
-
-    const numValue = parseFloat(value);
-
-    if (type === 'start') {
-        track.startTime = numValue;
-    } else if (type === 'end') {
-        track.endTime = numValue > 0 ? numValue : track.audio.duration;
-    }
-
-    if (track.startTime >= track.endTime) {
-        track.startTime = Math.max(0, track.endTime - 0.1);
-        const startInput = document.querySelector(`#${trackId} input[onchange*="start"]`);
-        if (startInput) startInput.value = track.startTime;
-        track.timelineMode = !track.timelineMode;
-    }
-}
 
 
 
@@ -1100,6 +857,9 @@ function generateHTMLContent() {
             border-radius: 10px;
             color: white;
             text-align: center;
+            max-width: 90%;
+            max-height: 60vh;
+            overflow-y: auto;
         }
 
         .ar-controls button {
@@ -1116,13 +876,90 @@ function generateHTMLContent() {
         .ar-controls button:hover {
             background: #0052a3;
         }
+
+        .audio-track {
+            background: rgba(45, 45, 45, 0.8);
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 8px 0;
+            color: white;
+        }
+
+        .audio-track-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .audio-controls-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .play-btn, .loop-toggle, .delete-track-btn {
+            width: 32px;
+            height: 32px;
+            background: #555;
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .loop-toggle.active {
+            background: #4CAF50;
+        }
+
+        .volume-control {
+            width: 60px;
+        }
+
+        .time-display {
+            font-size: 12px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .audio-track-name {
+            flex: 1;
+            font-size: 12px;
+            min-width: 120px;
+        }
+
+        @media (max-width: 768px) {
+            .ar-controls {
+                bottom: 10px;
+                padding: 10px;
+            }
+            
+            .audio-track-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .audio-controls-group {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="ar-controls">
-        <button onclick="playAllAnimations()">Play All Animations</button>
-        <button onclick="stopAllAnimations()">Stop Animations</button>
+        <div style="margin-bottom: 15px;">
+            <button onclick="playAllAnimations()">Play All Animations</button>
+            <button onclick="stopAllAnimations()">Stop Animations</button>
+            <button onclick="playAllAudio()">Play All Audio</button>
+            <button onclick="stopAllAudio()">Stop All Audio</button>
+        </div>
+        
+        <div id="audioTracks"></div>
     </div>
 
     <a-scene vr-mode-ui="enabled: false" embedded
@@ -1132,18 +969,7 @@ function generateHTMLContent() {
 
         <a-assets>`;
 
-    // Add audio asset if exists
-    if (backgroundAudio) {
-        htmlContent += `
-            <audio id="background-audio" src="audio/${backgroundAudio.fileName}" loop autoplay></audio>`;
-    }
-
-    // Add image assets
-    imageLayers.forEach(layer => {
-        htmlContent += `
-            <img id="img-${layer.id}" src="images/${layer.name}" crossorigin="anonymous">`;
-    });
-
+    // Add audio assets from audioTracks if they exist
     htmlContent += `
         </a-assets>
 
@@ -1156,17 +982,14 @@ function generateHTMLContent() {
         const scale = layer.originalScale;
         const opacity = layer.originalOpacity;
 
-        // Convert rotation from radians to degrees
         const rotX = (rot.x * 180 / Math.PI).toFixed(2);
         const rotY = (rot.y * 180 / Math.PI).toFixed(2);
         const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
 
-        // Properly escape JSON data for HTML attributes
         const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
         const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
         const specialEffectSettingsJSON = JSON.stringify(layer.specialEffectSettings).replace(/"/g, '&quot;');
 
-        // Store original position as data attributes for animation reference
         const originalPosJSON = JSON.stringify(pos).replace(/"/g, '&quot;');
         const originalRotJSON = JSON.stringify(rot).replace(/"/g, '&quot;');
         const originalScaleJSON = JSON.stringify(scale).replace(/"/g, '&quot;');
@@ -1201,32 +1024,364 @@ function generateHTMLContent() {
     <script>
     let animationIntervals = [];
     let markerVisible = false;
+    let audioTracks = [];
+    let backgroundMusic = {
+        trackId: null,
+        isPlaying: false,
+        originalVolume: 0.8,
+        fadeVolume: 0.2
+    };
+    let sequentialPlayback = {
+        isPlaying: false
+    };
 
     document.querySelector('a-marker').addEventListener('markerFound', function() {
         markerVisible = true;
         console.log('Marker found - starting animations and audio');
         
-        // Start background audio if exists
-        const audio = document.querySelector('#background-audio');
-        if (audio) {
-            audio.play().catch(e => console.log('Audio autoplay blocked:', e));
-        }
-        
         playAllAnimations();
+        playAllAudio();
     });
 
-       
     document.querySelector('a-marker').addEventListener('markerLost', function() {
         markerVisible = false;
         console.log('Marker lost - stopping animations and audio');
         
-        // Stop background audio if exists
-        const audio = document.querySelector('#background-audio');
-        if (audio) {
-            audio.pause();
-        }
         stopAllAnimations();
+        stopAllAudio();
     });
+
+    // Audio Track System Functions
+    function getLoopGroupTracks() {
+        return audioTracks
+            .filter(t => t.loop && !t.isBackground)
+            .sort((a, b) => a.playOrder - b.playOrder);
+    }
+
+    function getNextInLoopGroup(currentOrder) {
+        const loopTracks = getLoopGroupTracks();
+        
+        if (loopTracks.length === 0) {
+            return null;
+        }
+        
+        const currentIndex = loopTracks.findIndex(t => t.playOrder === currentOrder);
+        
+        if (currentIndex === -1) {
+            return loopTracks[0];
+        }
+        
+        const nextIndex = (currentIndex + 1) % loopTracks.length;
+        return loopTracks[nextIndex];
+    }
+
+    function playNextTrack(currentOrder, skipNonLooping = false) {
+        if (skipNonLooping) {
+            const nextLoopTrack = getNextInLoopGroup(currentOrder);
+            
+            if (nextLoopTrack) {
+                setTimeout(() => {
+                    console.log(\`Playing next in loop group: \${nextLoopTrack.name} (Order: \${nextLoopTrack.playOrder})\`);
+                    toggleAudioTrack(nextLoopTrack.id);
+                }, 100);
+                return true;
+            } else {
+                console.log('No loop group tracks available');
+                return false;
+            }
+        } else {
+            const nextTracks = audioTracks
+                .filter(t => t.playOrder > currentOrder && !t.isBackground)
+                .sort((a, b) => a.playOrder - b.playOrder);
+            
+            if (nextTracks.length === 0) {
+                console.log('No more tracks to play');
+                return false;
+            }
+            
+            const targetTrack = nextTracks[0];
+            
+            setTimeout(() => {
+                console.log(\`Auto-playing next track: \${targetTrack.name} (Order: \${targetTrack.playOrder})\`);
+                toggleAudioTrack(targetTrack.id);
+            }, 100);
+            
+            return true;
+        }
+    }
+
+    function onTrackEnded(trackId) {
+        const track = audioTracks.find(t => t.id === trackId);
+        const button = document.querySelector(\`#\${trackId} .play-btn\`);
+
+        console.log(\`Track ended: \${track.name} (playCount: \${track.playCount})\`);
+
+        if (track.isBackground) {
+            return;
+        }
+
+        track.isPlaying = false;
+        if (button) {
+            button.textContent = '▶';
+            button.classList.remove('playing');
+        }
+
+        if (track.timelineMode) {
+            track.audio.currentTime = track.startTime;
+        } else {
+            track.audio.currentTime = 0;
+        }
+
+        const element = document.getElementById(trackId);
+        if (element && !track.isBackground) {
+            element.style.border = '1px solid #404040';
+        }
+
+        if (typeof sequentialPlayback === 'undefined' || !sequentialPlayback.isPlaying) {
+            if (!track.playCount) {
+                track.playCount = 0;
+            }
+            track.playCount++;
+
+            console.log(\`Auto-next logic: Track "\${track.name}" play count: \${track.playCount}\`);
+
+            if (track.playCount === 1) {
+                console.log('First time ending - playing immediate next track');
+                playNextTrack(track.playOrder, false);
+            } else if (track.playCount >= 2) {
+                console.log('Second+ time ending - cycling through loop group');
+                playNextTrack(track.playOrder, true);
+            }
+        }
+
+        if (!track.isBackground && typeof backgroundMusic !== 'undefined' && backgroundMusic.isPlaying) {
+            setTimeout(() => {
+                fadeBackgroundMusic(false);
+            }, 500);
+        }
+    }
+
+    function toggleAudioTrack(trackId) {
+        const track = audioTracks.find(t => t.id === trackId);
+        const button = document.querySelector(\`#\${trackId} .play-btn\`);
+
+        if (track.isPlaying) {
+            track.audio.pause();
+            track.isPlaying = false;
+            button.textContent = '▶';
+            button.classList.remove('playing');
+
+            if (track.isBackground && typeof backgroundMusic !== 'undefined') {
+                backgroundMusic.isPlaying = false;
+            }
+        } else {
+            if (!track.isBackground && typeof backgroundMusic !== 'undefined' && backgroundMusic.isPlaying) {
+                fadeBackgroundMusic(true);
+            }
+
+            if (track.timelineMode && track.startTime > 0) {
+                track.audio.currentTime = track.startTime;
+            }
+
+            if (track.isBackground && typeof backgroundMusic !== 'undefined') {
+                backgroundMusic.isPlaying = true;
+            }
+
+            track.audio.play();
+            track.isPlaying = true;
+            button.textContent = '⏸';
+            button.classList.add('playing');
+
+            const element = document.getElementById(trackId);
+            if (element && !track.isBackground) {
+                if (track.loop) {
+                    element.style.border = '2px solid #4CAF50';
+                } else {
+                    element.style.border = '2px solid #00ff00';
+                }
+            }
+        }
+    }
+
+    function toggleLoop(trackId) {
+        const track = audioTracks.find(t => t.id === trackId);
+        const button = document.querySelector(\`#\${trackId} .loop-toggle\`);
+
+        track.loop = !track.loop;
+
+        if (track.loop) {
+            button.classList.add('active');
+            button.title = 'Remove from Loop Group';
+            button.style.backgroundColor = '#4CAF50';
+        } else {
+            button.classList.remove('active');
+            button.title = 'Add to Loop Group';
+            button.style.backgroundColor = '#555';
+        }
+        
+        const loopTracks = getLoopGroupTracks();
+        console.log('Loop Group updated:', loopTracks.map(t => \`\${t.name} (Order: \${t.playOrder})\`));
+    }
+
+    function updateTrackVolume(trackId, volume) {
+        const track = audioTracks.find(t => t.id === trackId);
+        track.audio.volume = parseFloat(volume);
+    }
+
+    function deleteAudioTrack(trackId) {
+        const trackIndex = audioTracks.findIndex(t => t.id === trackId);
+        if (trackIndex > -1) {
+            const track = audioTracks[trackIndex];
+            track.audio.pause();
+            URL.revokeObjectURL(track.audio.src);
+            audioTracks.splice(trackIndex, 1);
+
+            const trackElement = document.getElementById(trackId);
+            trackElement.remove();
+            
+            if (track.loop) {
+                console.log('Removed track from loop group');
+            }
+        }
+    }
+
+    function playAllAudio() {
+        const regularTracks = audioTracks
+            .filter(track => !track.isBackground)
+            .sort((a, b) => a.playOrder - b.playOrder);
+
+        if (regularTracks.length === 0) {
+            console.log('No tracks to play');
+            return;
+        }
+
+        regularTracks.forEach(track => {
+            if (!track.isPlaying) {
+                toggleAudioTrack(track.id);
+            }
+        });
+
+        console.log(\`Playing \${regularTracks.length} tracks simultaneously\`);
+    }
+
+    function stopAllAudio() {
+        audioTracks.forEach(track => {
+            track.audio.pause();
+
+            if (track.timelineMode) {
+                track.audio.currentTime = track.startTime;
+            } else {
+                track.audio.currentTime = 0;
+            }
+
+            track.isPlaying = false;
+            const button = document.querySelector(\`#\${track.id} .play-btn\`);
+            if (button) {
+                button.textContent = '▶';
+                button.classList.remove('playing');
+            }
+
+            const element = document.getElementById(track.id);
+            if (element && !track.isBackground) {
+                element.style.border = '1px solid #404040';
+            }
+
+            const loopButton = document.querySelector(\`#\${track.id} .loop-toggle\`);
+            if (loopButton && track.loop) {
+                loopButton.classList.add('active');
+                loopButton.style.backgroundColor = '#4CAF50';
+                loopButton.title = 'Remove from Loop Group';
+            }
+        });
+
+        console.log('All audio stopped and reset (loop settings preserved)');
+    }
+
+    function fadeBackgroundMusic(fadeOut = true) {
+        if (typeof backgroundMusic === 'undefined' || !backgroundMusic.trackId) return;
+
+        const track = audioTracks.find(t => t.id === backgroundMusic.trackId);
+        if (!track || !track.isPlaying) return;
+
+        const targetVolume = fadeOut ? backgroundMusic.fadeVolume : backgroundMusic.originalVolume;
+        const currentVolume = track.audio.volume;
+        const step = (targetVolume - currentVolume) / 20;
+
+        let count = 0;
+        const fadeInterval = setInterval(() => {
+            if (count >= 20) {
+                clearInterval(fadeInterval);
+                track.audio.volume = targetVolume;
+                return;
+            }
+
+            track.audio.volume = Math.max(0, Math.min(1, currentVolume + (step * count)));
+            count++;
+        }, 50);
+    }
+
+    // File input handling for audio tracks
+    function handleAudioFiles(files) {
+        for (let file of files) {
+            const trackId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const audioElement = new Audio();
+            audioElement.src = URL.createObjectURL(file);
+            audioElement.loop = false;
+            audioElement.volume = 0.8;
+
+            const track = {
+                id: trackId,
+                name: file.name,
+                audio: audioElement,
+                isPlaying: false,
+                loop: false,
+                startTime: 0,
+                endTime: null,
+                timelineMode: false,
+                originalDuration: null,
+                playOrder: audioTracks.length + 1,
+                autoNext: true,
+                isBackground: false,
+                playCount: 0,
+                timelinePlayCount: 0
+            };
+
+            audioTracks.push(track);
+            createAudioTrackUI(track);
+        }
+    }
+
+    function createAudioTrackUI(track) {
+        const tracksContainer = document.getElementById('audioTracks');
+        const trackDiv = document.createElement('div');
+        trackDiv.className = 'audio-track';
+        trackDiv.id = track.id;
+        trackDiv.innerHTML = \`
+        <div class="audio-track-header">
+            <div class="audio-track-name">\${track.name}</div>
+            <div class="audio-controls-group">
+                <button class="play-btn" onclick="playAllAudio()" title="Play All">▶</button>
+                <button class="loop-toggle" onclick="toggleLoop('\${track.id}')" title="Add to Loop Group">🔁</button>
+                <input type="range" class="volume-control" min="0" max="1" step="0.1" value="0.8" 
+                       onchange="updateTrackVolume('\${track.id}', this.value)" title="Volume">
+                <div class="time-display">0:00</div>
+                <button class="delete-track-btn" onclick="deleteAudioTrack('\${track.id}')" title="Delete">✕</button>
+            </div>
+        </div>
+        \`;
+
+        tracksContainer.appendChild(trackDiv);
+
+        track.audio.addEventListener('ended', () => onTrackEnded(track.id));
+
+        track.audio.addEventListener('loadedmetadata', () => {
+            track.endTime = track.audio.duration;
+            track.originalDuration = track.audio.duration;
+            console.log(\`Track loaded: \${track.name}, Duration: \${track.audio.duration}s\`);
+        });
+    }
+
+    // Animation functions (original)
     function playAllAnimations() {
        stopAllAnimations();
         const layers = document.querySelectorAll('[id^="layer-"]');
@@ -1239,13 +1394,11 @@ function generateHTMLContent() {
                 const duration = parseFloat(layer.getAttribute('data-animation-duration'));
                 const loop = layer.getAttribute('data-loop-animation') === 'true';
                 
-                // Parse special effect settings
                 let settings = {};
                 try {
                     settings = JSON.parse(layer.getAttribute('data-special-settings').replace(/&quot;/g, '"'));
                 } catch (e) {
                     console.error('Error parsing special effect settings:', e);
-                    // Fallback to default settings
                     settings = {
                         swingRange: 90, swingFreq: 8, swingTargetX: 5,
                         zigzagAmp: 2, zigzagFreq: 6, zigzagTargetX: 5, zigzagTargetY: 3,
@@ -1284,7 +1437,6 @@ function generateHTMLContent() {
                     let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
                     let finalOpacity = 1;
                 
-                    // Apply custom animation if enabled
                     if (enableCustom) {
                         try {
                             const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
@@ -1304,7 +1456,6 @@ function generateHTMLContent() {
                         }
                     }
                     
-                    // Apply special effects with user-controlled settings
                     if (specialEffect !== 'none') {
                         switch (specialEffect) {
                             case 'swingToTarget':
@@ -1402,17 +1553,15 @@ function generateHTMLContent() {
                         }
                     }
                     
-                    // Update layer position, rotation, and scale
                     layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                     layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                     layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
                     
-                    // Update opacity if needed
                     if (specialEffect === 'fadeIn' || enableCustom) {
                         layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
                     }
                     
-                }, 16); // ~60fps
+                }, 16);
                 
                 animationIntervals.push(interval);
             }
@@ -1423,11 +1572,32 @@ function generateHTMLContent() {
         animationIntervals.forEach(interval => clearInterval(interval));
         animationIntervals = [];
     }
+
+    // Add file input for audio tracks
+    const audioInput = document.createElement('input');
+    audioInput.type = 'file';
+    audioInput.multiple = true;
+    audioInput.accept = 'audio/*';
+    audioInput.style.display = 'none';
+    audioInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleAudioFiles(e.target.files);
+        }
+    });
+    document.body.appendChild(audioInput);
+
+    // Add button to trigger file input
+    const addAudioBtn = document.createElement('button');
+    addAudioBtn.textContent = 'Add Audio Tracks';
+    addAudioBtn.onclick = () => audioInput.click();
+    addAudioBtn.style.cssText = 'padding: 10px 20px; margin: 5px; border: none; background: #0066cc; color: white; border-radius: 5px; cursor: pointer; font-size: 14px;';
+    
+    const controlsDiv = document.querySelector('.ar-controls div');
+    controlsDiv.appendChild(addAudioBtn);
     
     <\/script>
 </body>
 </html>`;
-
     return htmlContent;
 }
 
