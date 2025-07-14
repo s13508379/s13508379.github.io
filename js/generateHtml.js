@@ -239,12 +239,12 @@ function generateHTMLContent() {
             if (hasLoopTracks) {
                 console.log('Restarting sequence due to loop tracks');
                 currentSequentialIndex = 0;
-                playNextInSequence(tracks);
+                // Don't call playNextInSequence immediately, let it fall through
+            } else {
+                console.log('Sequential playback complete');
+                sequenceLoopActive = false;
                 return;
             }
-            console.log('Sequential playback complete');
-            sequenceLoopActive = false;
-            return;
         }
 
         const track = tracks[currentSequentialIndex];
