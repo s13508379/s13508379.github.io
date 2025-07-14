@@ -16,7 +16,7 @@ body {
 #controls {
     position: absolute;
     width: 17%;
-    max-height: 79.5%;
+    max-height: 80%;
     overflow-y: auto;
     background: linear-gradient(135deg, #2b2b2b 0%, #1e1e1e 100%);
     padding: 24px;

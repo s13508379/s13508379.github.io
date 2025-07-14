@@ -1,3 +1,5 @@
+let controlsHeightChanged = false;
+
 function addAudioTracks(files) {
     for (let file of files) {
         const trackId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -27,6 +29,8 @@ function addAudioTracks(files) {
         createAudioTrackUI(track);
     }
 }
+
+
 
 function createAudioTrackUI(track) {
     const tracksContainer = document.getElementById('audioTracks');
@@ -80,6 +84,16 @@ function createAudioTrackUI(track) {
 
     tracksContainer.appendChild(trackDiv);
 
+    // Change controls max-height to 70% only if it hasn't been changed already
+    if (!controlsHeightChanged) {
+        const controlsElement = document.getElementById('controls');
+        if (controlsElement) {
+            controlsElement.style.maxHeight = '70%';
+            controlsHeightChanged = true;
+            console.log('Controls height changed to 70%');
+        }
+    }
+
     // Add event listeners for time updates
     track.audio.addEventListener('timeupdate', () => updateTimeDisplay(track.id));
     track.audio.addEventListener('ended', () => onTrackEnded(track.id));
@@ -106,17 +120,17 @@ function getLoopGroupTracks() {
 
 function getNextInLoopGroup(currentOrder) {
     const loopTracks = getLoopGroupTracks();
-    
+
     if (loopTracks.length === 0) {
         return null;
     }
-    
+
     const currentIndex = loopTracks.findIndex(t => t.playOrder === currentOrder);
-    
+
     if (currentIndex === -1) {
         return loopTracks[0];
     }
-    
+
     const nextIndex = (currentIndex + 1) % loopTracks.length;
     return loopTracks[nextIndex];
 }
@@ -124,7 +138,7 @@ function getNextInLoopGroup(currentOrder) {
 function playNextTrack(currentOrder, skipNonLooping = false) {
     if (skipNonLooping) {
         const nextLoopTrack = getNextInLoopGroup(currentOrder);
-        
+
         if (nextLoopTrack) {
             setTimeout(() => {
                 console.log(`Playing next in loop group: ${nextLoopTrack.name} (Order: ${nextLoopTrack.playOrder})`);
@@ -139,19 +153,19 @@ function playNextTrack(currentOrder, skipNonLooping = false) {
         const nextTracks = audioTracks
             .filter(t => t.playOrder > currentOrder && !t.isBackground)
             .sort((a, b) => a.playOrder - b.playOrder);
-        
+
         if (nextTracks.length === 0) {
             console.log('No more tracks to play');
             return false;
         }
-        
+
         const targetTrack = nextTracks[0];
-        
+
         setTimeout(() => {
             console.log(`Auto-playing next track: ${targetTrack.name} (Order: ${targetTrack.playOrder})`);
             toggleAudioTrack(targetTrack.id);
         }, 100);
-        
+
         return true;
     }
 }
@@ -287,7 +301,7 @@ function toggleLoop(trackId) {
         button.title = 'Add to Loop Group (加入循環組)';
         button.style.backgroundColor = '#555';
     }
-    
+
     const loopTracks = getLoopGroupTracks();
     console.log('Loop Group updated:', loopTracks.map(t => `${t.name} (Order: ${t.playOrder})`));
 }
@@ -298,7 +312,7 @@ function showLoopGroup() {
         console.log('No tracks in loop group');
         return;
     }
-    
+
     console.log('Current Loop Group (in play order):');
     loopTracks.forEach((track, index) => {
         console.log(`${index + 1}. ${track.name} (Order: ${track.playOrder})`);
@@ -350,7 +364,7 @@ function moveTrackUp(trackId) {
         track.playOrder--;
         updateOrderInputs();
         reorderAudioDisplay();
-        
+
         if (track.loop || prevTrack.loop) {
             console.log('Loop group order changed');
             showLoopGroup();
@@ -371,7 +385,7 @@ function moveTrackDown(trackId) {
         track.playOrder++;
         updateOrderInputs();
         reorderAudioDisplay();
-        
+
         if (track.loop || nextTrack.loop) {
             console.log('Loop group order changed');
             showLoopGroup();
@@ -445,7 +459,7 @@ function deleteAudioTrack(trackId) {
 
         const trackElement = document.getElementById(trackId);
         trackElement.remove();
-        
+
         if (track.loop) {
             console.log('Removed track from loop group');
             showLoopGroup();
@@ -505,7 +519,7 @@ function toggleBackgroundMusic(trackId, enabled) {
 
         track.isBackground = true;
         track.audio.loop = true;
-        
+
         if (typeof backgroundMusic !== 'undefined') {
             backgroundMusic.trackId = trackId;
             backgroundMusic.originalVolume = track.audio.volume;
@@ -520,7 +534,7 @@ function toggleBackgroundMusic(trackId, enabled) {
         if (!track.isPlaying) {
             toggleAudioTrack(trackId);
         }
-        
+
         if (typeof backgroundMusic !== 'undefined') {
             backgroundMusic.isPlaying = true;
         }
@@ -528,7 +542,7 @@ function toggleBackgroundMusic(trackId, enabled) {
     } else {
         track.isBackground = false;
         track.audio.loop = false;
-        
+
         if (typeof backgroundMusic !== 'undefined') {
             backgroundMusic.trackId = null;
             backgroundMusic.isPlaying = false;
@@ -554,7 +568,7 @@ function playAllAudio() {
 
     regularTracks.forEach(track => {
         if (!track.isPlaying) {
-                            console.log(track.id)
+            console.log(track.id)
             toggleAudioTrack(track.id);
         }
     });
@@ -613,4 +627,29 @@ function stopAllAudio() {
     });
 
     console.log('All audio stopped and reset');
+}
+
+async function getAudioBlobFromElement(audioElement) {
+    return new Promise((resolve, reject) => {
+        try {
+            if (audioElement.src.startsWith('blob:')) {
+                fetch(audioElement.src)
+                    .then(response => response.blob())
+                    .then(blob => resolve(blob))
+                    .catch(reject);
+            } else {
+                fetch(audioElement.src)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => resolve(blob))
+                    .catch(reject);
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
 }

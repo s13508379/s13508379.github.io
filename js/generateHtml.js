@@ -1,11 +1,14 @@
-<!DOCTYPE html>
+function generateHTMLContent() {
+    const name = (document.getElementById('projectName').value || 'AR_Project').trim();
+
+    let htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>project - AR Experience</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <title>${name} - AR Experience</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"><\/script>
     <style>
         .ar-controls {
             position: fixed;
@@ -52,108 +55,72 @@
         renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
         background="color: #000000; transparent: true">
 
-        <a-assets>
-            <img id="img-0" src="images/buildings.png" crossorigin="anonymous">
-            <img id="img-1" src="images/girls.png" crossorigin="anonymous">
-            <img id="img-2" src="images/ribbon.png" crossorigin="anonymous">
-            <img id="img-3" src="images/ticket.png" crossorigin="anonymous">
-            <img id="img-4" src="images/background_turk-01.png" crossorigin="anonymous">
-            <audio id="audio-audio_1752476996707_jjf14d1z4" src="audio/sound.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752476996709_die2amgbl" src="audio/title.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752476996710_gwbvbsgba" src="audio/title-large.mp3" preload="auto"></audio>
+        <a-assets>`;
+
+    // Add image assets
+    imageLayers.forEach(layer => {
+        htmlContent += `
+            <img id="img-${layer.id}" src="images/${layer.name}" crossorigin="anonymous">`;
+    });
+
+    // Add audio assets if audioTracks exist
+    if (typeof audioTracks !== 'undefined' && audioTracks.length > 0) {
+        audioTracks.forEach(track => {
+            const safeFileName = sanitizeFileName(track.name);
+            htmlContent += `
+            <audio id="audio-${track.id}" src="audio/${safeFileName}.mp3" preload="auto"></audio>`;
+        });
+    }
+
+    htmlContent += `
         </a-assets>
 
-        <a-marker type="pattern" url="pattern-project-qr-code.patt">
-            <a-plane id="layer-0" src="#img-0"
-                position="0.00 0.00 0.00"
-                rotation="0.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="false" 
-                data-special-effect="none"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="false"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
-            </a-plane>
-            <a-plane id="layer-1" src="#img-1"
-                position="0.00 0.00 0.00"
-                rotation="0.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="false" 
-                data-special-effect="none"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="false"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
-            </a-plane>
-            <a-plane id="layer-2" src="#img-2"
-                position="0.00 0.00 0.00"
-                rotation="0.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="false" 
-                data-special-effect="none"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="false"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
-            </a-plane>
-            <a-plane id="layer-3" src="#img-3"
-                position="0.00 0.00 0.00"
-                rotation="0.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="false" 
-                data-special-effect="none"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="false"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
-            </a-plane>
-            <a-plane id="layer-4" src="#img-4"
-                position="0.00 0.00 0.00"
-                rotation="0.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="true" 
-                data-special-effect="rotate"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:1.7,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
-            </a-plane>
+        <a-marker type="pattern" url="pattern-${name}-qr-code.patt">`;
+
+    // Add each layer as A-Frame entities with all settings
+    imageLayers.forEach(layer => {
+        const pos = layer.originalPosition;
+        const rot = layer.originalRotation;
+        const scale = layer.originalScale;
+        const opacity = layer.originalOpacity;
+
+        // Convert rotation from radians to degrees
+        const rotX = (rot.x * 180 / Math.PI).toFixed(2);
+        const rotY = (rot.y * 180 / Math.PI).toFixed(2);
+        const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
+
+        // Properly escape JSON data for HTML attributes
+        const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
+        const customEndJSON = JSON.stringify(layer.customAnimation.end).replace(/"/g, '&quot;');
+        const specialEffectSettingsJSON = JSON.stringify(layer.specialEffectSettings).replace(/"/g, '&quot;');
+
+        // Store original position as data attributes for animation reference
+        const originalPosJSON = JSON.stringify(pos).replace(/"/g, '&quot;');
+        const originalRotJSON = JSON.stringify(rot).replace(/"/g, '&quot;');
+        const originalScaleJSON = JSON.stringify(scale).replace(/"/g, '&quot;');
+
+        htmlContent += `
+            <a-plane id="layer-${layer.id}" src="#img-${layer.id}"
+                position="${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}"
+                rotation="${rotX} ${rotY} ${rotZ}"
+                scale="${scale.x.toFixed(2)} ${scale.y.toFixed(2)} ${scale.z.toFixed(2)}"
+                material="transparent: true; opacity: ${opacity.toFixed(2)}"
+                data-animation-enabled="${layer.enableCustomAnimation}" 
+                data-special-effect="${layer.specialEffect}"
+                data-animation-speed="${layer.animationSpeed}" 
+                data-animation-duration="${layer.animationDuration}"
+                data-loop-animation="${layer.loopAnimation}"
+                data-custom-start="${customStartJSON}"
+                data-custom-end="${customEndJSON}"
+                data-special-settings="${specialEffectSettingsJSON}"
+                data-original-position="${originalPosJSON}"
+                data-original-rotation="${originalRotJSON}"
+                data-original-scale="${originalScaleJSON}"
+                data-original-opacity="${opacity.toFixed(2)}">
+            </a-plane>`;
+    });
+
+    htmlContent += `
         </a-marker>
 
         <a-entity camera></a-entity>
@@ -169,46 +136,30 @@
 
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
-        audioTracks = [];
+        audioTracks = [];`;
+
+    // Generate audio track initialization if audioTracks exist
+    if (typeof audioTracks !== 'undefined' && audioTracks.length > 0) {
+        audioTracks.forEach(track => {
+            const safeFileName = sanitizeFileName(track.name);
+            htmlContent += `
         audioTracks.push({
-            id: "audio_1752476996707_jjf14d1z4",
-            name: "sound.mp3",
-            audio: document.getElementById("audio-audio_1752476996707_jjf14d1z4"),
-            playOrder: 1,
-            loop: false,
-            isBackground: true,
-            startTime: 0,
-            endTime: 18.133333,
-            timelineMode: false,
-            volume: 0.8,
+            id: "${track.id}",
+            name: "${track.name}",
+            audio: document.getElementById("audio-${track.id}"),
+            playOrder: ${track.playOrder},
+            loop: ${track.loop},
+            isBackground: ${track.isBackground},
+            startTime: ${track.startTime},
+            endTime: ${track.endTime || 'null'},
+            timelineMode: ${track.timelineMode},
+            volume: ${track.audio.volume},
             isPlaying: false
+        });`;
         });
-        audioTracks.push({
-            id: "audio_1752476996709_die2amgbl",
-            name: "title.mp3",
-            audio: document.getElementById("audio-audio_1752476996709_die2amgbl"),
-            playOrder: 2,
-            loop: false,
-            isBackground: false,
-            startTime: 0,
-            endTime: 3.584,
-            timelineMode: false,
-            volume: 0.8,
-            isPlaying: false
-        });
-        audioTracks.push({
-            id: "audio_1752476996710_gwbvbsgba",
-            name: "title-large.mp3",
-            audio: document.getElementById("audio-audio_1752476996710_gwbvbsgba"),
-            playOrder: 3,
-            loop: true,
-            isBackground: false,
-            startTime: 2,
-            endTime: 3.584,
-            timelineMode: true,
-            volume: 0.8,
-            isPlaying: false
-        });
+    }
+
+    htmlContent += `
         
         // Set audio properties
         audioTracks.forEach(track => {
@@ -546,6 +497,9 @@
         animationIntervals = [];
     }
     
-    </script>
+    <\/script>
 </body>
-</html>
+</html>`;
+
+    return htmlContent;
+}
