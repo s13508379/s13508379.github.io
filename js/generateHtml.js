@@ -37,8 +37,6 @@ function generateHTMLContent() {
         .ar-controls button:hover {
             background: #0052a3;
         }
-
-
     </style>
 </head>
 
@@ -47,8 +45,6 @@ function generateHTMLContent() {
         <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
     </div>
-
-
 
     <a-scene vr-mode-ui="enabled: false" embedded
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
@@ -133,6 +129,7 @@ function generateHTMLContent() {
     let backgroundAudioTrack = null;
     let currentSequentialIndex = 0;
     let sequentialAudioInterval = null;
+    let sequenceLoopActive = false;
 
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
@@ -229,33 +226,42 @@ function generateHTMLContent() {
         }
 
         currentSequentialIndex = 0;
+        sequenceLoopActive = true;
         playNextInSequence(regularTracks);
     }
 
     function playNextInSequence(tracks) {
+        if (!sequenceLoopActive) return;
+        
         if (currentSequentialIndex >= tracks.length) {
-            // Check if we have loop tracks to cycle through
-            const loopTracks = tracks.filter(t => t.loop);
-            if (loopTracks.length > 0) {
-                console.log('Cycling through loop tracks');
+            // Check if any track in the sequence has loop enabled
+            const hasLoopTracks = tracks.some(t => t.loop);
+            if (hasLoopTracks) {
+                console.log('Restarting sequence due to loop tracks');
                 currentSequentialIndex = 0;
-                const loopTrack = loopTracks.find(t => t.playOrder === tracks[currentSequentialIndex].playOrder);
-                if (loopTrack) {
-                    playTrackWithLoop(loopTrack);
-                    return;
-                }
+                playNextInSequence(tracks);
+                return;
             }
             console.log('Sequential playback complete');
+            sequenceLoopActive = false;
             return;
         }
 
         const track = tracks[currentSequentialIndex];
-        console.log('Playing track:', track.name, 'Loop:', track.loop);
+        console.log('Playing track:', track.name, 'Order:', track.playOrder);
 
-        playTrackWithLoop(track);
+        playTrack(track, () => {
+            // Move to next track after current one finishes
+            currentSequentialIndex++;
+            setTimeout(() => {
+                playNextInSequence(tracks);
+            }, 100);
+        });
     }
 
-    function playTrackWithLoop(track) {
+    function playTrack(track, onComplete) {
+        if (!sequenceLoopActive) return;
+        
         // Set start time if timeline mode
         if (track.timelineMode && track.startTime > 0) {
             track.audio.currentTime = track.startTime;
@@ -270,21 +276,8 @@ function generateHTMLContent() {
             track.audio.removeEventListener('timeupdate', onTimeUpdate);
             track.isPlaying = false;
             
-            if (track.loop) {
-                // If it's a loop track, restart it
-                console.log('Looping track:', track.name);
-                setTimeout(() => {
-                    playTrackWithLoop(track);
-                }, 100);
-            } else {
-                // Move to next track
-                currentSequentialIndex++;
-                setTimeout(() => {
-                    const regularTracks = audioTracks
-                        .filter(t => !t.isBackground)
-                        .sort((a, b) => a.playOrder - b.playOrder);
-                    playNextInSequence(regularTracks);
-                }, 100);
+            if (onComplete) {
+                onComplete();
             }
         };
 
@@ -302,6 +295,8 @@ function generateHTMLContent() {
     }
 
     function stopAllAudio() {
+        sequenceLoopActive = false;
+        
         if (sequentialAudioInterval) {
             clearInterval(sequentialAudioInterval);
             sequentialAudioInterval = null;
