@@ -89,8 +89,8 @@
                 id: "audio_1752484509673_9s4ftvf5e",
                 name: "sound.mp3",
                 audio: document.getElementById("audio-audio_1752484509673_9s4ftvf5e"),
-                playOrder: 1,
-                loop: false,
+                playOrder: 0, // Not in sequence
+                loop: true,
                 isBackground: true,
                 startTime: 2,
                 endTime: 18.133333,
@@ -102,8 +102,8 @@
                 id: "audio_1752484509674_d684gl199",
                 name: "title.mp3",
                 audio: document.getElementById("audio-audio_1752484509674_d684gl199"),
-                playOrder: 2,
-                loop: false, // Changed to false - we'll handle looping at sequence level
+                playOrder: 1,
+                loop: true,
                 isBackground: false,
                 startTime: 2,
                 endTime: 3.584,
@@ -115,8 +115,8 @@
                 id: "audio_1752484509675_bif20w0hu",
                 name: "title-large.mp3",
                 audio: document.getElementById("audio-audio_1752484509675_bif20w0hu"),
-                playOrder: 3,
-                loop: false, // Changed to false - we'll handle looping at sequence level
+                playOrder: 2,
+                loop: true,
                 isBackground: false,
                 startTime: 1,
                 endTime: 3.584,
@@ -128,7 +128,7 @@
             // Set audio properties
             audioTracks.forEach(track => {
                 track.audio.volume = track.volume;
-                track.audio.loop = false; // Disable native looping
+                track.audio.loop = false; // Disable native looping initially
                 if (track.isBackground) {
                     track.audio.loop = true; // Keep loop for background audio
                     backgroundAudioTrack = track;
@@ -191,7 +191,7 @@
             });
 
             const regularTracks = audioTracks
-                .filter(track => !track.isBackground)
+                .filter(track => !track.isBackground && track.playOrder > 0)
                 .sort((a, b) => a.playOrder - b.playOrder);
 
             if (regularTracks.length === 0) {
@@ -208,16 +208,9 @@
             if (!sequenceLoopActive || !markerVisible) return;
 
             if (currentSequentialIndex >= tracks.length) {
-                console.log('Sequence complete, restarting...');
+                console.log('Restarting title sequence...');
                 currentSequentialIndex = 0;
-                
-                // Add a delay before restarting the sequence to prevent rapid cycling
-                currentTrackTimeout = setTimeout(() => {
-                    if (sequenceLoopActive && markerVisible) {
-                        playNextInSequence(tracks);
-                    }
-                }, 1000); // 1 second delay between sequence cycles
-                return;
+                // No delay needed for continuous looping of titles
             }
 
             const track = tracks[currentSequentialIndex];
