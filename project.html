@@ -81,7 +81,7 @@
         let currentSequentialIndex = 0;
         let sequenceLoopActive = false;
         let currentTrackTimeout = null;
-        let currentIndex = 0;
+        let currentLoopIndex = 0;
 
         // Initialize audio tracks from HTML audio elements
         function initializeAudioTracks() {
@@ -184,8 +184,9 @@
             console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
 
 
-            if (currentSequentialIndex < tracks.length) {
+            if (currentLoopIndex < 0) {
                 console.log(currentSequentialIndex, 'tacks:', tracks.length)
+                currentLoopIndex++;
                 playTrack(track, () => {
                     console.log(currentSequentialIndex, 'tacks:', tracks.length)
                     console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
@@ -321,6 +322,7 @@
                 }
             });
             currentSequentialIndex = 0;
+            currentLoopIndex = 0;
             if (typeof currentLoopIndex !== 'undefined') {
                 currentLoopIndex = 0;
             }
