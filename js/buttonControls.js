@@ -61,6 +61,6 @@ function stopAllAnimations() {
 
 // Reset camera
 function resetCamera() {
-    camera.position.set(0, 4, 0);
+    camera.position.set(0, 7, 0);
     camera.lookAt(0, 0, 0);
 }

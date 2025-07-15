@@ -25,7 +25,7 @@ function initScene() {
     scene.background = new THREE.Color('#000000');
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 4, 0);
+    camera.position.set(0, 7, 0);
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -66,7 +66,7 @@ function initScene() {
     const phoneGeometry = new THREE.BoxGeometry(0.1, 1, 2);
     const phoneMaterial = new THREE.MeshBasicMaterial({ color: "#2c3e50" });
     const phoneIcon = new THREE.Mesh(phoneGeometry, phoneMaterial);
-    phoneIcon.position.set(0, 4, 0);
+    phoneIcon.position.set(0, 7, 0);
     phoneIcon.rotation.z = Math.PI / 2;
     scene.add(phoneIcon);
 

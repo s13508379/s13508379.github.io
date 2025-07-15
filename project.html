@@ -49,50 +49,12 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="images/ballon.png" crossorigin="anonymous">
-            <img id="img-1" src="images/Asset 3.png" crossorigin="anonymous">
-            <audio id="audio-audio_1752548771669_d8eh2xe1d" src="audio/sound.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752548771671_xehnsedfd" src="audio/title.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752548771672_cowan498l" src="audio/title-large.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752549828301_ejaxyjfi4" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752549828302_s5b0dhvye" src="audio/title.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752549828304_bto40cxcy" src="audio/title-large.mp3" preload="auto"></audio>
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
-            <a-plane id="layer-0" src="#img-0"
-                position="0.00 0.00 0.00"
-                rotation="-90.00 0.00 3.00"
-                scale="1.90 1.90 1.90"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="true" 
-                data-special-effect="swingToTarget"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:2.7,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:2.7,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0.05235987755982988}"
-                data-original-scale="{&quot;x&quot;:1.9,&quot;y&quot;:1.9,&quot;z&quot;:1.9}"
-                data-original-opacity="1.00">
-            </a-plane>
-            <a-plane id="layer-1" src="#img-1"
-                position="0.00 0.00 0.00"
-                rotation="-85.00 0.00 0.00"
-                scale="2.90 2.90 2.90"
-                material="transparent: true; opacity: 1.00"
-                data-animation-enabled="true" 
-                data-special-effect="swingToTarget"
-                data-animation-speed="1" 
-                data-animation-duration="2"
-                data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:-2,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:-2,&quot;z&quot;:0,&quot;scale&quot;:2.4,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:-1.4835298641951802,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:2.9,&quot;y&quot;:2.9,&quot;z&quot;:2.9}"
-                data-original-opacity="1.00">
-            </a-plane>
         </a-marker>
 
         <a-entity camera></a-entity>
@@ -111,22 +73,22 @@
     function initializeAudioTracks() {
         audioTracks = [];
         audioTracks.push({
-            id: "audio_1752548771669_d8eh2xe1d",
+            id: "audio_1752549828301_ejaxyjfi4",
             name: "sound.mp3",
-            audio: document.getElementById("audio-audio_1752548771669_d8eh2xe1d"),
+            audio: document.getElementById("audio-audio_1752549828301_ejaxyjfi4"),
             playOrder: 1,
-            loop: false,
-            isBackground: true,
-            startTime: 0,
+            loop: true,
+            isBackground: false,
+            startTime: 16,
             endTime: 18.133333,
-            timelineMode: false,
+            timelineMode: true,
             volume: 0.8,
             isPlaying: false
         });
         audioTracks.push({
-            id: "audio_1752548771671_xehnsedfd",
+            id: "audio_1752549828302_s5b0dhvye",
             name: "title.mp3",
-            audio: document.getElementById("audio-audio_1752548771671_xehnsedfd"),
+            audio: document.getElementById("audio-audio_1752549828302_s5b0dhvye"),
             playOrder: 2,
             loop: true,
             isBackground: false,
@@ -137,15 +99,15 @@
             isPlaying: false
         });
         audioTracks.push({
-            id: "audio_1752548771672_cowan498l",
+            id: "audio_1752549828304_bto40cxcy",
             name: "title-large.mp3",
-            audio: document.getElementById("audio-audio_1752548771672_cowan498l"),
+            audio: document.getElementById("audio-audio_1752549828304_bto40cxcy"),
             playOrder: 3,
             loop: true,
             isBackground: false,
-            startTime: 2,
+            startTime: 0,
             endTime: 3.584,
-            timelineMode: true,
+            timelineMode: false,
             volume: 0.8,
             isPlaying: false
         });
