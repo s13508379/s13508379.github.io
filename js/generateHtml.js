@@ -128,8 +128,8 @@ function generateHTMLContent() {
     let markerVisible = false;
     let backgroundAudioTrack = null;
     let currentSequentialIndex = 0;
-    let sequentialAudioInterval = null;
     let sequenceLoopActive = false;
+    let currentTrackTimeout = null;
 
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
@@ -161,8 +161,9 @@ function generateHTMLContent() {
         // Set audio properties
         audioTracks.forEach(track => {
             track.audio.volume = track.volume;
+            track.audio.loop = false; // Disable native looping initially
             if (track.isBackground) {
-                track.audio.loop = true;
+                track.audio.loop = true; // Keep loop for background audio
                 backgroundAudioTrack = track;
             }
         });
@@ -203,6 +204,12 @@ function generateHTMLContent() {
             return;
         }
 
+        // Clear any existing timeout
+        if (currentTrackTimeout) {
+            clearTimeout(currentTrackTimeout);
+            currentTrackTimeout = null;
+        }
+
         // Don't stop background music, only stop regular tracks
         audioTracks.forEach(track => {
             if (!track.isBackground && track.isPlaying) {
@@ -217,7 +224,7 @@ function generateHTMLContent() {
         });
         
         const regularTracks = audioTracks
-            .filter(track => !track.isBackground)
+            .filter(track => !track.isBackground && track.playOrder > 0)
             .sort((a, b) => a.playOrder - b.playOrder);
 
         if (regularTracks.length === 0) {
@@ -231,47 +238,68 @@ function generateHTMLContent() {
     }
 
     function playNextInSequence(tracks) {
-        if (!sequenceLoopActive) return;
-        
+        if (!sequenceLoopActive || !markerVisible) return;
+
+        // Clear any existing timeout before starting new track
+        if (currentTrackTimeout) {
+            clearTimeout(currentTrackTimeout);
+            currentTrackTimeout = null;
+        }
+
         if (currentSequentialIndex >= tracks.length) {
-            // Check if any track in the sequence has loop enabled
-            const hasLoopTracks = tracks.some(t => t.loop);
-            if (hasLoopTracks) {
-                console.log('Restarting sequence due to loop tracks');
-                currentSequentialIndex = 0;
-                // Don't call playNextInSequence immediately, let it fall through
-            } else {
-                console.log('Sequential playback complete');
-                sequenceLoopActive = false;
-                return;
-            }
+            console.log('Restarting title sequence... (index was', currentSequentialIndex, 'of', tracks.length, ')');
+            currentSequentialIndex = 0;
+            // No delay needed for continuous looping of titles
         }
 
         const track = tracks[currentSequentialIndex];
-        console.log('Playing track:', track.name, 'Order:', track.playOrder);
+        console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
 
         playTrack(track, () => {
             // Move to next track after current one finishes
+            console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
             currentSequentialIndex++;
-            setTimeout(() => {
-                playNextInSequence(tracks);
-            }, 100);
+            
+            // Small delay between tracks for smoother transitions
+            currentTrackTimeout = setTimeout(() => {
+                if (sequenceLoopActive && markerVisible) {
+                    playNextInSequence(tracks);
+                }
+            }, 200); // 200ms delay between tracks
         });
     }
 
     function playTrack(track, onComplete) {
-        if (!sequenceLoopActive) return;
-        
+        if (!sequenceLoopActive || !markerVisible) return;
+
+        console.log('Starting track:', track.name, 'Timeline mode:', track.timelineMode, 'Start:', track.startTime, 'End:', track.endTime);
+
         // Set start time if timeline mode
         if (track.timelineMode && track.startTime > 0) {
             track.audio.currentTime = track.startTime;
+        } else {
+            track.audio.currentTime = 0;
         }
 
         track.audio.play().catch(e => console.log('Audio play error:', e));
         track.isPlaying = true;
 
+        // Calculate duration for this track
+        let trackDuration;
+        if (track.timelineMode && track.endTime && track.startTime) {
+            trackDuration = (track.endTime - track.startTime) * 1000; // Convert to milliseconds
+            console.log('Track duration (timeline):', trackDuration + 'ms');
+        } else if (track.audio.duration) {
+            trackDuration = track.audio.duration * 1000; // Convert to milliseconds
+            console.log('Track duration (full):', trackDuration + 'ms');
+        } else {
+            trackDuration = 3000; // Fallback to 3 seconds
+            console.log('Track duration (fallback):', trackDuration + 'ms');
+        }
+
         // Set up end listener
         const onEnded = () => {
+            console.log('Track ended:', track.name);
             track.audio.removeEventListener('ended', onEnded);
             track.audio.removeEventListener('timeupdate', onTimeUpdate);
             track.isPlaying = false;
@@ -283,6 +311,7 @@ function generateHTMLContent() {
 
         const onTimeUpdate = () => {
             if (track.timelineMode && track.endTime && track.audio.currentTime >= track.endTime) {
+                console.log('Track reached end time:', track.name, 'at', track.audio.currentTime);
                 track.audio.pause();
                 onEnded();
             }
@@ -292,14 +321,24 @@ function generateHTMLContent() {
         if (track.timelineMode && track.endTime) {
             track.audio.addEventListener('timeupdate', onTimeUpdate);
         }
+
+        // Fallback timeout in case audio events don't fire properly
+        currentTrackTimeout = setTimeout(() => {
+            if (track.isPlaying) {
+                console.log('Track timeout reached:', track.name);
+                track.audio.pause();
+                onEnded();
+            }
+        }, trackDuration + 100); // Add 100ms buffer
     }
 
     function stopAllAudio() {
         sequenceLoopActive = false;
         
-        if (sequentialAudioInterval) {
-            clearInterval(sequentialAudioInterval);
-            sequentialAudioInterval = null;
+        // Clear any pending timeouts
+        if (currentTrackTimeout) {
+            clearTimeout(currentTrackTimeout);
+            currentTrackTimeout = null;
         }
 
         audioTracks.forEach(track => {
