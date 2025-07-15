@@ -51,10 +51,9 @@
         <a-assets>
             <img id="img-0" src="images/Asset 7.png" crossorigin="anonymous">
             <img id="img-1" src="images/allimg.png" crossorigin="anonymous">
-            <audio id="audio-audio_1752545616967_1p0f3x5c0" src="audio/sound.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752545628016_wdvt9i1bb" src="audio/title.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752545616969_nrdqpdf5x" src="audio/title.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752545616970_0su8ok9fz" src="audio/title-large.mp3" preload="auto"></audio>
+            <audio id="audio-sound" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="audio-title" src="audio/title.mp3" preload="auto"></audio>
+            <audio id="audio-title-large" src="audio/title-large.mp3" preload="auto"></audio>
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
@@ -111,10 +110,12 @@
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
         audioTracks = [];
+        
+        // Background music - sound.mp3
         audioTracks.push({
-            id: "audio_1752545616967_1p0f3x5c0",
+            id: "sound",
             name: "sound.mp3",
-            audio: document.getElementById("audio-audio_1752545616967_1p0f3x5c0"),
+            audio: document.getElementById("audio-sound"),
             playOrder: 1,
             loop: false,
             isBackground: true,
@@ -124,12 +125,14 @@
             volume: 0.8,
             isPlaying: false
         });
+        
+        // Title sequence track 1
         audioTracks.push({
-            id: "audio_1752545628016_wdvt9i1bb",
+            id: "title",
             name: "title.mp3",
-            audio: document.getElementById("audio-audio_1752545628016_wdvt9i1bb"),
+            audio: document.getElementById("audio-title"),
             playOrder: 2,
-            loop: false,
+            loop: true,
             isBackground: false,
             startTime: 2,
             endTime: 3.584,
@@ -137,24 +140,13 @@
             volume: 0.8,
             isPlaying: false
         });
+        
+        // Title sequence track 2
         audioTracks.push({
-            id: "audio_1752545616969_nrdqpdf5x",
-            name: "title.mp3",
-            audio: document.getElementById("audio-audio_1752545616969_nrdqpdf5x"),
-            playOrder: 3,
-            loop: true,
-            isBackground: false,
-            startTime: 0,
-            endTime: 3.584,
-            timelineMode: false,
-            volume: 0.8,
-            isPlaying: false
-        });
-        audioTracks.push({
-            id: "audio_1752545616970_0su8ok9fz",
+            id: "title-large",
             name: "title-large.mp3",
-            audio: document.getElementById("audio-audio_1752545616970_0su8ok9fz"),
-            playOrder: 4,
+            audio: document.getElementById("audio-title-large"),
+            playOrder: 3,
             loop: true,
             isBackground: false,
             startTime: 1,
@@ -175,6 +167,7 @@
         });
         
         console.log('Initialized', audioTracks.length, 'audio tracks');
+        console.log('Background track:', backgroundAudioTrack?.name);
     }
 
     // Call initialization when page loads
@@ -230,8 +223,10 @@
         });
         
         const regularTracks = audioTracks
-            .filter(track => !track.isBackground && track.playOrder > 0)
+            .filter(track => !track.isBackground)
             .sort((a, b) => a.playOrder - b.playOrder);
+
+        console.log('Regular tracks to play:', regularTracks.map(t => t.name));
 
         if (regularTracks.length === 0) {
             console.log('No regular tracks to play');
@@ -292,7 +287,7 @@
 
         // Calculate duration for this track
         let trackDuration;
-        if (track.timelineMode && track.endTime && track.startTime) {
+        if (track.timelineMode && track.endTime && track.startTime >= 0) {
             trackDuration = (track.endTime - track.startTime) * 1000; // Convert to milliseconds
             console.log('Track duration (timeline):', trackDuration + 'ms');
         } else if (track.audio.duration) {
