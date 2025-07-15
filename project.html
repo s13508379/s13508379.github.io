@@ -51,6 +51,9 @@
         <a-assets>
             <img id="img-0" src="images/ballon.png" crossorigin="anonymous">
             <img id="img-1" src="images/Asset 3.png" crossorigin="anonymous">
+            <audio id="audio-audio_1752548771669_d8eh2xe1d" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752548771671_xehnsedfd" src="audio/title.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752548771672_cowan498l" src="audio/title-large.mp3" preload="auto"></audio>
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
@@ -107,6 +110,45 @@
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
         audioTracks = [];
+        audioTracks.push({
+            id: "audio_1752548771669_d8eh2xe1d",
+            name: "sound.mp3",
+            audio: document.getElementById("audio-audio_1752548771669_d8eh2xe1d"),
+            playOrder: 1,
+            loop: false,
+            isBackground: true,
+            startTime: 0,
+            endTime: 18.133333,
+            timelineMode: false,
+            volume: 0.8,
+            isPlaying: false
+        });
+        audioTracks.push({
+            id: "audio_1752548771671_xehnsedfd",
+            name: "title.mp3",
+            audio: document.getElementById("audio-audio_1752548771671_xehnsedfd"),
+            playOrder: 2,
+            loop: true,
+            isBackground: false,
+            startTime: 0,
+            endTime: 3.584,
+            timelineMode: false,
+            volume: 0.8,
+            isPlaying: false
+        });
+        audioTracks.push({
+            id: "audio_1752548771672_cowan498l",
+            name: "title-large.mp3",
+            audio: document.getElementById("audio-audio_1752548771672_cowan498l"),
+            playOrder: 3,
+            loop: true,
+            isBackground: false,
+            startTime: 2,
+            endTime: 3.584,
+            timelineMode: true,
+            volume: 0.8,
+            isPlaying: false
+        });
         
         // Set audio properties
         audioTracks.forEach(track => {
