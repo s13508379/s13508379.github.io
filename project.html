@@ -185,6 +185,7 @@
 
 
             if (currentSequentialIndex < tracks.length) {
+                console.log(currentSequentialIndex, 'tacks:', tracks.length)
                 playTrack(track, () => {
                     console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
 
