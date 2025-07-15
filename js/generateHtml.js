@@ -254,11 +254,10 @@ function generateHTMLContent() {
 
         const track = tracks[currentSequentialIndex];
         console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
-
+            currentSequentialIndex++;
         playTrack(track, () => {
             // Move to next track after current one finishes
-            console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
-            currentSequentialIndex++;
+            console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex);
             
             // Small delay between tracks for smoother transitions
             currentTrackTimeout = setTimeout(() => {
@@ -268,7 +267,6 @@ function generateHTMLContent() {
             }, 200); // 200ms delay between tracks
         });
     }
-
     function playTrack(track, onComplete) {
         if (!sequenceLoopActive || !markerVisible) return;
 
