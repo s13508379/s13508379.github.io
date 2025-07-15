@@ -207,17 +207,24 @@
         function playNextInSequence(tracks) {
             if (!sequenceLoopActive || !markerVisible) return;
 
-            if (currentSequentialIndex >= tracks.length + 1) {
-                console.log('Restarting title sequence...');
+            // Clear any existing timeout before starting new track
+            if (currentTrackTimeout) {
+                clearTimeout(currentTrackTimeout);
+                currentTrackTimeout = null;
+            }
+
+            if (currentSequentialIndex >= tracks.length) {
+                console.log('Restarting title sequence... (index was', currentSequentialIndex, 'of', tracks.length, ')');
                 currentSequentialIndex = 0;
                 // No delay needed for continuous looping of titles
             }
 
             const track = tracks[currentSequentialIndex];
-            console.log('Playing track:', track.name, 'Order:', track.playOrder);
+            console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
 
             playTrack(track, () => {
                 // Move to next track after current one finishes
+                console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
                 currentSequentialIndex++;
                 
                 // Small delay between tracks for smoother transitions
@@ -232,9 +239,13 @@
         function playTrack(track, onComplete) {
             if (!sequenceLoopActive || !markerVisible) return;
 
+            console.log('Starting track:', track.name, 'Timeline mode:', track.timelineMode, 'Start:', track.startTime, 'End:', track.endTime);
+
             // Set start time if timeline mode
             if (track.timelineMode && track.startTime > 0) {
                 track.audio.currentTime = track.startTime;
+            } else {
+                track.audio.currentTime = 0;
             }
 
             track.audio.play().catch(e => console.log('Audio play error:', e));
@@ -244,12 +255,18 @@
             let trackDuration;
             if (track.timelineMode && track.endTime && track.startTime) {
                 trackDuration = (track.endTime - track.startTime) * 1000; // Convert to milliseconds
-            } else {
+                console.log('Track duration (timeline):', trackDuration + 'ms');
+            } else if (track.audio.duration) {
                 trackDuration = track.audio.duration * 1000; // Convert to milliseconds
+                console.log('Track duration (full):', trackDuration + 'ms');
+            } else {
+                trackDuration = 3000; // Fallback to 3 seconds
+                console.log('Track duration (fallback):', trackDuration + 'ms');
             }
 
             // Set up end listener
             const onEnded = () => {
+                console.log('Track ended:', track.name);
                 track.audio.removeEventListener('ended', onEnded);
                 track.audio.removeEventListener('timeupdate', onTimeUpdate);
                 track.isPlaying = false;
@@ -261,6 +278,7 @@
 
             const onTimeUpdate = () => {
                 if (track.timelineMode && track.endTime && track.audio.currentTime >= track.endTime) {
+                    console.log('Track reached end time:', track.name, 'at', track.audio.currentTime);
                     track.audio.pause();
                     onEnded();
                 }
@@ -274,6 +292,7 @@
             // Fallback timeout in case audio events don't fire properly
             currentTrackTimeout = setTimeout(() => {
                 if (track.isPlaying) {
+                    console.log('Track timeout reached:', track.name);
                     track.audio.pause();
                     onEnded();
                 }
