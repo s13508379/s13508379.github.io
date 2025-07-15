@@ -207,7 +207,7 @@
         function playNextInSequence(tracks) {
             if (!sequenceLoopActive || !markerVisible) return;
 
-            if (currentSequentialIndex >= tracks.length) {
+            if (currentSequentialIndex >= tracks.length + 1) {
                 console.log('Restarting title sequence...');
                 currentSequentialIndex = 0;
                 // No delay needed for continuous looping of titles
