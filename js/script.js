@@ -50,18 +50,18 @@ function initScene() {
     const axesHelper = new THREE.AxesHelper(5);
     scene.add(axesHelper);
 
-    const planeGeometry = new THREE.PlaneGeometry(4, 4);
-    const planeMaterial = new THREE.MeshBasicMaterial({
-        color: "#444444",
-        transparent: true,
-        opacity: 0.2,
-        side: THREE.DoubleSide
-    });
+    // const planeGeometry = new THREE.PlaneGeometry(4, 4);
+    // const planeMaterial = new THREE.MeshBasicMaterial({
+    //     color: "#444444",
+    //     transparent: true,
+    //     opacity: 0.2,
+    //     side: THREE.DoubleSide
+    // });
 
-    const referencePlane = new THREE.Mesh(planeGeometry, planeMaterial);
-    referencePlane.rotation.x = -Math.PI / 2;
-    referencePlane.position.y = 0;
-    scene.add(referencePlane);
+    // const referencePlane = new THREE.Mesh(planeGeometry, planeMaterial);
+    // referencePlane.rotation.x = -Math.PI / 2;
+    // referencePlane.position.y = 0;
+    // scene.add(referencePlane);
 
     const phoneGeometry = new THREE.BoxGeometry(0.1, 1, 2);
     const phoneMaterial = new THREE.MeshBasicMaterial({ color: "#2c3e50" });
