@@ -130,6 +130,7 @@ function generateHTMLContent() {
     let currentSequentialIndex = 0;
     let sequenceLoopActive = false;
     let currentTrackTimeout = null;
+    let currentLoopIndex = 0;
 
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
@@ -199,74 +200,137 @@ function generateHTMLContent() {
     });
 
     function playSequentialAudio() {
-        if (audioTracks.length === 0) {
-            console.log('No audio tracks available');
-            return;
+            if (audioTracks.length === 0) {
+                console.log('No audio tracks available');
+                return;
+            }
+
+            // Clear any existing timeout
+            if (currentTrackTimeout) {
+                clearTimeout(currentTrackTimeout);
+                currentTrackTimeout = null;
+            }
+
+            // Don't stop background music, only stop regular tracks
+            audioTracks.forEach(track => {
+                if (!track.isBackground && track.isPlaying) {
+                    track.audio.pause();
+                    track.isPlaying = false;
+                    if (track.timelineMode && track.startTime > 0) {
+                        track.audio.currentTime = track.startTime;
+                    } else {
+                        track.audio.currentTime = 0;
+                    }
+                }
+            });
+
+            const regularTracks = audioTracks
+                .filter(track => !track.isBackground && track.playOrder > 0)
+                .sort((a, b) => a.playOrder - b.playOrder);
+
+            if (regularTracks.length === 0) {
+                console.log('No regular tracks to play');
+                return;
+            }
+
+            currentSequentialIndex = 0;
+            window.currentLoopIndex = 0; 
+            sequenceLoopActive = true;
+
+            console.log('Starting sequential audio with', regularTracks.length, 'tracks');
+            console.log('Loop tracks:', getLoopGroupTracks().length);
+
+            playNextInSequence(regularTracks);
         }
 
-        // Clear any existing timeout
-        if (currentTrackTimeout) {
-            clearTimeout(currentTrackTimeout);
-            currentTrackTimeout = null;
-        }
+function playNextInSequence(tracks) {
+            if (!sequenceLoopActive || !markerVisible) return;
 
-        // Don't stop background music, only stop regular tracks
-        audioTracks.forEach(track => {
-            if (!track.isBackground && track.isPlaying) {
-                track.audio.pause();
-                track.isPlaying = false;
-                if (track.timelineMode && track.startTime > 0) {
-                    track.audio.currentTime = track.startTime;
+            // Clear any existing timeout before starting new track
+            if (currentTrackTimeout) {
+                clearTimeout(currentTrackTimeout);
+                currentTrackTimeout = null;
+            }
+
+            if (currentSequentialIndex >= tracks.length) {
+                console.log('Restarting title sequence... (index was', currentSequentialIndex, 'of', tracks.length, ')');
+                currentSequentialIndex = 0;
+                // No delay needed for continuous looping of titles
+            }
+
+            const track = tracks[currentSequentialIndex];
+            console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
+
+
+            if (currentLoopIndex <= 0) {
+                console.log(currentSequentialIndex, 'tacks:', tracks.length)
+                console.log(currentLoopIndex)
+                currentLoopIndex++;
+                playTrack(track, () => {
+                    console.log(currentSequentialIndex, 'tacks:', tracks.length)
+                    console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
+
+                    currentSequentialIndex++;
+
+                    currentTrackTimeout = setTimeout(() => {
+                        if (sequenceLoopActive && markerVisible) {
+                            playNextInSequence(tracks);
+                        }
+                    }, 200); // 200ms delay between tracks
+                });
+            } else {
+                console.log(currentSequentialIndex, 'test12315646546:', tracks.length)
+                console.log(currentLoopIndex)
+                const loopTracks = getLoopGroupTracks();
+
+                if (loopTracks.length > 0) {
+                    console.log('Starting loop phase with', loopTracks.length, 'looping tracks');
+                    playLoopSequence(loopTracks);
                 } else {
-                    track.audio.currentTime = 0;
+                    console.log('No looping tracks found, sequence complete');
+                    sequenceLoopActive = false;
                 }
             }
-        });
-        
-        const regularTracks = audioTracks
-            .filter(track => !track.isBackground && track.playOrder > 0)
-            .sort((a, b) => a.playOrder - b.playOrder);
+        }
+            function playLoopSequence(loopTracks) {
+            if (!sequenceLoopActive || !markerVisible) return;
 
-        if (regularTracks.length === 0) {
-            console.log('No regular tracks to play');
-            return;
+            if (typeof currentLoopIndex === 'undefined') {
+                window.currentLoopIndex = 0;
+            }
+
+            if (currentTrackTimeout) {
+                clearTimeout(currentTrackTimeout);
+                currentTrackTimeout = null;
+            }
+
+            if (currentLoopIndex >= loopTracks.length) {
+                currentLoopIndex = 0;
+                console.log('Restarting loop sequence...');
+            }
+
+            const track = loopTracks[currentLoopIndex];
+            console.log('Playing loop track:', track.name, 'Loop index:', currentLoopIndex, 'of', loopTracks.length);
+
+            playTrack(track, () => {
+                console.log('Loop track completed:', track.name);
+
+                currentLoopIndex++;
+
+                currentTrackTimeout = setTimeout(() => {
+                    if (sequenceLoopActive && markerVisible) {
+                        playLoopSequence(loopTracks);
+                    }
+                }, 200);
+            });
         }
 
-        currentSequentialIndex = 0;
-        sequenceLoopActive = true;
-        playNextInSequence(regularTracks);
-    }
-
-    function playNextInSequence(tracks) {
-        if (!sequenceLoopActive || !markerVisible) return;
-
-        // Clear any existing timeout before starting new track
-        if (currentTrackTimeout) {
-            clearTimeout(currentTrackTimeout);
-            currentTrackTimeout = null;
+        function getLoopGroupTracks() {
+            return audioTracks
+                .filter(t => t.loop && !t.isBackground)
+                .sort((a, b) => a.playOrder - b.playOrder);
         }
 
-        if (currentSequentialIndex >= tracks.length) {
-            console.log('Restarting title sequence... (index was', currentSequentialIndex, 'of', tracks.length, ')');
-            currentSequentialIndex = 0;
-            // No delay needed for continuous looping of titles
-        }
-
-        const track = tracks[currentSequentialIndex];
-        console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
-            currentSequentialIndex++;
-        playTrack(track, () => {
-            // Move to next track after current one finishes
-            console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex);
-            
-            // Small delay between tracks for smoother transitions
-            currentTrackTimeout = setTimeout(() => {
-                if (sequenceLoopActive && markerVisible) {
-                    playNextInSequence(tracks);
-                }
-            }, 200); // 200ms delay between tracks
-        });
-    }
     function playTrack(track, onComplete) {
         if (!sequenceLoopActive || !markerVisible) return;
 
@@ -331,28 +395,32 @@ function generateHTMLContent() {
     }
 
     function stopAllAudio() {
-        sequenceLoopActive = false;
-        
-        // Clear any pending timeouts
-        if (currentTrackTimeout) {
-            clearTimeout(currentTrackTimeout);
-            currentTrackTimeout = null;
-        }
+            sequenceLoopActive = false;
 
-        audioTracks.forEach(track => {
-            track.audio.pause();
-            track.isPlaying = false;
-            
-            if (track.timelineMode && track.startTime > 0) {
-                track.audio.currentTime = track.startTime;
-            } else {
-                track.audio.currentTime = 0;
+            // Clear any pending timeouts
+            if (currentTrackTimeout) {
+                clearTimeout(currentTrackTimeout);
+                currentTrackTimeout = null;
             }
-        });
 
-        currentSequentialIndex = 0;
-        console.log('All audio stopped');
-    }
+            audioTracks.forEach(track => {
+                track.audio.pause();
+                track.isPlaying = false;
+
+                if (track.timelineMode && track.startTime > 0) {
+                    track.audio.currentTime = track.startTime;
+                } else {
+                    track.audio.currentTime = 0;
+                }
+            });
+            currentSequentialIndex = 0;
+            currentLoopIndex = 0;
+            if (typeof currentLoopIndex !== 'undefined') {
+                currentLoopIndex = 0;
+            }
+
+            console.log('All audio stopped');
+        }
 
     function toggleBackgroundAudio() {
         if (!backgroundAudioTrack) {
