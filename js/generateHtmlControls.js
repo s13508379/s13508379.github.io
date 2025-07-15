@@ -37,11 +37,27 @@ function generateHTMLContent() {
         .ar-controls button:hover {
             background: #0052a3;
         }
+
+        .timeline-info {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
     </style>
 </head>
 
 <body>
     <div class="ar-controls">
+        <div class="timeline-info">
+            <div>Timeline: <span id="timeline-current">0:00</span> / <span id="timeline-duration">0:00</span></div>
+            <div style="margin-top: 5px;">
+                <button onclick="playTimeline()">Play Timeline</button>
+                <button onclick="stopTimeline()">Stop Timeline</button>
+                <button onclick="toggleTimelineLoop()">Toggle Loop</button>
+            </div>
+        </div>
         <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
     </div>
@@ -126,11 +142,16 @@ function generateHTMLContent() {
     let animationIntervals = [];
     let audioTracks = [];
     let markerVisible = false;
-    let backgroundAudioTrack = null;
-    let currentSequentialIndex = 0;
-    let sequenceLoopActive = false;
-    let currentTrackTimeout = null;
-    let currentLoopIndex = 0;
+    
+    // Timeline system variables
+    let globalTimeline = {
+        isPlaying: false,
+        startTime: 0,
+        currentTime: 0,
+        duration: 0,
+        loop: true,
+        animationId: null
+    };
 
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
@@ -145,13 +166,12 @@ function generateHTMLContent() {
             id: "${track.id}",
             name: "${track.name}",
             audio: document.getElementById("audio-${track.id}"),
-            playOrder: ${track.playOrder - 1},
-            loop: ${track.loop},
-            isBackground: ${track.isBackground},
+            playOrder: ${track.playOrder},
             startTime: ${track.startTime},
-            endTime: ${track.endTime || 'null'},
-            timelineMode: ${track.timelineMode},
-            volume: ${track.audio.volume},
+            endTime: ${track.endTime || track.startTime + (track.duration || 0)},
+            duration: ${track.duration || 0},
+            timelineActive: false,
+            volume: ${track.audio ? track.audio.volume : 0.8},
             isPlaying: false
         });`;
         });
@@ -159,288 +179,175 @@ function generateHTMLContent() {
 
     htmlContent += `
         
-        // Set audio properties
+        // Set audio properties and calculate timeline duration
+        let maxEndTime = 0;
         audioTracks.forEach(track => {
-            track.audio.volume = track.volume;
-            track.audio.loop = false; // Disable native looping initially
-            if (track.isBackground) {
-                track.audio.loop = true; // Keep loop for background audio
-                backgroundAudioTrack = track;
+            if (track.audio) {
+                track.audio.volume = track.volume;
+                track.audio.loop = false;
+            }
+            if (track.endTime > maxEndTime) {
+                maxEndTime = track.endTime;
             }
         });
         
+        globalTimeline.duration = maxEndTime;
+        updateTimelineDisplay();
+        
         console.log('Initialized', audioTracks.length, 'audio tracks');
+        console.log('Timeline duration:', globalTimeline.duration, 'seconds');
+    }
+
+    // Update timeline display
+    function updateTimelineDisplay() {
+        const currentSpan = document.getElementById('timeline-current');
+        const durationSpan = document.getElementById('timeline-duration');
+        
+        if (currentSpan) {
+            const minutes = Math.floor(globalTimeline.currentTime / 60);
+            const seconds = Math.floor(globalTimeline.currentTime % 60);
+            currentSpan.textContent = minutes + ':' + seconds.toString().padStart(2, '0');
+        }
+        
+        if (durationSpan) {
+            const minutes = Math.floor(globalTimeline.duration / 60);
+            const seconds = Math.floor(globalTimeline.duration % 60);
+            durationSpan.textContent = minutes + ':' + seconds.toString().padStart(2, '0');
+        }
+    }
+
+    // Play timeline (Adobe AE style)
+    function playTimeline() {
+        if (globalTimeline.isPlaying) {
+            stopTimeline();
+            return;
+        }
+        
+        globalTimeline.isPlaying = true;
+        globalTimeline.startTime = Date.now();
+        globalTimeline.currentTime = 0;
+        
+        console.log('Starting timeline playback (Duration: ' + globalTimeline.duration + 's, Loop: ' + globalTimeline.loop + ')');
+        
+        // Start timeline loop
+        updateTimeline();
+    }
+
+    // Stop timeline
+    function stopTimeline() {
+        globalTimeline.isPlaying = false;
+        globalTimeline.currentTime = 0;
+        
+        if (globalTimeline.animationId) {
+            cancelAnimationFrame(globalTimeline.animationId);
+            globalTimeline.animationId = null;
+        }
+        
+        // Stop all tracks
+        audioTracks.forEach(track => {
+            if (track.audio) {
+                track.audio.pause();
+                track.audio.currentTime = 0;
+            }
+            track.timelineActive = false;
+        });
+        
+        updateTimelineDisplay();
+        console.log('Timeline stopped and reset');
+    }
+
+    // Toggle timeline loop
+    function toggleTimelineLoop() {
+        globalTimeline.loop = !globalTimeline.loop;
+        console.log('Timeline loop:', globalTimeline.loop ? 'enabled' : 'disabled');
+    }
+
+    // Update timeline (main timeline loop)
+    function updateTimeline() {
+        if (!globalTimeline.isPlaying) return;
+        
+        // Calculate current timeline position
+        const elapsed = (Date.now() - globalTimeline.startTime) / 1000;
+        globalTimeline.currentTime = elapsed;
+        
+        updateTimelineDisplay();
+        
+        // Check if timeline is complete
+        if (elapsed >= globalTimeline.duration) {
+            if (globalTimeline.loop) {
+                // Restart timeline
+                console.log('Timeline loop - restarting');
+                globalTimeline.startTime = Date.now();
+                globalTimeline.currentTime = 0;
+                
+                // Reset all tracks
+                audioTracks.forEach(track => {
+                    if (track.audio) {
+                        track.audio.pause();
+                        track.audio.currentTime = 0;
+                    }
+                    track.timelineActive = false;
+                });
+            } else {
+                // Stop timeline
+                stopTimeline();
+                return;
+            }
+        }
+        
+        // Update each track based on timeline position
+        audioTracks.forEach(track => {
+            if (!track.audio) return;
+            
+            const shouldPlay = elapsed >= track.startTime && elapsed < track.endTime;
+            
+            if (shouldPlay && !track.timelineActive) {
+                // Start playing this track
+                track.timelineActive = true;
+                track.audio.currentTime = 0;
+                track.audio.play().catch(e => console.log('Audio play failed:', e));
+                
+                console.log('Timeline: Starting ' + track.name + ' at ' + elapsed.toFixed(1) + 's');
+                
+            } else if (!shouldPlay && track.timelineActive) {
+                // Stop playing this track
+                track.timelineActive = false;
+                track.audio.pause();
+                track.audio.currentTime = 0;
+                
+                console.log('Timeline: Stopping ' + track.name + ' at ' + elapsed.toFixed(1) + 's');
+            }
+        });
+        
+        // Continue timeline
+        globalTimeline.animationId = requestAnimationFrame(updateTimeline);
     }
 
     // Call initialization when page loads
     window.addEventListener('load', initializeAudioTracks);
 
+    // Marker event handlers
     document.querySelector('a-marker').addEventListener('markerFound', function() {
         markerVisible = true;
-        console.log('Marker found - starting animations and audio');
+        console.log('Marker found - starting timeline and animations');
         
-        // Start background audio if exists
-        if (backgroundAudioTrack && backgroundAudioTrack.audio) {
-            backgroundAudioTrack.audio.play().catch(e => console.log('Background audio autoplay blocked:', e));
-            backgroundAudioTrack.isPlaying = true;
-        }
-        
-        // Auto-start sequential audio playback based on settings
-        playSequentialAudio();
+        // Auto-start timeline when marker is found
+        playTimeline();
         playAllAnimations();
     });
 
     document.querySelector('a-marker').addEventListener('markerLost', function() {
         markerVisible = false;
-        console.log('Marker lost - stopping animations and audio');
+        console.log('Marker lost - stopping timeline and animations');
         
-        // Stop all audio
-        stopAllAudio();
+        // Stop timeline and animations
+        stopTimeline();
         stopAllAnimations();
     });
 
-    function playSequentialAudio() {
-            if (audioTracks.length === 0) {
-                console.log('No audio tracks available');
-                return;
-            }
-
-            // Clear any existing timeout
-            if (currentTrackTimeout) {
-                clearTimeout(currentTrackTimeout);
-                currentTrackTimeout = null;
-            }
-
-            // Don't stop background music, only stop regular tracks
-            audioTracks.forEach(track => {
-                if (!track.isBackground && track.isPlaying) {
-                    track.audio.pause();
-                    track.isPlaying = false;
-                    if (track.timelineMode && track.startTime > 0) {
-                        track.audio.currentTime = track.startTime;
-                    } else {
-                        track.audio.currentTime = 0;
-                    }
-                }
-            });
-
-            const regularTracks = audioTracks
-                .filter(track => !track.isBackground && track.playOrder > 0)
-                .sort((a, b) => a.playOrder - b.playOrder);
-
-            if (regularTracks.length === 0) {
-                console.log('No regular tracks to play');
-                return;
-            }
-
-            currentSequentialIndex = 0;
-            window.currentLoopIndex = 0; 
-            sequenceLoopActive = true;
-
-            console.log('Starting sequential audio with', regularTracks.length, 'tracks');
-            console.log('Loop tracks:', getLoopGroupTracks().length);
-
-            playNextInSequence(regularTracks);
-        }
-
-function playNextInSequence(tracks) {
-            if (!sequenceLoopActive || !markerVisible) return;
-
-            // Clear any existing timeout before starting new track
-            if (currentTrackTimeout) {
-                clearTimeout(currentTrackTimeout);
-                currentTrackTimeout = null;
-            }
-
-            if (currentSequentialIndex >= tracks.length) {
-                console.log('Restarting title sequence... (index was', currentSequentialIndex, 'of', tracks.length, ')');
-                currentSequentialIndex = 0;
-                // No delay needed for continuous looping of titles
-            }
-
-            const track = tracks[currentSequentialIndex];
-            console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
-
-
-            if (currentLoopIndex <= 0) {
-                console.log(currentSequentialIndex, 'tacks:', tracks.length)
-                console.log(currentLoopIndex)
-                currentLoopIndex++;
-                playTrack(track, () => {
-                    console.log(currentSequentialIndex, 'tacks:', tracks.length)
-                    console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
-
-                    currentSequentialIndex++;
-
-                    currentTrackTimeout = setTimeout(() => {
-                        if (sequenceLoopActive && markerVisible) {
-                            playNextInSequence(tracks);
-                        }
-                    }, 200); // 200ms delay between tracks
-                });
-            } else {
-                console.log(currentSequentialIndex, 'test12315646546:', tracks.length)
-                console.log(currentLoopIndex)
-                const loopTracks = getLoopGroupTracks();
-
-                if (loopTracks.length > 0) {
-                    console.log('Starting loop phase with', loopTracks.length, 'looping tracks');
-                    playLoopSequence(loopTracks);
-                } else {
-                    console.log('No looping tracks found, sequence complete');
-                    sequenceLoopActive = false;
-                }
-            }
-        }
-            function playLoopSequence(loopTracks) {
-            if (!sequenceLoopActive || !markerVisible) return;
-
-            if (typeof currentLoopIndex === 'undefined') {
-                window.currentLoopIndex = 0;
-            }
-
-            if (currentTrackTimeout) {
-                clearTimeout(currentTrackTimeout);
-                currentTrackTimeout = null;
-            }
-
-            if (currentLoopIndex >= loopTracks.length) {
-                currentLoopIndex = 0;
-                console.log('Restarting loop sequence...');
-            }
-
-            const track = loopTracks[currentLoopIndex];
-            console.log('Playing loop track:', track.name, 'Loop index:', currentLoopIndex, 'of', loopTracks.length);
-
-            playTrack(track, () => {
-                console.log('Loop track completed:', track.name);
-
-                currentLoopIndex++;
-
-                currentTrackTimeout = setTimeout(() => {
-                    if (sequenceLoopActive && markerVisible) {
-                        playLoopSequence(loopTracks);
-                    }
-                }, 200);
-            });
-        }
-
-        function getLoopGroupTracks() {
-            return audioTracks
-                .filter(t => t.loop && !t.isBackground)
-                .sort((a, b) => a.playOrder - b.playOrder);
-        }
-
-    function playTrack(track, onComplete) {
-        if (!sequenceLoopActive || !markerVisible) return;
-
-        console.log('Starting track:', track.name, 'Timeline mode:', track.timelineMode, 'Start:', track.startTime, 'End:', track.endTime);
-
-        // Set start time if timeline mode
-        if (track.timelineMode && track.startTime > 0) {
-            track.audio.currentTime = track.startTime;
-        } else {
-            track.audio.currentTime = 0;
-        }
-
-        track.audio.play().catch(e => console.log('Audio play error:', e));
-        track.isPlaying = true;
-
-        // Calculate duration for this track
-        let trackDuration;
-        if (track.timelineMode && track.endTime && track.startTime) {
-            trackDuration = (track.endTime - track.startTime) * 1000; // Convert to milliseconds
-            console.log('Track duration (timeline):', trackDuration + 'ms');
-        } else if (track.audio.duration) {
-            trackDuration = track.audio.duration * 1000; // Convert to milliseconds
-            console.log('Track duration (full):', trackDuration + 'ms');
-        } else {
-            trackDuration = 3000; // Fallback to 3 seconds
-            console.log('Track duration (fallback):', trackDuration + 'ms');
-        }
-
-        // Set up end listener
-        const onEnded = () => {
-            console.log('Track ended:', track.name);
-            track.audio.removeEventListener('ended', onEnded);
-            track.audio.removeEventListener('timeupdate', onTimeUpdate);
-            track.isPlaying = false;
-            
-            if (onComplete) {
-                onComplete();
-            }
-        };
-
-        const onTimeUpdate = () => {
-            if (track.timelineMode && track.endTime && track.audio.currentTime >= track.endTime) {
-                console.log('Track reached end time:', track.name, 'at', track.audio.currentTime);
-                track.audio.pause();
-                onEnded();
-            }
-        };
-
-        track.audio.addEventListener('ended', onEnded);
-        if (track.timelineMode && track.endTime) {
-            track.audio.addEventListener('timeupdate', onTimeUpdate);
-        }
-
-        // Fallback timeout in case audio events don't fire properly
-        currentTrackTimeout = setTimeout(() => {
-            if (track.isPlaying) {
-                console.log('Track timeout reached:', track.name);
-                track.audio.pause();
-                onEnded();
-            }
-        }, trackDuration + 100); // Add 100ms buffer
-    }
-
-    function stopAllAudio() {
-            sequenceLoopActive = false;
-
-            // Clear any pending timeouts
-            if (currentTrackTimeout) {
-                clearTimeout(currentTrackTimeout);
-                currentTrackTimeout = null;
-            }
-
-            audioTracks.forEach(track => {
-                track.audio.pause();
-                track.isPlaying = false;
-
-                if (track.timelineMode && track.startTime > 0) {
-                    track.audio.currentTime = track.startTime;
-                } else {
-                    track.audio.currentTime = 0;
-                }
-            });
-            currentSequentialIndex = 0;
-            currentLoopIndex = 0;
-            if (typeof currentLoopIndex !== 'undefined') {
-                currentLoopIndex = 0;
-            }
-
-            console.log('All audio stopped');
-        }
-
-    function toggleBackgroundAudio() {
-        if (!backgroundAudioTrack) {
-            console.log('No background audio track available');
-            return;
-        }
-
-        if (backgroundAudioTrack.isPlaying) {
-            backgroundAudioTrack.audio.pause();
-            backgroundAudioTrack.isPlaying = false;
-            console.log('Background audio paused');
-        } else {
-            backgroundAudioTrack.audio.play().catch(e => console.log('Background audio play error:', e));
-            backgroundAudioTrack.isPlaying = true;
-            console.log('Background audio playing');
-        }
-    }
-
+    // Animation functions (unchanged)
     function playAllAnimations() {
-       stopAllAnimations();
+        stopAllAnimations();
         const layers = document.querySelectorAll('[id^="layer-"]');
         layers.forEach(layer => {
             const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
@@ -484,17 +391,25 @@ function playNextInSequence(tracks) {
                     const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
                     const easedProgress = easeInOut(progress);
 
-                    const originalPos = layer.getAttribute('position');
-                    const originalRot = layer.getAttribute('rotation');
-                    const originalScale = layer.getAttribute('scale');
+                    // Get original values
+                    const originalPosStr = layer.getAttribute('data-original-position').replace(/&quot;/g, '"');
+                    const originalPos = JSON.parse(originalPosStr);
                     const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
-                    const origRotX = originalRot.x, origRotY = originalRot.y, origRotZ = originalRot.z;
+                    
+                    const originalRotStr = layer.getAttribute('data-original-rotation').replace(/&quot;/g, '"');
+                    const originalRot = JSON.parse(originalRotStr);
+                    const origRotX = originalRot.x * 180 / Math.PI;
+                    const origRotY = originalRot.y * 180 / Math.PI;
+                    const origRotZ = originalRot.z * 180 / Math.PI;
+                    
+                    const originalScaleStr = layer.getAttribute('data-original-scale').replace(/&quot;/g, '"');
+                    const originalScale = JSON.parse(originalScaleStr);
                     const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
 
                     let finalX = origX, finalY = origY, finalZ = origZ;
                     let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
                     let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-                    let finalOpacity = 1;
+                    let finalOpacity = parseFloat(layer.getAttribute('data-original-opacity'));
                 
                     // Apply custom animation if enabled
                     if (enableCustom) {
@@ -510,20 +425,19 @@ function playNextInSequence(tracks) {
                             finalScaleX = finalScaleY = finalScaleZ = customScale;
                             
                             finalOpacity = customStart.opacity + (customEnd.opacity - customStart.opacity) * easedProgress;
-                            finalRotZ = customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress;
+                            finalRotZ = origRotZ + (customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress);
                         } catch (e) {
                             console.error('Error parsing custom animation data:', e);
                         }
                     }
                     
-                    // Apply special effects with user-controlled settings
+                    // Apply special effects (same as original)
                     if (specialEffect !== 'none') {
                         switch (specialEffect) {
                             case 'swingToTarget':
                                 const swingAmplitude = (1 - easedProgress) * settings.swingRange;
                                 const swingAngle = Math.sin(progress * settings.swingFreq * Math.PI) * swingAmplitude;
                                 finalRotZ += swingAngle;
-
                                 if (!enableCustom) {
                                     finalX += settings.swingTargetX * easedProgress;
                                 }
@@ -533,7 +447,6 @@ function playNextInSequence(tracks) {
                                 const zigzagAmplitude = (1 - easedProgress) * settings.zigzagAmp;
                                 const zigzagOffset = Math.sin(progress * settings.zigzagFreq * Math.PI) * zigzagAmplitude;
                                 finalX += zigzagOffset;
-
                                 if (!enableCustom) {
                                     finalX += settings.zigzagTargetX * easedProgress;
                                     finalY += settings.zigzagTargetY * easedProgress;
@@ -549,7 +462,6 @@ function playNextInSequence(tracks) {
                                 const waveY = Math.sin(progress * settings.waveFreq * Math.PI) * settings.waveAmp * (1 - easedProgress);
                                 finalY += waveY;
                                 finalRotZ += (waveY * 0.2);
-
                                 if (!enableCustom) {
                                     finalX += settings.waveTargetX * easedProgress;
                                     finalY += settings.waveTargetY * easedProgress;
@@ -561,7 +473,6 @@ function playNextInSequence(tracks) {
                                 finalScaleX *= scaleElastic;
                                 finalScaleY *= scaleElastic;
                                 finalScaleZ *= scaleElastic;
-
                                 if (!enableCustom) {
                                     const elasticEase = (t) => {
                                         if (t === 0) return 0;
@@ -618,11 +529,7 @@ function playNextInSequence(tracks) {
                     layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                     layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                     layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-                    
-                    // Update opacity if needed
-                    if (specialEffect === 'fadeIn' || enableCustom) {
-                        layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
-                    }
+                    layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
                     
                 }, 16); // ~60fps
                 
@@ -634,6 +541,24 @@ function playNextInSequence(tracks) {
     function stopAllAnimations() {
         animationIntervals.forEach(interval => clearInterval(interval));
         animationIntervals = [];
+        
+        // Reset all layers to original state
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach(layer => {
+            try {
+                const originalPos = JSON.parse(layer.getAttribute('data-original-position').replace(/&quot;/g, '"'));
+                const originalRot = JSON.parse(layer.getAttribute('data-original-rotation').replace(/&quot;/g, '"'));
+                const originalScale = JSON.parse(layer.getAttribute('data-original-scale').replace(/&quot;/g, '"'));
+                const originalOpacity = parseFloat(layer.getAttribute('data-original-opacity'));
+                
+                layer.setAttribute('position', originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z);
+                layer.setAttribute('rotation', (originalRot.x * 180 / Math.PI) + ' ' + (originalRot.y * 180 / Math.PI) + ' ' + (originalRot.z * 180 / Math.PI));
+                layer.setAttribute('scale', originalScale.x + ' ' + originalScale.y + ' ' + originalScale.z);
+                layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity);
+            } catch (e) {
+                console.error('Error resetting layer:', e);
+            }
+        });
     }
     
     <\/script>

@@ -1,4 +1,12 @@
 let controlsHeightChanged = false;
+let globalTimeline = {
+    isPlaying: false,
+    startTime: 0,
+    currentTime: 0,
+    duration: 0,
+    loop: true,
+    animationId: null
+};
 
 function addAudioTracks(files) {
     for (let file of files) {
@@ -13,24 +21,19 @@ function addAudioTracks(files) {
             name: file.name,
             audio: audioElement,
             isPlaying: false,
-            loop: false,
-            startTime: 0,
-            endTime: null,
-            timelineMode: false,
-            originalDuration: null,
+            startTime: 0,  // When in timeline this track starts playing
+            endTime: null, // When in timeline this track stops playing
+            duration: null,
+            timelineActive: false,
             playOrder: audioTracks.length + 1,
-            autoNext: true,
-            isBackground: false,
-            playCount: 0,
-            timelinePlayCount: 0
+            isBackground: false
         };
 
         audioTracks.push(track);
         createAudioTrackUI(track);
     }
+    updateTimelineDuration();
 }
-
-
 
 function createAudioTrackUI(track) {
     const tracksContainer = document.getElementById('audioTracks');
@@ -40,9 +43,9 @@ function createAudioTrackUI(track) {
     trackDiv.innerHTML = `
     <div class="audio-track-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-                <input type="number" min="1" max="99" value="${track.playOrder}" readonly id="playOrder-${track.id}"
-                    data-track="${track.id}" style="width:40px; padding:4px; background:#333; border:1px solid #555;
-                color:#fff; border-radius:4px; text-align:center;" title="Play Order">
+            <input type="number" min="1" max="99" value="${track.playOrder}" readonly id="playOrder-${track.id}"
+                data-track="${track.id}" style="width:40px; padding:4px; background:#333; border:1px solid #555;
+                color:#fff; border-radius:4px; text-align:center;" title="Track Order">
             <button onclick="moveTrackUp('${track.id}')" 
                     style="width: 24px; height: 24px; background: #555; border: none; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px;"
                     title="Move Up">↑</button>
@@ -52,33 +55,31 @@ function createAudioTrackUI(track) {
         </div>
         <div class="audio-track-name" style="flex: 1;">${track.name}</div>
         <div class="audio-controls-group">
-            <button class="play-btn" onclick="toggleAudioTrack('${track.id}')" title="Play / Pause">▶</button>
-            <button class="loop-toggle" onclick="toggleLoop('${track.id}')" title="Add to Loop Group">🔁</button>
+            <button class="play-btn" onclick="toggleIndividualTrack('${track.id}')" title="Play Individual Track">▶</button>
             <input type="range" class="volume-control" min="0" max="1" step="0.1" value="0.8" 
                    onchange="updateTrackVolume('${track.id}', this.value)" title="Volume">
-            <div class="time-display">0:00</div>
+            <div class="time-display" id="time-${track.id}">0:00</div>
             <button class="delete-track-btn" onclick="deleteAudioTrack('${track.id}')" title="Delete">✕</button>
         </div>
     </div>
     <div class="audio-timeline-controls" style="display: flex; gap: 8px; align-items: center; font-size: 11px; color: #ccc;">
-        <label style="min-width: 60px;">Start Time:</label>
+        <label style="min-width: 80px;">Timeline Start:</label>
         <input type="number" min="0" max="999" step="0.1" value="0" 
-               onchange="updateTimeSettings('${track.id}', 'start', this.value)"
+               onchange="updateTimelineSettings('${track.id}', 'start', this.value)"
                style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;"
-               title="Set start time for timeline mode">
+               title="When this track starts in the timeline">
         <span>sec</span>
         
-        <label style="min-width: 60px; margin-left: 12px;">End Time:</label>
+        <label style="min-width: 80px; margin-left: 12px;">Timeline End:</label>
         <input type="number" min="0" max="999" step="0.1" value="0" 
-               onchange="updateTimeSettings('${track.id}', 'end', this.value)"
+               onchange="updateTimelineSettings('${track.id}', 'end', this.value)"
                style="width: 60px; padding: 4px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;"
-               title="Set end time for timeline mode">
+               title="When this track ends in the timeline">
         <span>sec</span>
 
-        <label style="margin-left: 12px; font-size: 10px;">
-            <input type="checkbox" onchange="toggleBackgroundMusic('${track.id}', this.checked)" style="margin-right: 4px;">
-            Set as background music
-        </label>
+        <div class="timeline-status" style="margin-left: 12px; padding: 2px 6px; background: #555; border-radius: 3px; font-size: 10px;">
+            Inactive
+        </div>
     </div>
 `;
 
@@ -93,264 +94,294 @@ function createAudioTrackUI(track) {
         }
     }
 
-    // Add event listeners for time updates
-    track.audio.addEventListener('timeupdate', () => updateTimeDisplay(track.id));
-    track.audio.addEventListener('ended', () => onTrackEnded(track.id));
-
     // Load duration when metadata is loaded
     track.audio.addEventListener('loadedmetadata', () => {
+        track.duration = track.audio.duration;
         const endInput = trackDiv.querySelector('input[onchange*="end"]');
-        endInput.max = Math.floor(track.audio.duration);
-        endInput.value = Math.floor(track.audio.duration);
-        track.endTime = track.audio.duration;
-        track.originalDuration = track.audio.duration;
-
-        console.log(`Track loaded: ${track.name}, Duration: ${track.audio.duration}s`);
+        if (track.endTime === null) {
+            track.endTime = track.startTime + track.duration;
+            endInput.value = track.endTime.toFixed(1);
+        }
+        updateTimelineDuration();
+        console.log(`Track loaded: ${track.name}, Duration: ${track.duration}s`);
     });
 
-    reorderAudioDisplay();
-}
-
-function getLoopGroupTracks() {
-    return audioTracks
-        .filter(t => t.loop && !t.isBackground)
-        .sort((a, b) => a.playOrder - b.playOrder);
-}
-
-function getNextInLoopGroup(currentOrder) {
-    const loopTracks = getLoopGroupTracks();
-
-    if (loopTracks.length === 0) {
-        return null;
-    }
-
-    const currentIndex = loopTracks.findIndex(t => t.playOrder === currentOrder);
-
-    if (currentIndex === -1) {
-        return loopTracks[0];
-    }
-
-    const nextIndex = (currentIndex + 1) % loopTracks.length;
-    return loopTracks[nextIndex];
-}
-
-function playNextTrack(currentOrder, skipNonLooping = false) {
-    if (skipNonLooping) {
-        const nextLoopTrack = getNextInLoopGroup(currentOrder);
-
-        if (nextLoopTrack) {
-            setTimeout(() => {
-                console.log(`Playing next in loop group: ${nextLoopTrack.name} (Order: ${nextLoopTrack.playOrder})`);
-                toggleAudioTrack(nextLoopTrack.id);
-            }, 100);
-            return true;
-        } else {
-            console.log('No loop group tracks available');
-            return false;
+    track.audio.addEventListener('ended', () => {
+        // Reset individual track playback
+        track.isPlaying = false;
+        const button = document.querySelector(`#${track.id} .play-btn`);
+        if (button) {
+            button.textContent = '▶';
+            button.classList.remove('playing');
         }
-    } else {
-        const nextTracks = audioTracks
-            .filter(t => t.playOrder > currentOrder && !t.isBackground)
-            .sort((a, b) => a.playOrder - b.playOrder);
-
-        if (nextTracks.length === 0) {
-            console.log('No more tracks to play');
-            return false;
-        }
-
-        const targetTrack = nextTracks[0];
-
-        setTimeout(() => {
-            console.log(`Auto-playing next track: ${targetTrack.name} (Order: ${targetTrack.playOrder})`);
-            toggleAudioTrack(targetTrack.id);
-        }, 100);
-
-        return true;
-    }
-}
-
-function onTrackEnded(trackId) {
-    const track = audioTracks.find(t => t.id === trackId);
-    const button = document.querySelector(`#${trackId} .play-btn`);
-
-    console.log(`Track ended: ${track.name} (playCount: ${track.playCount})`);
-
-    if (track.isBackground) {
-        return;
-    }
-
-    track.isPlaying = false;
-    if (button) {
-        button.textContent = '▶';
-        button.classList.remove('playing');
-    }
-
-    if (track.timelineMode) {
-        track.audio.currentTime = track.startTime;
-    } else {
         track.audio.currentTime = 0;
-    }
+    });
 
-    const element = document.getElementById(trackId);
-    if (element && !track.isBackground) {
-        element.style.border = '1px solid #404040';
-    }
-
-    if (typeof sequentialPlayback === 'undefined' || !sequentialPlayback.isPlaying) {
-        if (!track.playCount) {
-            track.playCount = 0;
-        }
-        track.playCount++;
-
-        console.log(`Auto-next logic: Track "${track.name}" play count: ${track.playCount}`);
-
-        if (track.playCount === 1) {
-            console.log('First time ending - playing immediate next track');
-            playNextTrack(track.playOrder, false);
-        } else if (track.playCount >= 2) {
-            console.log('Second+ time ending - cycling through loop group');
-            playNextTrack(track.playOrder, true);
-        }
-    }
-
-    if (!track.isBackground && typeof backgroundMusic !== 'undefined' && backgroundMusic.isPlaying) {
-        setTimeout(() => {
-            fadeBackgroundMusic(false);
-        }, 500);
-    }
+    updateTimelineDuration();
 }
 
-function updateTimeDisplay(trackId) {
+function updateTimelineSettings(trackId, type, value) {
     const track = audioTracks.find(t => t.id === trackId);
-    const timeDisplay = document.querySelector(`#${trackId} .time-display`);
+    if (!track) return;
 
-    if (track && timeDisplay) {
-        const currentTime = track.audio.currentTime;
-        const minutes = Math.floor(currentTime / 60);
-        const seconds = Math.floor(currentTime % 60);
+    const numValue = parseFloat(value);
 
-        if (track.timelineMode && track.endTime && currentTime >= track.endTime) {
-            track.audio.pause();
-            track.isPlaying = false;
-            const button = document.querySelector(`#${trackId} .play-btn`);
-            if (button) {
-                button.textContent = '▶';
-                button.classList.remove('playing');
-            }
-
-            track.audio.currentTime = track.startTime;
-
-            const element = document.getElementById(trackId);
-            if (element && !track.isBackground) {
-                element.style.border = '1px solid #404040';
-            }
-
-            if (!track.isBackground) {
-                if (!track.timelinePlayCount) {
-                    track.timelinePlayCount = 0;
-                }
-                track.timelinePlayCount++;
-
-                console.log(`Timeline ended: "${track.name}" timeline play count: ${track.timelinePlayCount}`);
-
-                if (track.timelinePlayCount === 1) {
-                    console.log('Timeline first time ending - playing immediate next track');
-                    playNextTrack(track.playOrder, false);
-                } else if (track.timelinePlayCount >= 2) {
-                    console.log('Timeline second+ time ending - cycling through loop group');
-                    playNextTrack(track.playOrder, true);
-                }
-            }
-
-            if (!track.isBackground && typeof backgroundMusic !== 'undefined' && backgroundMusic.isPlaying) {
-                setTimeout(() => {
-                    fadeBackgroundMusic(false);
-                }, 500);
-            }
+    if (type === 'start') {
+        track.startTime = Math.max(0, numValue);
+        
+        // Auto-adjust end time if not manually set
+        if (track.duration && track.endTime <= track.startTime) {
+            track.endTime = track.startTime + track.duration;
+            const endInput = document.querySelector(`#${trackId} input[onchange*="end"]`);
+            if (endInput) endInput.value = track.endTime.toFixed(1);
         }
-
-        timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-        if (track.timelineMode) {
-            const startMin = Math.floor(track.startTime / 60);
-            const startSec = Math.floor(track.startTime % 60);
-            const endMin = Math.floor((track.endTime || track.audio.duration) / 60);
-            const endSec = Math.floor((track.endTime || track.audio.duration) % 60);
-            const playCount = track.timelinePlayCount || 0;
-            timeDisplay.title = `Timeline: ${startMin}:${startSec.toString().padStart(2, '0')} - ${endMin}:${endSec.toString().padStart(2, '0')} (Played: ${playCount}x)`;
-        } else {
-            const playCount = track.playCount || 0;
-            timeDisplay.title = `Full track: ${minutes}:${seconds.toString().padStart(2, '0')} (Played: ${playCount}x)`;
+    } else if (type === 'end') {
+        track.endTime = Math.max(track.startTime + 0.1, numValue);
+        
+        // Update input if value was adjusted
+        const endInput = document.querySelector(`#${trackId} input[onchange*="end"]`);
+        if (endInput && endInput.value !== track.endTime.toString()) {
+            endInput.value = track.endTime.toFixed(1);
         }
     }
+
+    updateTimelineDuration();
+    updateTimelineStatus(trackId);
+    
+    console.log(`Timeline updated for ${track.name}: Start=${track.startTime}s, End=${track.endTime}s`);
 }
 
-function toggleLoop(trackId) {
+function updateTimelineDuration() {
+    // Calculate total timeline duration
+    let maxEndTime = 0;
+    audioTracks.forEach(track => {
+        if (track.endTime && track.endTime > maxEndTime) {
+            maxEndTime = track.endTime;
+        }
+    });
+    globalTimeline.duration = maxEndTime;
+    
+    // Update timeline display
+    updateTimelineDisplay();
+}
+
+function updateTimelineStatus(trackId) {
     const track = audioTracks.find(t => t.id === trackId);
-    const button = document.querySelector(`#${trackId} .loop-toggle`);
-
-    track.loop = !track.loop;
-
-    if (track.loop) {
-        button.classList.add('active');
-        button.title = 'Remove from Loop Group';
-        button.style.backgroundColor = '#4CAF50';
-    } else {
-        button.classList.remove('active');
-        button.title = 'Add to Loop Group ';
-        button.style.backgroundColor = '#555';
+    const statusElement = document.querySelector(`#${trackId} .timeline-status`);
+    
+    if (track && statusElement) {
+        const isActive = track.startTime !== undefined && track.endTime !== undefined;
+        statusElement.textContent = isActive ? `Active (${(track.endTime - track.startTime).toFixed(1)}s)` : 'Inactive';
+        statusElement.style.background = isActive ? '#4CAF50' : '#555';
     }
-
-    const loopTracks = getLoopGroupTracks();
-    console.log('Loop Group updated:', loopTracks.map(t => `${t.name} (Order: ${t.playOrder})`));
 }
 
-function showLoopGroup() {
-    const loopTracks = getLoopGroupTracks();
-    if (loopTracks.length === 0) {
-        console.log('No tracks in loop group');
+function updateTimelineDisplay() {
+    const timelineInfo = document.getElementById('timeline-info');
+    if (!timelineInfo) {
+        // Create timeline info display
+        const audioControls = document.getElementById('audioControls');
+        const infoDiv = document.createElement('div');
+        infoDiv.id = 'timeline-info';
+        infoDiv.style.cssText = `
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 8px 0; 
+            border-bottom: 1px solid #404040; 
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #ccc;
+        `;
+        infoDiv.innerHTML = `
+            <div>
+                <span>Timeline: </span>
+                <span id="timeline-current">0:00</span>
+                <span> / </span>
+                <span id="timeline-duration">0:00</span>
+            </div>
+            <div>
+                <button onclick="playTimeline()" id="timeline-play-btn" style="
+                    background: #4CAF50; 
+                    border: none; 
+                    color: white; 
+                    padding: 6px 12px; 
+                    border-radius: 4px; 
+                    cursor: pointer; 
+                    margin-right: 8px;
+                ">Play Timeline</button>
+                <button onclick="stopTimeline()" style="
+                    background: #ff4444; 
+                    border: none; 
+                    color: white; 
+                    padding: 6px 12px; 
+                    border-radius: 4px; 
+                    cursor: pointer; 
+                    margin-right: 8px;
+                ">Stop Timeline</button>
+                <label style="font-size: 11px;">
+                    <input type="checkbox" id="timeline-loop" checked onchange="globalTimeline.loop = this.checked">
+                    Loop Timeline
+                </label>
+            </div>
+        `;
+        audioControls.insertBefore(infoDiv, audioControls.firstChild);
+    }
+    
+    // Update duration display
+    const durationSpan = document.getElementById('timeline-duration');
+    if (durationSpan) {
+        const minutes = Math.floor(globalTimeline.duration / 60);
+        const seconds = Math.floor(globalTimeline.duration % 60);
+        durationSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
+
+function playTimeline() {
+    if (globalTimeline.isPlaying) {
+        stopTimeline();
         return;
     }
-
-    console.log('Current Loop Group (in play order):');
-    loopTracks.forEach((track, index) => {
-        console.log(`${index + 1}. ${track.name} (Order: ${track.playOrder})`);
-    });
+    
+    globalTimeline.isPlaying = true;
+    globalTimeline.startTime = Date.now();
+    globalTimeline.currentTime = 0;
+    
+    const playBtn = document.getElementById('timeline-play-btn');
+    if (playBtn) {
+        playBtn.textContent = 'Stop Timeline';
+        playBtn.style.background = '#ff4444';
+    }
+    
+    console.log(`Starting timeline playback (Duration: ${globalTimeline.duration}s, Loop: ${globalTimeline.loop})`);
+    
+    // Start timeline loop
+    updateTimeline();
 }
 
-function fadeBackgroundMusic(fadeOut = true) {
-    if (typeof backgroundMusic === 'undefined' || !backgroundMusic.trackId) return;
+function stopTimeline() {
+    globalTimeline.isPlaying = false;
+    globalTimeline.currentTime = 0;
+    
+    if (globalTimeline.animationId) {
+        cancelAnimationFrame(globalTimeline.animationId);
+        globalTimeline.animationId = null;
+    }
+    
+    const playBtn = document.getElementById('timeline-play-btn');
+    if (playBtn) {
+        playBtn.textContent = 'Play Timeline';
+        playBtn.style.background = '#4CAF50';
+    }
+    
+    // Stop all tracks
+    audioTracks.forEach(track => {
+        track.audio.pause();
+        track.audio.currentTime = 0;
+        track.timelineActive = false;
+        
+        const timeDisplay = document.getElementById(`time-${track.id}`);
+        if (timeDisplay) {
+            timeDisplay.textContent = '0:00';
+        }
+    });
+    
+    // Reset timeline display
+    const currentSpan = document.getElementById('timeline-current');
+    if (currentSpan) {
+        currentSpan.textContent = '0:00';
+    }
+    
+    console.log('Timeline stopped and reset');
+}
 
-    const track = audioTracks.find(t => t.id === backgroundMusic.trackId);
-    if (!track || !track.isPlaying) return;
-
-    const targetVolume = fadeOut ? backgroundMusic.fadeVolume : backgroundMusic.originalVolume;
-    const currentVolume = track.audio.volume;
-    const step = (targetVolume - currentVolume) / 20;
-
-    let count = 0;
-    const fadeInterval = setInterval(() => {
-        if (count >= 20) {
-            clearInterval(fadeInterval);
-            track.audio.volume = targetVolume;
+function updateTimeline() {
+    if (!globalTimeline.isPlaying) return;
+    
+    // Calculate current timeline position
+    const elapsed = (Date.now() - globalTimeline.startTime) / 1000;
+    globalTimeline.currentTime = elapsed;
+    
+    // Update timeline display
+    const currentSpan = document.getElementById('timeline-current');
+    if (currentSpan) {
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = Math.floor(elapsed % 60);
+        currentSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Check if timeline is complete
+    if (elapsed >= globalTimeline.duration) {
+        if (globalTimeline.loop) {
+            // Restart timeline
+            console.log('Timeline loop - restarting');
+            globalTimeline.startTime = Date.now();
+            globalTimeline.currentTime = 0;
+            
+            // Reset all tracks
+            audioTracks.forEach(track => {
+                track.audio.pause();
+                track.audio.currentTime = 0;
+                track.timelineActive = false;
+            });
+        } else {
+            // Stop timeline
+            stopTimeline();
             return;
         }
-
-        track.audio.volume = Math.max(0, Math.min(1, currentVolume + (step * count)));
-        count++;
-    }, 50);
-}
-
-function reorderAudioDisplay() {
-    const tracksContainer = document.getElementById('audioTracks');
-    const sortedTracks = audioTracks.sort((a, b) => a.playOrder - b.playOrder);
-
-    sortedTracks.forEach(track => {
-        const element = document.getElementById(track.id);
-        if (element) {
-            tracksContainer.appendChild(element);
+    }
+    
+    // Update each track based on timeline position
+    audioTracks.forEach(track => {
+        const shouldPlay = elapsed >= track.startTime && elapsed < track.endTime;
+        
+        if (shouldPlay && !track.timelineActive) {
+            // Start playing this track
+            track.timelineActive = true;
+            track.audio.currentTime = 0;
+            track.audio.play().catch(e => console.log('Audio play failed:', e));
+            
+            console.log(`Timeline: Starting ${track.name} at ${elapsed.toFixed(1)}s`);
+            
+        } else if (!shouldPlay && track.timelineActive) {
+            // Stop playing this track
+            track.timelineActive = false;
+            track.audio.pause();
+            track.audio.currentTime = 0;
+            
+            console.log(`Timeline: Stopping ${track.name} at ${elapsed.toFixed(1)}s`);
+        }
+        
+        // Update individual track time display
+        const timeDisplay = document.getElementById(`time-${track.id}`);
+        if (timeDisplay && track.timelineActive) {
+            const trackTime = track.audio.currentTime;
+            const minutes = Math.floor(trackTime / 60);
+            const seconds = Math.floor(trackTime % 60);
+            timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
     });
+    
+    // Continue timeline
+    globalTimeline.animationId = requestAnimationFrame(updateTimeline);
+}
+
+function toggleIndividualTrack(trackId) {
+    const track = audioTracks.find(t => t.id === trackId);
+    const button = document.querySelector(`#${trackId} .play-btn`);
+    
+    if (track.isPlaying) {
+        track.audio.pause();
+        track.isPlaying = false;
+        button.textContent = '▶';
+        button.classList.remove('playing');
+    } else {
+        track.audio.currentTime = 0;
+        track.audio.play().catch(e => console.log('Audio play failed:', e));
+        track.isPlaying = true;
+        button.textContent = '⏸';
+        button.classList.add('playing');
+    }
 }
 
 function moveTrackUp(trackId) {
@@ -363,11 +394,6 @@ function moveTrackUp(trackId) {
         track.playOrder--;
         updateOrderInputs();
         reorderAudioDisplay();
-
-        if (track.loop || prevTrack.loop) {
-            console.log('Loop group order changed');
-            showLoopGroup();
-        }
     }
 }
 
@@ -384,11 +410,6 @@ function moveTrackDown(trackId) {
         track.playOrder++;
         updateOrderInputs();
         reorderAudioDisplay();
-
-        if (track.loop || nextTrack.loop) {
-            console.log('Loop group order changed');
-            showLoopGroup();
-        }
     }
 }
 
@@ -401,51 +422,23 @@ function updateOrderInputs() {
     });
 }
 
-function toggleAudioTrack(trackId) {
-    const track = audioTracks.find(t => t.id === trackId);
-    const button = document.querySelector(`#${trackId} .play-btn`);
+function reorderAudioDisplay() {
+    const tracksContainer = document.getElementById('audioTracks');
+    const sortedTracks = audioTracks.sort((a, b) => a.playOrder - b.playOrder);
 
-    if (track.isPlaying) {
-        track.audio.pause();
-        track.isPlaying = false;
-        button.textContent = '▶';
-        button.classList.remove('playing');
-
-        if (track.isBackground && typeof backgroundMusic !== 'undefined') {
-            backgroundMusic.isPlaying = false;
+    sortedTracks.forEach(track => {
+        const element = document.getElementById(track.id);
+        if (element) {
+            tracksContainer.appendChild(element);
         }
-    } else {
-        if (!track.isBackground && typeof backgroundMusic !== 'undefined' && backgroundMusic.isPlaying) {
-            fadeBackgroundMusic(true);
-        }
-
-        if (track.timelineMode && track.startTime > 0) {
-            track.audio.currentTime = track.startTime;
-        }
-
-        if (track.isBackground && typeof backgroundMusic !== 'undefined') {
-            backgroundMusic.isPlaying = true;
-        }
-
-        track.audio.play();
-        track.isPlaying = true;
-        button.textContent = '⏸';
-        button.classList.add('playing');
-
-        const element = document.getElementById(trackId);
-        if (element && !track.isBackground) {
-            if (track.loop) {
-                element.style.border = '2px solid #4CAF50';
-            } else {
-                element.style.border = '2px solid #00ff00';
-            }
-        }
-    }
+    });
 }
 
 function updateTrackVolume(trackId, volume) {
     const track = audioTracks.find(t => t.id === trackId);
-    track.audio.volume = parseFloat(volume);
+    if (track) {
+        track.audio.volume = parseFloat(volume);
+    }
 }
 
 function deleteAudioTrack(trackId) {
@@ -457,177 +450,50 @@ function deleteAudioTrack(trackId) {
         audioTracks.splice(trackIndex, 1);
 
         const trackElement = document.getElementById(trackId);
-        trackElement.remove();
-
-        if (track.loop) {
-            console.log('Removed track from loop group');
-            showLoopGroup();
+        if (trackElement) {
+            trackElement.remove();
         }
+
+        updateTimelineDuration();
+        console.log(`Track ${track.name} deleted`);
     }
 }
 
-function updateTimeSettings(trackId, type, value) {
-    const track = audioTracks.find(t => t.id === trackId);
-    if (!track) return;
-
-    const numValue = parseFloat(value);
-
-    if (type === 'start') {
-        track.startTime = Math.max(0, numValue);
-
-        if (track.endTime && track.startTime >= track.endTime) {
-            track.startTime = Math.max(0, track.endTime - 0.1);
-            const startInput = document.querySelector(`#${trackId} input[onchange*="start"]`);
-            if (startInput) startInput.value = track.startTime.toFixed(1);
-        }
-    } else if (type === 'end') {
-        const maxDuration = track.audio.duration || 999;
-        track.endTime = numValue > 0 ? Math.min(numValue, maxDuration) : maxDuration;
-
-        if (track.endTime <= track.startTime) {
-            track.endTime = track.startTime + 0.1;
-            const endInput = document.querySelector(`#${trackId} input[onchange*="end"]`);
-            if (endInput) endInput.value = track.endTime.toFixed(1);
-        }
-    }
-
-    const totalDuration = track.audio.duration || 0;
-    track.timelineMode = track.startTime > 0 || (track.endTime && track.endTime < totalDuration);
-
-    console.log(`Timeline mode ${track.timelineMode ? 'enabled' : 'disabled'} for ${track.name}`);
-    console.log(`Start: ${track.startTime}s, End: ${track.endTime}s, Duration: ${totalDuration}s`);
-}
-
-function toggleBackgroundMusic(trackId, enabled) {
-    const track = audioTracks.find(t => t.id === trackId);
-    if (!track) return;
-
-    if (enabled) {
-        audioTracks.forEach(t => {
-            if (t.id !== trackId && t.isBackground) {
-                t.isBackground = false;
-                const checkbox = document.querySelector(`#${t.id} input[onchange*="toggleBackgroundMusic"]`);
-                if (checkbox) checkbox.checked = false;
-
-                const element = document.getElementById(t.id);
-                if (element) {
-                    element.style.backgroundColor = 'rgba(45, 45, 45, 0.8)';
-                }
-            }
-        });
-
-        track.isBackground = true;
-        track.audio.loop = true;
-
-        if (typeof backgroundMusic !== 'undefined') {
-            backgroundMusic.trackId = trackId;
-            backgroundMusic.originalVolume = track.audio.volume;
-        }
-
-        const element = document.getElementById(trackId);
-        if (element) {
-            element.style.backgroundColor = 'rgba(0, 102, 255, 0.2)';
-            element.style.border = '2px solid #0066ff';
-        }
-
-        if (!track.isPlaying) {
-            toggleAudioTrack(trackId);
-        }
-
-        if (typeof backgroundMusic !== 'undefined') {
-            backgroundMusic.isPlaying = true;
-        }
-
-    } else {
-        track.isBackground = false;
-        track.audio.loop = false;
-
-        if (typeof backgroundMusic !== 'undefined') {
-            backgroundMusic.trackId = null;
-            backgroundMusic.isPlaying = false;
-        }
-
-        const element = document.getElementById(trackId);
-        if (element) {
-            element.style.backgroundColor = 'rgba(45, 45, 45, 0.8)';
-            element.style.border = '1px solid #404040';
-        }
-    }
-}
-
+// Updated master controls to work with timeline
 function playAllAudio() {
-    const regularTracks = audioTracks
-        .filter(track => !track.isBackground)
-        .sort((a, b) => a.playOrder - b.playOrder);
-
-    if (regularTracks.length === 0) {
-        console.log('No tracks to play');
-        return;
-    }
-
-    regularTracks.forEach(track => {
-        if (!track.isPlaying) {
-            console.log(track.id)
-            toggleAudioTrack(track.id);
-        }
-    });
-
-    console.log(`Playing ${regularTracks.length} tracks simultaneously`);
+    playTimeline();
 }
 
 function playAllInSequence() {
-    const regularTracks = audioTracks
-        .filter(track => !track.isBackground)
-        .sort((a, b) => a.playOrder - b.playOrder);
-
-    if (regularTracks.length === 0) {
-        console.log('No tracks to play');
-        return;
-    }
-
-    stopAllAudio();
-
-    const firstTrack = regularTracks[0];
-    toggleAudioTrack(firstTrack.id);
-
-    console.log(`Starting sequential playback of ${regularTracks.length} tracks`);
-    showLoopGroup();
+    // For timeline mode, this just plays the timeline
+    playTimeline();
 }
 
 function pauseAllAudio() {
+    if (globalTimeline.isPlaying) {
+        stopTimeline();
+    }
+    
+    // Also pause any individual tracks
     audioTracks.forEach(track => {
         if (track.isPlaying) {
-            toggleAudioTrack(track.id);
+            toggleIndividualTrack(track.id);
         }
     });
 }
 
 function stopAllAudio() {
+    stopTimeline();
+    
+    // Also stop any individual tracks
     audioTracks.forEach(track => {
-        track.audio.pause();
-
-        if (track.timelineMode) {
-            track.audio.currentTime = track.startTime;
-        } else {
-            track.audio.currentTime = 0;
-        }
-
-        track.isPlaying = false;
-        const button = document.querySelector(`#${track.id} .play-btn`);
-        if (button) {
-            button.textContent = '▶';
-            button.classList.remove('playing');
-        }
-
-        const element = document.getElementById(track.id);
-        if (element && !track.isBackground) {
-            element.style.border = '1px solid #404040';
+        if (track.isPlaying) {
+            toggleIndividualTrack(track.id);
         }
     });
-
-    console.log('All audio stopped and reset');
 }
 
+// Keep existing functions for compatibility
 async function getAudioBlobFromElement(audioElement) {
     return new Promise((resolve, reject) => {
         try {

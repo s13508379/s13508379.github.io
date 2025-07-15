@@ -13,7 +13,6 @@ function updateSpecialEffect() {
     document.getElementById('slideControls').style.display = 'none';
     document.getElementById('rotateControls').style.display = 'none';
 
-
     if (specialEffect === 'none') {
         specialControls.style.display = 'none';
     } else {
@@ -61,166 +60,240 @@ function updateSpecialEffectSettings() {
     if (!selectedLayer) return;
 
     const settings = selectedLayer.specialEffectSettings;
-    settings.swingRange = parseFloat(document.getElementById('swingRange').value);
-    settings.swingFreq = parseFloat(document.getElementById('swingFreq').value);
-    settings.swingTargetX = parseFloat(document.getElementById('swingTargetX').value);
-    settings.zigzagAmp = parseFloat(document.getElementById('zigzagAmp').value);
-    settings.zigzagFreq = parseFloat(document.getElementById('zigzagFreq').value);
-    settings.zigzagTargetX = parseFloat(document.getElementById('zigzagTargetX').value);
-    settings.zigzagTargetY = parseFloat(document.getElementById('zigzagTargetY').value);
-    settings.pendulumRange = parseFloat(document.getElementById('pendulumRange').value);
-    settings.pendulumSpeed = parseFloat(document.getElementById('pendulumSpeed').value);
-    settings.waveAmp = parseFloat(document.getElementById('waveAmp').value);
-    settings.waveFreq = parseFloat(document.getElementById('waveFreq').value);
-    settings.waveTargetX = parseFloat(document.getElementById('waveTargetX').value);
-    settings.waveTargetY = parseFloat(document.getElementById('waveTargetY').value);
-    settings.bounceHeight = parseFloat(document.getElementById('bounceHeight').value);
-    settings.bounceFreq = parseFloat(document.getElementById('bounceFreq').value);
-    settings.spiralRadius = parseFloat(document.getElementById('spiralRadius').value);
-    settings.spiralRotations = parseFloat(document.getElementById('spiralRotations').value);
-    settings.slideDistance = parseFloat(document.getElementById('slideDistance').value);
-    settings.rotateCycles = parseFloat(document.getElementById('rotateCycles').value);
-
-    updateControlValues();
+    
+    // Validate and clamp values within bounds
+    settings.swingRange = clampValue(parseFloat(document.getElementById('swingRange').value), 10, 180);
+    settings.swingFreq = clampValue(parseFloat(document.getElementById('swingFreq').value), 2, 16);
+    settings.swingTargetX = clampValue(parseFloat(document.getElementById('swingTargetX').value), 0, 10);
+    settings.zigzagAmp = clampValue(parseFloat(document.getElementById('zigzagAmp').value), 0.5, 5);
+    settings.zigzagFreq = clampValue(parseFloat(document.getElementById('zigzagFreq').value), 2, 12);
+    settings.zigzagTargetX = clampValue(parseFloat(document.getElementById('zigzagTargetX').value), 0, 10);
+    settings.zigzagTargetY = clampValue(parseFloat(document.getElementById('zigzagTargetY').value), 0, 10);
+    settings.pendulumRange = clampValue(parseFloat(document.getElementById('pendulumRange').value), 10, 120);
+    settings.pendulumSpeed = clampValue(parseFloat(document.getElementById('pendulumSpeed').value), 0.5, 5);
+    settings.waveAmp = clampValue(parseFloat(document.getElementById('waveAmp').value), 0.5, 5);
+    settings.waveFreq = clampValue(parseFloat(document.getElementById('waveFreq').value), 1, 10);
+    settings.waveTargetX = clampValue(parseFloat(document.getElementById('waveTargetX').value), 0, 10);
+    settings.waveTargetY = clampValue(parseFloat(document.getElementById('waveTargetY').value), 0, 10);
+    settings.bounceHeight = clampValue(parseFloat(document.getElementById('bounceHeight').value), 0.5, 10);
+    settings.bounceFreq = clampValue(parseFloat(document.getElementById('bounceFreq').value), 1, 10);
+    settings.spiralRadius = clampValue(parseFloat(document.getElementById('spiralRadius').value), 1, 10);
+    settings.spiralRotations = clampValue(parseFloat(document.getElementById('spiralRotations').value), 1, 15);
+    settings.slideDistance = clampValue(parseFloat(document.getElementById('slideDistance').value), 2, 20);
+    settings.rotateCycles = clampValue(parseFloat(document.getElementById('rotateCycles').value), 0.25, 5);
 }
 
-// Update control value displays
-function updateControlValues() {
-    document.getElementById('xValue').textContent = document.getElementById('xPos').value;
-    document.getElementById('yValue').textContent = document.getElementById('yPos').value;
-    document.getElementById('zValue').textContent = document.getElementById('zPos').value;
-    document.getElementById('rotXValue').textContent = document.getElementById('rotX').value + '°';
-    document.getElementById('rotYValue').textContent = document.getElementById('rotY').value + '°';
-    document.getElementById('rotZValue').textContent = document.getElementById('rotZ').value + '°';
-    document.getElementById('scaleValue').textContent = document.getElementById('scale').value;
-    document.getElementById('alphaValue').textContent = document.getElementById('alpha').value;
-    document.getElementById('speedValue').textContent = document.getElementById('animationSpeed').value;
-    document.getElementById('durationValue').textContent = document.getElementById('animationDuration').value;
-
-    updateCustomValues();
-    updateSpecialEffectValues();
-}
-
-// Update special effect value displays
-function updateSpecialEffectValues() {
-    document.getElementById('swingRangeValue').textContent = document.getElementById('swingRange').value;
-    document.getElementById('swingFreqValue').textContent = document.getElementById('swingFreq').value;
-    document.getElementById('swingTargetXValue').textContent = document.getElementById('swingTargetX').value;
-    document.getElementById('zigzagAmpValue').textContent = document.getElementById('zigzagAmp').value;
-    document.getElementById('zigzagFreqValue').textContent = document.getElementById('zigzagFreq').value;
-    document.getElementById('zigzagTargetXValue').textContent = document.getElementById('zigzagTargetX').value;
-    document.getElementById('zigzagTargetYValue').textContent = document.getElementById('zigzagTargetY').value;
-    document.getElementById('pendulumRangeValue').textContent = document.getElementById('pendulumRange').value;
-    document.getElementById('pendulumSpeedValue').textContent = document.getElementById('pendulumSpeed').value;
-    document.getElementById('waveAmpValue').textContent = document.getElementById('waveAmp').value;
-    document.getElementById('waveFreqValue').textContent = document.getElementById('waveFreq').value;
-    document.getElementById('waveTargetXValue').textContent = document.getElementById('waveTargetX').value;
-    document.getElementById('waveTargetYValue').textContent = document.getElementById('waveTargetY').value;
-    document.getElementById('bounceHeightValue').textContent = document.getElementById('bounceHeight').value;
-    document.getElementById('bounceFreqValue').textContent = document.getElementById('bounceFreq').value;
-    document.getElementById('spiralRadiusValue').textContent = document.getElementById('spiralRadius').value;
-    document.getElementById('spiralRotationsValue').textContent = document.getElementById('spiralRotations').value;
-    document.getElementById('slideDistanceValue').textContent = document.getElementById('slideDistance').value;
-    document.getElementById('rotateCyclesValue').textContent = document.getElementById('rotateCycles').value;
+// Utility function to clamp values within bounds
+function clampValue(value, min, max) {
+    if (isNaN(value)) return min;
+    return Math.max(min, Math.min(max, value));
 }
 
 // Update custom animation values
 function updateCustomValues() {
-    document.getElementById('startXValue').textContent = document.getElementById('startX').value;
-    document.getElementById('startYValue').textContent = document.getElementById('startY').value;
-    document.getElementById('startZValue').textContent = document.getElementById('startZ').value;
-    document.getElementById('startScaleValue').textContent = document.getElementById('startScale').value;
-    document.getElementById('startOpacityValue').textContent = document.getElementById('startOpacity').value;
-    document.getElementById('startRotationValue').textContent = document.getElementById('startRotation').value;
+    if (!selectedLayer) return;
 
-    document.getElementById('endXValue').textContent = document.getElementById('endX').value;
-    document.getElementById('endYValue').textContent = document.getElementById('endY').value;
-    document.getElementById('endZValue').textContent = document.getElementById('endZ').value;
-    document.getElementById('endScaleValue').textContent = document.getElementById('endScale').value;
-    document.getElementById('endOpacityValue').textContent = document.getElementById('endOpacity').value;
-    document.getElementById('endRotationValue').textContent = document.getElementById('endRotation').value;
+    // Get values with validation
+    const startX = clampValue(parseFloat(document.getElementById('startX').value), -15, 15);
+    const startY = clampValue(parseFloat(document.getElementById('startY').value), -15, 15);
+    const startZ = clampValue(parseFloat(document.getElementById('startZ').value), -15, 15);
+    const startScale = clampValue(parseFloat(document.getElementById('startScale').value), 0.1, 5);
+    const startOpacity = clampValue(parseFloat(document.getElementById('startOpacity').value), 0, 1);
+    const startRotation = clampValue(parseFloat(document.getElementById('startRotation').value), -360, 360);
 
-    if (selectedLayer) {
-        selectedLayer.customAnimation = {
-            start: {
-                x: parseFloat(document.getElementById('startX').value),
-                y: parseFloat(document.getElementById('startY').value),
-                z: parseFloat(document.getElementById('startZ').value),
-                scale: parseFloat(document.getElementById('startScale').value),
-                opacity: parseFloat(document.getElementById('startOpacity').value),
-                rotation: parseFloat(document.getElementById('startRotation').value)
-            },
-            end: {
-                x: parseFloat(document.getElementById('endX').value),
-                y: parseFloat(document.getElementById('endY').value),
-                z: parseFloat(document.getElementById('endZ').value),
-                scale: parseFloat(document.getElementById('endScale').value),
-                opacity: parseFloat(document.getElementById('endOpacity').value),
-                rotation: parseFloat(document.getElementById('endRotation').value)
-            }
-        };
-    }
+    const endX = clampValue(parseFloat(document.getElementById('endX').value), -15, 15);
+    const endY = clampValue(parseFloat(document.getElementById('endY').value), -15, 15);
+    const endZ = clampValue(parseFloat(document.getElementById('endZ').value), -15, 15);
+    const endScale = clampValue(parseFloat(document.getElementById('endScale').value), 0.1, 5);
+    const endOpacity = clampValue(parseFloat(document.getElementById('endOpacity').value), 0, 1);
+    const endRotation = clampValue(parseFloat(document.getElementById('endRotation').value), -360, 360);
+
+    selectedLayer.customAnimation = {
+        start: {
+            x: startX,
+            y: startY,
+            z: startZ,
+            scale: startScale,
+            opacity: startOpacity,
+            rotation: startRotation
+        },
+        end: {
+            x: endX,
+            y: endY,
+            z: endZ,
+            scale: endScale,
+            opacity: endOpacity,
+            rotation: endRotation
+        }
+    };
 }
 
 // Update position
 function updatePosition() {
     if (!selectedLayer) return;
 
-    const x = parseFloat(document.getElementById('xPos').value);
-    const y = parseFloat(document.getElementById('yPos').value);
-    const z = parseFloat(document.getElementById('zPos').value);
+    const x = clampValue(parseFloat(document.getElementById('xPos').value), -10, 10);
+    const y = clampValue(parseFloat(document.getElementById('yPos').value), -10, 10);
+    const z = clampValue(parseFloat(document.getElementById('zPos').value), -10, 10);
 
     selectedLayer.mesh.position.set(x, y, z);
     selectedLayer.originalPosition = { x, y, z };
-    updateControlValues();
+    
+    // Update the input values in case they were clamped
+    document.getElementById('xPos').value = x;
+    document.getElementById('yPos').value = y;
+    document.getElementById('zPos').value = z;
 }
 
 // Update rotation
 function updateRotation() {
     if (!selectedLayer) return;
 
-    const x = parseFloat(document.getElementById('rotX').value) * Math.PI / 180;
-    const y = parseFloat(document.getElementById('rotY').value) * Math.PI / 180;
-    const z = parseFloat(document.getElementById('rotZ').value) * Math.PI / 180;
+    const xDeg = clampValue(parseFloat(document.getElementById('rotX').value), -180, 180);
+    const yDeg = clampValue(parseFloat(document.getElementById('rotY').value), -180, 180);
+    const zDeg = clampValue(parseFloat(document.getElementById('rotZ').value), -180, 180);
+
+    const x = xDeg * Math.PI / 180;
+    const y = yDeg * Math.PI / 180;
+    const z = zDeg * Math.PI / 180;
 
     selectedLayer.mesh.rotation.set(x, y, z);
     selectedLayer.originalRotation = { x, y, z };
-    updateControlValues();
+    
+    // Update the input values in case they were clamped
+    document.getElementById('rotX').value = xDeg;
+    document.getElementById('rotY').value = yDeg;
+    document.getElementById('rotZ').value = zDeg;
 }
 
 // Update transparency
 function updateTransparency() {
     if (!selectedLayer) return;
 
-    const alpha = parseFloat(document.getElementById('alpha').value);
+    const alpha = clampValue(parseFloat(document.getElementById('alpha').value), 0, 1);
     selectedLayer.mesh.material.opacity = alpha;
     selectedLayer.originalOpacity = alpha;
-    updateControlValues();
+    
+    // Update the input value in case it was clamped
+    document.getElementById('alpha').value = alpha;
 }
 
 // Update scale
 function updateScale() {
     if (!selectedLayer) return;
 
-    const scale = parseFloat(document.getElementById('scale').value);
+    const scale = clampValue(parseFloat(document.getElementById('scale').value), 0.1, 5);
     selectedLayer.mesh.scale.set(scale, scale, scale);
     selectedLayer.originalScale = { x: scale, y: scale, z: scale };
-    updateControlValues();
+    
+    // Update the input value in case it was clamped
+    document.getElementById('scale').value = scale;
 }
 
 // Update animation speed
 function updateAnimationSpeed() {
     if (!selectedLayer) return;
-    selectedLayer.animationSpeed = parseFloat(document.getElementById('animationSpeed').value);
-    updateControlValues();
+    
+    const speed = clampValue(parseFloat(document.getElementById('animationSpeed').value), 0.1, 3);
+    selectedLayer.animationSpeed = speed;
+    
+    // Update the input value in case it was clamped
+    document.getElementById('animationSpeed').value = speed;
 }
 
 // Update animation duration
 function updateAnimationDuration() {
     if (!selectedLayer) return;
-    selectedLayer.animationDuration = parseFloat(document.getElementById('animationDuration').value);
-    updateControlValues();
+    
+    const duration = clampValue(parseFloat(document.getElementById('animationDuration').value), 0.5, 100);
+    selectedLayer.animationDuration = duration;
+    
+    // Update the input value in case it was clamped
+    document.getElementById('animationDuration').value = duration;
 }
+
+// Function to update UI controls when a layer is selected
+function updateUIControls(layer) {
+    if (!layer) return;
+
+    // Update position controls
+    document.getElementById('xPos').value = layer.originalPosition?.x || 0;
+    document.getElementById('yPos').value = layer.originalPosition?.y || 0;
+    document.getElementById('zPos').value = layer.originalPosition?.z || 0;
+
+    // Update rotation controls (convert from radians to degrees)
+    document.getElementById('rotX').value = layer.originalRotation?.x ? (layer.originalRotation.x * 180 / Math.PI) : 0;
+    document.getElementById('rotY').value = layer.originalRotation?.y ? (layer.originalRotation.y * 180 / Math.PI) : 0;
+    document.getElementById('rotZ').value = layer.originalRotation?.z ? (layer.originalRotation.z * 180 / Math.PI) : 0;
+
+    // Update other controls
+    document.getElementById('scale').value = layer.originalScale?.x || 1;
+    document.getElementById('alpha').value = layer.originalOpacity || 1;
+    document.getElementById('animationSpeed').value = layer.animationSpeed || 1;
+    document.getElementById('animationDuration').value = layer.animationDuration || 2;
+
+    // Update special effect controls
+    if (layer.specialEffect) {
+        document.getElementById('specialEffect').value = layer.specialEffect;
+        updateSpecialEffect();
+    }
+
+    // Update custom animation controls if they exist
+    if (layer.customAnimation) {
+        document.getElementById('startX').value = layer.customAnimation.start.x || 0;
+        document.getElementById('startY').value = layer.customAnimation.start.y || 0;
+        document.getElementById('startZ').value = layer.customAnimation.start.z || 0;
+        document.getElementById('startScale').value = layer.customAnimation.start.scale || 1;
+        document.getElementById('startOpacity').value = layer.customAnimation.start.opacity || 1;
+        document.getElementById('startRotation').value = layer.customAnimation.start.rotation || 0;
+
+        document.getElementById('endX').value = layer.customAnimation.end.x || 0;
+        document.getElementById('endY').value = layer.customAnimation.end.y || 0;
+        document.getElementById('endZ').value = layer.customAnimation.end.z || 0;
+        document.getElementById('endScale').value = layer.customAnimation.end.scale || 1;
+        document.getElementById('endOpacity').value = layer.customAnimation.end.opacity || 1;
+        document.getElementById('endRotation').value = layer.customAnimation.end.rotation || 0;
+    }
+}
+
+// Add input validation event listeners
+function addInputValidation() {
+    // Add validation for all number inputs
+    const numberInputs = document.querySelectorAll('input[type="number"]');
+    
+    numberInputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            const min = parseFloat(this.min);
+            const max = parseFloat(this.max);
+            const value = parseFloat(this.value);
+            
+            if (isNaN(value)) {
+                this.value = min;
+            } else if (value < min) {
+                this.value = min;
+            } else if (value > max) {
+                this.value = max;
+            }
+            
+            // Trigger the appropriate update function
+            if (this.oninput) {
+                this.oninput();
+            }
+        });
+        
+        input.addEventListener('keydown', function(e) {
+            // Allow Enter key to trigger blur event
+            if (e.key === 'Enter') {
+                this.blur();
+            }
+        });
+    });
+}
+
+// Initialize validation when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    addInputValidation();
+});
 
 // Animation loop
 function animate() {
