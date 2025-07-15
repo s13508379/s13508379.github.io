@@ -293,11 +293,11 @@ function toggleLoop(trackId) {
 
     if (track.loop) {
         button.classList.add('active');
-        button.title = 'Remove from Loop Group (已加入循環組)';
+        button.title = 'Remove from Loop Group';
         button.style.backgroundColor = '#4CAF50';
     } else {
         button.classList.remove('active');
-        button.title = 'Add to Loop Group (加入循環組)';
+        button.title = 'Add to Loop Group ';
         button.style.backgroundColor = '#555';
     }
 
