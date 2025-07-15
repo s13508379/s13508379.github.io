@@ -49,9 +49,9 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <audio id="audio-audio_1752550355546_ismtqay8y" src="audio/sound.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752550355548_qo5jk683a" src="audio/title.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752550355549_04walp3cg" src="audio/title-large.mp3" preload="auto"></audio>
+            <audio id="audio-sound" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="audio-title" src="audio/title.mp3" preload="auto"></audio>
+            <audio id="audio-title-large" src="audio/title-large.mp3" preload="auto"></audio>
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
@@ -72,24 +72,28 @@
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
         audioTracks = [];
+        
+        // Background music - sound.mp3 (continuous)
         audioTracks.push({
-            id: "audio_1752550355546_ismtqay8y",
+            id: "sound",
             name: "sound.mp3",
-            audio: document.getElementById("audio-audio_1752550355546_ismtqay8y"),
-            playOrder: 0,
+            audio: document.getElementById("audio-sound"),
+            playOrder: 1,
             loop: true,
             isBackground: false,
-            startTime: 16,
-            endTime: 18.133333,
-            timelineMode: true,
+            startTime: 0,
+            endTime: null,
+            timelineMode: false,
             volume: 0.8,
             isPlaying: false
         });
+        
+        // Sequence track 1 - title.mp3
         audioTracks.push({
-            id: "audio_1752550355548_qo5jk683a",
+            id: "title",
             name: "title.mp3",
-            audio: document.getElementById("audio-audio_1752550355548_qo5jk683a"),
-            playOrder: 1,
+            audio: document.getElementById("audio-title"),
+            playOrder: 2,
             loop: true,
             isBackground: false,
             startTime: 2,
@@ -98,16 +102,18 @@
             volume: 0.8,
             isPlaying: false
         });
+        
+        // Sequence track 2 - title-large.mp3
         audioTracks.push({
-            id: "audio_1752550355549_04walp3cg",
+            id: "title-large",
             name: "title-large.mp3",
-            audio: document.getElementById("audio-audio_1752550355549_04walp3cg"),
-            playOrder: 2,
+            audio: document.getElementById("audio-title-large"),
+            playOrder: 3,
             loop: true,
             isBackground: false,
-            startTime: 0,
+            startTime: 1,
             endTime: 3.584,
-            timelineMode: false,
+            timelineMode: true,
             volume: 0.8,
             isPlaying: false
         });
@@ -115,13 +121,16 @@
         // Set audio properties
         audioTracks.forEach(track => {
             track.audio.volume = track.volume;
+            track.audio.loop = false; // Disable native looping initially
             if (track.isBackground) {
-                track.audio.loop = true; // Keep loop for background audio
+                track.audio.loop = true; // Enable loop for background audio
                 backgroundAudioTrack = track;
             }
         });
-        console.log(audio.loop)
+        
         console.log('Initialized', audioTracks.length, 'audio tracks');
+        console.log('Background track:', backgroundAudioTrack ? backgroundAudioTrack.name : 'None');
+        console.log('Sequence tracks:', audioTracks.filter(t => !t.isBackground).map(t => t.name));
     }
 
     // Call initialization when page loads
@@ -133,6 +142,7 @@
         
         // Start background audio if exists
         if (backgroundAudioTrack && backgroundAudioTrack.audio) {
+            console.log('Starting background audio:', backgroundAudioTrack.name);
             backgroundAudioTrack.audio.play().catch(e => console.log('Background audio autoplay blocked:', e));
             backgroundAudioTrack.isPlaying = true;
         }
@@ -177,8 +187,10 @@
         });
         
         const regularTracks = audioTracks
-            .filter(track => !track.isBackground && track.playOrder >= 0)
+            .filter(track => !track.isBackground)
             .sort((a, b) => a.playOrder - b.playOrder);
+
+        console.log('Regular tracks to play:', regularTracks.map(t => `${t.name} (order: ${t.playOrder})`));
 
         if (regularTracks.length === 0) {
             console.log('No regular tracks to play');
@@ -202,7 +214,6 @@
         if (currentSequentialIndex >= tracks.length) {
             console.log('Restarting title sequence... (index was', currentSequentialIndex, 'of', tracks.length, ')');
             currentSequentialIndex = 0;
-            // No delay needed for continuous looping of titles
         }
 
         const track = tracks[currentSequentialIndex];
@@ -239,7 +250,7 @@
 
         // Calculate duration for this track
         let trackDuration;
-        if (track.timelineMode && track.endTime && track.startTime) {
+        if (track.timelineMode && track.endTime && track.startTime >= 0) {
             trackDuration = (track.endTime - track.startTime) * 1000; // Convert to milliseconds
             console.log('Track duration (timeline):', trackDuration + 'ms');
         } else if (track.audio.duration) {
