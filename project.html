@@ -49,17 +49,17 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="images/Asset 7.png" crossorigin="anonymous">
-            <img id="img-1" src="images/allimg.png" crossorigin="anonymous">
-            <audio id="audio-sound" src="audio/sound.mp3" preload="auto"></audio>
-            <audio id="audio-title" src="audio/title.mp3" preload="auto"></audio>
-            <audio id="audio-title-large" src="audio/title-large.mp3" preload="auto"></audio>
+            <img id="img-2" src="images/allimg.png" crossorigin="anonymous">
+            <audio id="audio-audio_1752545616967_1p0f3x5c0" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752545628016_wdvt9i1bb" src="audio/title.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752545616969_nrdqpdf5x" src="audio/title.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752545616970_0su8ok9fz" src="audio/title-large.mp3" preload="auto"></audio>
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
-            <a-plane id="layer-1" src="#img-1"
-                position="-1.10 0.90 0.00"
-                rotation="92.00 -2.00 0.00"
+            <a-plane id="layer-2" src="#img-2"
+                position="0.00 0.00 0.00"
+                rotation="94.00 0.00 0.00"
                 scale="1.00 1.00 1.00"
                 material="transparent: true; opacity: 1.00"
                 data-animation-enabled="true" 
@@ -67,11 +67,11 @@
                 data-animation-speed="1" 
                 data-animation-duration="2"
                 data-loop-animation="true"
-                data-custom-start="{&quot;x&quot;:0.8,&quot;y&quot;:0.4,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0.8,&quot;y&quot;:-0.4,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:-131}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:-131}"
                 data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:-1.1,&quot;y&quot;:0.9,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:1.605702911834783,&quot;y&quot;:-0.03490658503988659,&quot;z&quot;:0}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-rotation="{&quot;x&quot;:1.6406094968746698,&quot;y&quot;:0,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
                 data-original-opacity="1.00">
             </a-plane>
@@ -92,12 +92,10 @@
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
         audioTracks = [];
-        
-        // Background music - sound.mp3
         audioTracks.push({
-            id: "sound",
+            id: "audio_1752545616967_1p0f3x5c0",
             name: "sound.mp3",
-            audio: document.getElementById("audio-sound"),
+            audio: document.getElementById("audio-audio_1752545616967_1p0f3x5c0"),
             playOrder: 1,
             loop: false,
             isBackground: true,
@@ -107,14 +105,12 @@
             volume: 0.8,
             isPlaying: false
         });
-        
-        // Title sequence track 1
         audioTracks.push({
-            id: "title",
+            id: "audio_1752545628016_wdvt9i1bb",
             name: "title.mp3",
-            audio: document.getElementById("audio-title"),
+            audio: document.getElementById("audio-audio_1752545628016_wdvt9i1bb"),
             playOrder: 2,
-            loop: true,
+            loop: false,
             isBackground: false,
             startTime: 2,
             endTime: 3.584,
@@ -122,13 +118,24 @@
             volume: 0.8,
             isPlaying: false
         });
-        
-        // Title sequence track 2
         audioTracks.push({
-            id: "title-large",
-            name: "title-large.mp3",
-            audio: document.getElementById("audio-title-large"),
+            id: "audio_1752545616969_nrdqpdf5x",
+            name: "title.mp3",
+            audio: document.getElementById("audio-audio_1752545616969_nrdqpdf5x"),
             playOrder: 3,
+            loop: true,
+            isBackground: false,
+            startTime: 0,
+            endTime: 3.584,
+            timelineMode: false,
+            volume: 0.8,
+            isPlaying: false
+        });
+        audioTracks.push({
+            id: "audio_1752545616970_0su8ok9fz",
+            name: "title-large.mp3",
+            audio: document.getElementById("audio-audio_1752545616970_0su8ok9fz"),
+            playOrder: 4,
             loop: true,
             isBackground: false,
             startTime: 1,
@@ -149,7 +156,6 @@
         });
         
         console.log('Initialized', audioTracks.length, 'audio tracks');
-        console.log('Background track:', backgroundAudioTrack?.name);
     }
 
     // Call initialization when page loads
@@ -205,10 +211,8 @@
         });
         
         const regularTracks = audioTracks
-            .filter(track => !track.isBackground)
+            .filter(track => !track.isBackground && track.playOrder > 0)
             .sort((a, b) => a.playOrder - b.playOrder);
-
-        console.log('Regular tracks to play:', regularTracks.map(t => t.name));
 
         if (regularTracks.length === 0) {
             console.log('No regular tracks to play');
@@ -269,7 +273,7 @@
 
         // Calculate duration for this track
         let trackDuration;
-        if (track.timelineMode && track.endTime && track.startTime >= 0) {
+        if (track.timelineMode && track.endTime && track.startTime) {
             trackDuration = (track.endTime - track.startTime) * 1000; // Convert to milliseconds
             console.log('Track duration (timeline):', trackDuration + 'ms');
         } else if (track.audio.duration) {
