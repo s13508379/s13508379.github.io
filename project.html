@@ -115,13 +115,12 @@
         // Set audio properties
         audioTracks.forEach(track => {
             track.audio.volume = track.volume;
-            track.audio.loop = false; // Disable native looping initially
             if (track.isBackground) {
                 track.audio.loop = true; // Keep loop for background audio
                 backgroundAudioTrack = track;
             }
         });
-        
+        console.log(audio.loop)
         console.log('Initialized', audioTracks.length, 'audio tracks');
     }
 
