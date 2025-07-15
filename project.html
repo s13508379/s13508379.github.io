@@ -49,9 +49,9 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <audio id="audio-audio_1752549828301_ejaxyjfi4" src="audio/sound.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752549828302_s5b0dhvye" src="audio/title.mp3" preload="auto"></audio>
-            <audio id="audio-audio_1752549828304_bto40cxcy" src="audio/title-large.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752550355546_ismtqay8y" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752550355548_qo5jk683a" src="audio/title.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752550355549_04walp3cg" src="audio/title-large.mp3" preload="auto"></audio>
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
@@ -73,10 +73,10 @@
     function initializeAudioTracks() {
         audioTracks = [];
         audioTracks.push({
-            id: "audio_1752549828301_ejaxyjfi4",
+            id: "audio_1752550355546_ismtqay8y",
             name: "sound.mp3",
-            audio: document.getElementById("audio-audio_1752549828301_ejaxyjfi4"),
-            playOrder: 1,
+            audio: document.getElementById("audio-audio_1752550355546_ismtqay8y"),
+            playOrder: 0,
             loop: true,
             isBackground: false,
             startTime: 16,
@@ -86,23 +86,23 @@
             isPlaying: false
         });
         audioTracks.push({
-            id: "audio_1752549828302_s5b0dhvye",
+            id: "audio_1752550355548_qo5jk683a",
             name: "title.mp3",
-            audio: document.getElementById("audio-audio_1752549828302_s5b0dhvye"),
-            playOrder: 2,
+            audio: document.getElementById("audio-audio_1752550355548_qo5jk683a"),
+            playOrder: 1,
             loop: true,
             isBackground: false,
-            startTime: 0,
+            startTime: 2,
             endTime: 3.584,
-            timelineMode: false,
+            timelineMode: true,
             volume: 0.8,
             isPlaying: false
         });
         audioTracks.push({
-            id: "audio_1752549828304_bto40cxcy",
+            id: "audio_1752550355549_04walp3cg",
             name: "title-large.mp3",
-            audio: document.getElementById("audio-audio_1752549828304_bto40cxcy"),
-            playOrder: 3,
+            audio: document.getElementById("audio-audio_1752550355549_04walp3cg"),
+            playOrder: 2,
             loop: true,
             isBackground: false,
             startTime: 0,
@@ -178,7 +178,7 @@
         });
         
         const regularTracks = audioTracks
-            .filter(track => !track.isBackground && track.playOrder > 0)
+            .filter(track => !track.isBackground && track.playOrder >= 0)
             .sort((a, b) => a.playOrder - b.playOrder);
 
         if (regularTracks.length === 0) {

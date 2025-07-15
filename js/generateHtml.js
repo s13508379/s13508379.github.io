@@ -144,7 +144,7 @@ function generateHTMLContent() {
             id: "${track.id}",
             name: "${track.name}",
             audio: document.getElementById("audio-${track.id}"),
-            playOrder: ${track.playOrder},
+            playOrder: ${track.playOrder - 1},
             loop: ${track.loop},
             isBackground: ${track.isBackground},
             startTime: ${track.startTime},
