@@ -187,6 +187,7 @@
             if (currentSequentialIndex < tracks.length) {
                 console.log(currentSequentialIndex, 'tacks:', tracks.length)
                 playTrack(track, () => {
+                    console.log(currentSequentialIndex, 'tacks:', tracks.length)
                     console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
 
                     currentSequentialIndex++;
@@ -198,7 +199,7 @@
                     }, 200); // 200ms delay between tracks
                 });
             } else {
-
+                console.log(currentSequentialIndex, 'tacks:', tracks.length)
                 const loopTracks = getLoopGroupTracks();
 
                 if (loopTracks.length > 0) {
@@ -210,7 +211,7 @@
                 }
             }
         }
-        
+
         function playLoopSequence(loopTracks) {
             if (!sequenceLoopActive || !markerVisible) return;
 
@@ -255,7 +256,6 @@
                 .sort((a, b) => a.playOrder - b.playOrder);
         }
 
-        // 更新后的playSequentialAudio函数
         function playSequentialAudio() {
             if (audioTracks.length === 0) {
                 console.log('No audio tracks available');
