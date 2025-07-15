@@ -210,54 +210,7 @@
                 }
             }
         }
-        function playNextInSequence(tracks) {
-            if (!sequenceLoopActive || !markerVisible) return;
-
-            // Clear any existing timeout before starting new track
-            if (currentTrackTimeout) {
-                clearTimeout(currentTrackTimeout);
-                currentTrackTimeout = null;
-            }
-
-            if (currentSequentialIndex >= tracks.length) {
-                console.log('Restarting title sequence... (index was', currentSequentialIndex, 'of', tracks.length, ')');
-                currentSequentialIndex = 0;
-                // No delay needed for continuous looping of titles
-            }
-
-            const track = tracks[currentSequentialIndex];
-            console.log('Playing track:', track.name, 'Order:', track.playOrder, 'Index:', currentSequentialIndex);
-
-            // 检查是否是第一次播放（所有轨道按顺序播放一次）
-            if (currentSequentialIndex < tracks.length) {
-                // 播放当前轨道
-                playTrack(track, () => {
-                    console.log('Track completed:', track.name, 'Moving to index:', currentSequentialIndex + 1);
-
-                    // 移动到下一个轨道
-                    currentSequentialIndex++;
-
-                    // 小延迟后播放下一个轨道
-                    currentTrackTimeout = setTimeout(() => {
-                        if (sequenceLoopActive && markerVisible) {
-                            playNextInSequence(tracks);
-                        }
-                    }, 200); // 200ms delay between tracks
-                });
-            } else {
-                // 所有轨道播放完一次后，只循环播放标记为loop的轨道
-                const loopTracks = getLoopGroupTracks();
-
-                if (loopTracks.length > 0) {
-                    console.log('Starting loop phase with', loopTracks.length, 'looping tracks');
-                    playLoopSequence(loopTracks);
-                } else {
-                    console.log('No looping tracks found, sequence complete');
-                    sequenceLoopActive = false;
-                }
-            }
-        }
-
+        
         function playLoopSequence(loopTracks) {
             if (!sequenceLoopActive || !markerVisible) return;
 
