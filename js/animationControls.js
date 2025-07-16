@@ -245,7 +245,6 @@ function updateRotation() {
     selectedLayer.mesh.rotation.set(x, y, z);
     selectedLayer.originalRotation = { x, y, z };
     
-    // Update the input values in case they were clamped
     document.getElementById('rotX').value = xDeg;
     document.getElementById('rotY').value = yDeg;
     document.getElementById('rotZ').value = zDeg;
@@ -254,19 +253,11 @@ function updateRotation() {
 // Update transparency
 function updateTransparency() {
     if (!selectedLayer) return;
-
-    // Get original input value
     const inputAlpha = parseFloat(document.getElementById('alpha').value);
-
-    // Store original input value
     selectedLayer.inputOpacity = inputAlpha;
-
-    // Apply clamped value
     const alpha = clampValue(inputAlpha, 0, 1);
     selectedLayer.mesh.material.opacity = alpha;
     selectedLayer.originalOpacity = alpha;
-    
-    // Update the input value in case it was clamped
     document.getElementById('alpha').value = alpha;
 }
 
@@ -293,21 +284,14 @@ function updateScale() {
     document.getElementById('scale').value = scale;
 }
 
-// Update animation speed
+
 function updateAnimationSpeed() {
     if (!selectedLayer) return;
-    
-    // Get original input value
     const inputSpeed = parseFloat(document.getElementById('animationSpeed').value);
-
-    // Store original input value
     selectedLayer.inputAnimationSpeed = inputSpeed;
-
-    // Apply clamped value
     const speed = clampValue(inputSpeed, 0.1, 3);
     selectedLayer.animationSpeed = speed;
     
-    // Update the input value in case it was clamped
     document.getElementById('animationSpeed').value = speed;
 }
 
@@ -315,30 +299,19 @@ function updateAnimationSpeed() {
 function updateAnimationDuration() {
     if (!selectedLayer) return;
     
-    // Get original input value
     const inputDuration = parseFloat(document.getElementById('animationDuration').value);
-
-    // Store original input value
     selectedLayer.inputAnimationDuration = inputDuration;
-
-    // Apply clamped value
     const duration = clampValue(inputDuration, 0.5, 100);
     selectedLayer.animationDuration = duration;
-    
-    // Update the input value in case it was clamped
     document.getElementById('animationDuration').value = duration;
 }
 
 // Function to update UI controls when a layer is selected
 function updateUIControls(layer) {
     if (!layer) return;
-
-    // Update position controls - use input values if available, otherwise use original values
     document.getElementById('xPos').value = layer.inputPosition?.x ?? layer.originalPosition?.x ?? 0;
     document.getElementById('yPos').value = layer.inputPosition?.y ?? layer.originalPosition?.y ?? 0;
     document.getElementById('zPos').value = layer.inputPosition?.z ?? layer.originalPosition?.z ?? 0;
-
-    // Update rotation controls - use input values if available, otherwise convert from radians to degrees
     if (layer.inputRotation) {
         document.getElementById('rotX').value = layer.inputRotation.x;
         document.getElementById('rotY').value = layer.inputRotation.y;
@@ -348,20 +321,16 @@ function updateUIControls(layer) {
         document.getElementById('rotY').value = layer.originalRotation?.y ? (layer.originalRotation.y * 180 / Math.PI) : 0;
         document.getElementById('rotZ').value = layer.originalRotation?.z ? (layer.originalRotation.z * 180 / Math.PI) : 0;
     }
-
-    // Update other controls - use input values if available
     document.getElementById('scale').value = layer.inputScale?.x ?? layer.originalScale?.x ?? 1;
     document.getElementById('alpha').value = layer.inputOpacity ?? layer.originalOpacity ?? 1;
     document.getElementById('animationSpeed').value = layer.inputAnimationSpeed ?? layer.animationSpeed ?? 1;
     document.getElementById('animationDuration').value = layer.inputAnimationDuration ?? layer.animationDuration ?? 2;
 
-    // Update special effect controls
     if (layer.specialEffect) {
         document.getElementById('specialEffect').value = layer.specialEffect;
         updateSpecialEffect();
     }
 
-    // Update custom animation controls if they exist - use input values if available
     if (layer.customAnimation) {
         const start = layer.customAnimation.start;
         const end = layer.customAnimation.end;

@@ -203,12 +203,23 @@ function createAnimationForLayer(layer) {
     const speed = layer.animationSpeed;
     const loop = layer.loopAnimation;
     const settings = layer.specialEffectSettings;
-
+    const runtimeEl = document.getElementById('runtimeDisplay');
     const startTime = Date.now();
+
     return {
         stop: () => { layer.animation = null; },
         update: (currentTime) => {
             const elapsed = (currentTime - startTime) / 1000 * speed;
+
+            if (elapsed > duration && !loop) {
+                layer.animation.stop();
+                return;
+            }
+
+            // Show time within current cycle (resets to 0 on each loop)
+            const cycleTime = elapsed % duration;
+            runtimeEl.textContent = `animation time: ${cycleTime.toFixed(1)} seconds`;
+
             let progress = (elapsed % duration) / duration;
 
             if (!loop && elapsed > duration) {
@@ -356,4 +367,4 @@ function createAnimationForLayer(layer) {
             mesh.material.opacity = finalOpacity;
         }
     };
-}
+}   
