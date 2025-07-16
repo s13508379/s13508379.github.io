@@ -210,15 +210,6 @@ function updateTimelineDisplay() {
                     cursor: pointer; 
                     margin-right: 8px;
                 ">Play Timeline</button>
-                <button onclick="stopTimeline()" style="
-                    background: #ff4444; 
-                    border: none; 
-                    color: white; 
-                    padding: 6px 12px; 
-                    border-radius: 4px; 
-                    cursor: pointer; 
-                    margin-right: 8px;
-                ">Stop Timeline</button>
                 <label style="font-size: 11px;">
                     <input type="checkbox" id="timeline-loop" checked onchange="globalTimeline.loop = this.checked">
                     Loop Timeline

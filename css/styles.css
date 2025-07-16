@@ -526,12 +526,24 @@ h5 {
 }
 
 /* Add validation styling for number inputs */
-.control-group input[type="number"]:invalid {
-    border-color: #ff4444;
-    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.2);
+.control-group input[type="number"]:invalid,
+#specialEffectControls input[type="number"]:invalid,
+#customAnimationControls input[type="number"]:invalid,
+#slideControls input[type="number"]:invalid,
+#swingControls input[type="number"]:invalid,
+#zigzagControls input[type="number"]:invalid,
+#pendulumControls input[type="number"]:invalid,
+#waveControls input[type="number"]:invalid,
+#bounceControls input[type="number"]:invalid,
+#spiralControls input[type="number"]:invalid,
+#rotateControls input[type="number"]:invalid {
+    border-color: #ff4444 !important;
+    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.2) !important;
 }
 
-.control-group input[type="number"]:valid {
+.control-group input[type="number"]:valid,
+#specialEffectControls input[type="number"]:valid,
+#customAnimationControls input[type="number"]:valid {
     border-color: #404040;
 }
 

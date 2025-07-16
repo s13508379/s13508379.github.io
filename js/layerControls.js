@@ -140,9 +140,9 @@ function selectLayer(layer) {
     document.getElementById('xPos').value = pos.x;
     document.getElementById('yPos').value = pos.y;
     document.getElementById('zPos').value = pos.z;
-    document.getElementById('rotX').value = rot.x * 180 / Math.PI;
-    document.getElementById('rotY').value = rot.y * 180 / Math.PI;
-    document.getElementById('rotZ').value = rot.z * 180 / Math.PI;
+    document.getElementById('rotX').value = rot.x / Math.PI * 180;
+    document.getElementById('rotY').value = rot.y / Math.PI * 180;
+    document.getElementById('rotZ').value = rot.z / Math.PI * 180;
     document.getElementById('scale').value = scale;
     document.getElementById('alpha').value = alpha;
     document.getElementById('enableCustomAnimation').checked = layer.enableCustomAnimation;
@@ -191,7 +191,6 @@ function selectLayer(layer) {
 
     toggleCustomControls();
     updateSpecialEffect();
-    updateControlValues();
 }
 
 function createAnimationForLayer(layer) {
