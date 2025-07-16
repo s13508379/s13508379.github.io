@@ -366,10 +366,6 @@
         if (debugEntries.length > 100) {
             debugEntries.shift();
         }
-        
-        // Also log to browser console
-        originalConsole[type]('[' + timestamp + '] ' + message);
-        
         updateDebugConsole();
     }
 
