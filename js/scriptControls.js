@@ -161,6 +161,7 @@ async function exportAsAR() {
             ctx.drawImage(img, 0, 0);
             const imageData = canvas.toDataURL('image/png');
 
+            console.log(getCleanTransform(layer.inputRotation, layer.mesh.rotation));
             const layerData = {
                 id: layer.id,
                 name: layer.name,
@@ -384,6 +385,16 @@ async function exportAsModel() {
             ctx.drawImage(img, 0, 0);
 
             const imageData = canvas.toDataURL('image/png');
+            console.log(getCleanTransform(layer.inputRotation, layer.mesh.rotation));
+
+            const rotDeg = getCleanTransform(layer.inputRotation, layer.mesh.rotation);
+            //error doing
+            const rotX = Math.round(rotDeg.x / Math.PI * 180);
+            const rotY = Math.round(rotDeg.y / Math.PI * 180);
+            const rotZ = Math.round(rotDeg.z / Math.PI * 180);
+            layer.mesh.rotation.set(rotX, rotY, rotZ);
+            console.log('Applied rotation (rad):', layer.mesh.rotation);
+
 
             const layerData = {
                 id: layer.id,

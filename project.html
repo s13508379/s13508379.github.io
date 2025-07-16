@@ -35,6 +35,10 @@
             background: #0052a3;
         }
 
+        .ar-controls button.active {
+            background: #00aa00;
+        }
+
         .timeline-info {
             background: rgba(0, 0, 0, 0.9);
             padding: 10px;
@@ -43,12 +47,11 @@
             font-size: 12px;
         }
 
-        /* Add debug console styles */
         .debug-console {
             position: fixed;
             top: 10px;
             right: 10px;
-            width: 300px;
+            width: 350px;
             max-height: 400px;
             background: rgba(0, 0, 0, 0.9);
             color: #00ff00;
@@ -86,7 +89,7 @@
         .debug-toggle {
             position: fixed;
             top: 10px;
-            right: 320px;
+            right: 370px;
             background: #333;
             color: white;
             border: none;
@@ -95,11 +98,28 @@
             cursor: pointer;
             z-index: 1001;
         }
+
+        .layer-info {
+            position: fixed;
+            top: 50px;
+            right: 370px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1001;
+            max-width: 200px;
+        }
     </style>
 </head>
 
 <body>
     <button class="debug-toggle" onclick="toggleDebugConsole()">Toggle Debug</button>
+    <div class="layer-info" id="layerInfo">
+        <div><strong>Layers Status:</strong></div>
+        <div id="layerStatus">Loading...</div>
+    </div>
     <div class="debug-console" id="debugConsole">
         <div class="log-entry log-info">🔧 Debug Console Initialized</div>
     </div>
@@ -108,11 +128,14 @@
         <div class="timeline-info">
             <span id="timeline-current">0:00</span> / <span id="timeline-duration">0:00</span>
         </div>
-        <button onclick="playAllAnimations()">Play All Animations</button>
+        <button onclick="playAllAnimations()">Play Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
         <button onclick="playTimeline()">Play Timeline</button>
         <button onclick="stopTimeline()">Stop Timeline</button>
         <button onclick="toggleTimelineLoop()">Toggle Loop</button>
+        <button onclick="showAllLayers()" id="showLayersBtn">Show All Layers</button>
+        <button onclick="hideAllLayers()">Hide All Layers</button>
+        <button onclick="testLayerVisibility()">Test Visibility</button>
         <button onclick="clearDebugLog()">Clear Log</button>
     </div>
 
@@ -142,6 +165,7 @@
                 rotation="90.00 0.00 0.00"
                 scale="2.00 2.00 2.00"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="background_turk-01.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -153,13 +177,15 @@
                 data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:0,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:2,&quot;y&quot;:2,&quot;z&quot;:2}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-4" src="#img-4"
                 position="-0.10 0.30 -0.10"
                 rotation="90.00 180.00 -1.00"
                 scale="0.60 0.60 0.60"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="Asset 9.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -171,13 +197,15 @@
                 data-original-position="{&quot;x&quot;:-0.1,&quot;y&quot;:0.3,&quot;z&quot;:-0.1}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:-0.017453}"
                 data-original-scale="{&quot;x&quot;:0.6,&quot;y&quot;:0.6,&quot;z&quot;:0.6}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-5" src="#img-5"
                 position="-0.50 0.60 -1.00"
                 rotation="90.00 180.00 0.00"
                 scale="0.60 0.60 0.60"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="girl.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -189,13 +217,15 @@
                 data-original-position="{&quot;x&quot;:-0.5,&quot;y&quot;:0.6,&quot;z&quot;:-1}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:0.6,&quot;y&quot;:0.6,&quot;z&quot;:0.6}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-6" src="#img-6"
                 position="0.70 0.40 -1.40"
                 rotation="90.00 180.00 0.00"
                 scale="0.20 0.20 0.20"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="cat.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -207,13 +237,15 @@
                 data-original-position="{&quot;x&quot;:0.7,&quot;y&quot;:0.4,&quot;z&quot;:-1.4}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:0.2,&quot;y&quot;:0.2,&quot;z&quot;:0.2}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-7" src="#img-7"
                 position="0.10 0.10 -0.30"
                 rotation="90.00 -180.00 0.00"
                 scale="1.30 1.30 1.30"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="allimg.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -225,13 +257,15 @@
                 data-original-position="{&quot;x&quot;:0.1,&quot;y&quot;:0.1,&quot;z&quot;:-0.3}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:-3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:1.3,&quot;y&quot;:1.3,&quot;z&quot;:1.3}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-8" src="#img-8"
                 position="0.00 0.70 1.10"
                 rotation="90.00 180.00 0.00"
                 scale="0.50 0.50 0.50"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="big_title.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -243,13 +277,15 @@
                 data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0.7,&quot;z&quot;:1.1}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:0.5,&quot;y&quot;:0.5,&quot;z&quot;:0.5}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-10" src="#img-10"
                 position="0.10 1.30 -0.70"
                 rotation="90.00 -180.00 -5.00"
                 scale="0.20 0.20 0.20"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="datentime.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -261,13 +297,15 @@
                 data-original-position="{&quot;x&quot;:0.1,&quot;y&quot;:1.3,&quot;z&quot;:-0.7}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:-3.141593,&quot;z&quot;:-0.087266}"
                 data-original-scale="{&quot;x&quot;:0.2,&quot;y&quot;:0.2,&quot;z&quot;:0.2}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-11" src="#img-11"
                 position="0.10 1.60 -1.30"
                 rotation="90.00 180.00 0.00"
                 scale="0.10 0.10 0.10"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="rthk31.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -279,13 +317,15 @@
                 data-original-position="{&quot;x&quot;:0.1,&quot;y&quot;:1.6,&quot;z&quot;:-1.3}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:0.1,&quot;y&quot;:0.1,&quot;z&quot;:0.1}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-12" src="#img-12"
                 position="0.00 1.40 -0.50"
                 rotation="90.00 180.00 0.00"
                 scale="0.10 0.10 0.10"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="info.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -297,13 +337,15 @@
                 data-original-position="{&quot;x&quot;:0,&quot;y&quot;:1.4,&quot;z&quot;:-0.5}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:0.1,&quot;y&quot;:0.1,&quot;z&quot;:0.1}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-13" src="#img-13"
                 position="0.00 1.60 0.50"
                 rotation="90.00 180.00 0.00"
                 scale="0.20 0.20 0.20"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="small_title_turk.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -315,13 +357,15 @@
                 data-original-position="{&quot;x&quot;:0,&quot;y&quot;:1.6,&quot;z&quot;:0.5}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:0.2,&quot;y&quot;:0.2,&quot;z&quot;:0.2}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
             <a-plane id="layer-14" src="#img-14"
                 position="1.20 -1.00 0.00"
                 rotation="90.00 180.00 0.00"
                 scale="1.00 1.00 1.00"
                 material="transparent: true; opacity: 1.00"
+                data-layer-name="tea.png"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -333,7 +377,8 @@
                 data-original-position="{&quot;x&quot;:1.2,&quot;y&quot;:-1,&quot;z&quot;:0}"
                 data-original-rotation="{&quot;x&quot;:1.570796,&quot;y&quot;:3.141593,&quot;z&quot;:0}"
                 data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
-                data-original-opacity="1.00">
+                data-original-opacity="1.00"
+                visible="true">
             </a-plane>
         </a-marker>
 
@@ -341,16 +386,9 @@
     </a-scene>
 
     <script>
-    // Enhanced logging system
-    const originalConsole = {
-        log: console.log,
-        error: console.error,
-        warn: console.warn,
-        info: console.info
-    };
-
     let debugConsoleVisible = true;
     let debugEntries = [];
+    let layersVisible = true;
 
     function debugLog(message, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
@@ -366,6 +404,9 @@
         if (debugEntries.length > 100) {
             debugEntries.shift();
         }
+        
+        // Also log to browser console
+        
         updateDebugConsole();
     }
 
@@ -392,6 +433,98 @@
         debugEntries = [];
         updateDebugConsole();
         debugLog('Debug log cleared', 'info');
+    }
+
+    // Update layer status display
+    function updateLayerStatus() {
+        const layerStatusDiv = document.getElementById('layerStatus');
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        
+        let visibleCount = 0;
+        let totalCount = layers.length;
+        
+        layers.forEach(layer => {
+            const isVisible = layer.getAttribute('visible') === 'true';
+            if (isVisible) visibleCount++;
+        });
+        
+        layerStatusDiv.innerHTML = 
+            'Total: ' + totalCount + '<br>' +
+            'Visible: ' + visibleCount + '<br>' +
+            'Hidden: ' + (totalCount - visibleCount);
+    }
+
+    // Show all layers function
+    function showAllLayers() {
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        let shownCount = 0;
+        
+        layers.forEach(layer => {
+            layer.setAttribute('visible', 'true');
+            layer.setAttribute('material', 'transparent: true; opacity: ' + layer.getAttribute('data-original-opacity'));
+            shownCount++;
+        });
+        
+        layersVisible = true;
+        document.getElementById('showLayersBtn').classList.add('active');
+        debugLog('👁️ Showing all layers (' + shownCount + ' layers)', 'success');
+        updateLayerStatus();
+    }
+
+    // Hide all layers function
+    function hideAllLayers() {
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        let hiddenCount = 0;
+        
+        layers.forEach(layer => {
+            layer.setAttribute('visible', 'false');
+            hiddenCount++;
+        });
+        
+        layersVisible = false;
+        document.getElementById('showLayersBtn').classList.remove('active');
+        debugLog('👁️‍🗨️ Hiding all layers (' + hiddenCount + ' layers)', 'info');
+        updateLayerStatus();
+    }
+
+    // Test layer visibility function
+    function testLayerVisibility() {
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        debugLog('🔍 Testing layer visibility...', 'info');
+        
+        layers.forEach((layer, index) => {
+            const layerId = layer.id;
+            const layerName = layer.getAttribute('data-layer-name') || 'Unknown';
+            const isVisible = layer.getAttribute('visible');
+            const opacity = layer.getAttribute('material');
+            const position = layer.getAttribute('position');
+            const scale = layer.getAttribute('scale');
+            const imgSrc = layer.getAttribute('src');
+            
+            debugLog('Layer ' + (index + 1) + ' (' + layerId + ' - ' + layerName + '):', 'info');
+            debugLog('  Visible: ' + isVisible, 'info');
+            debugLog('  Position: ' + position, 'info');
+            debugLog('  Scale: ' + scale, 'info');
+            debugLog('  Material: ' + opacity, 'info');
+            debugLog('  Image: ' + imgSrc, 'info');
+            
+            // Check if image asset exists
+            const imgElement = document.querySelector(imgSrc);
+            if (imgElement) {
+                debugLog('  ✅ Image asset found', 'success');
+                
+                // Check image loading status
+                if (imgElement.complete) {
+                    debugLog('  ✅ Image loaded successfully', 'success');
+                } else {
+                    debugLog('  ⏳ Image still loading...', 'warning');
+                }
+            } else {
+                debugLog('  ❌ Image asset not found!', 'error');
+            }
+        });
+        
+        updateLayerStatus();
     }
 
     // Override console methods to capture all logs
@@ -622,12 +755,23 @@
     window.addEventListener('load', () => {
         debugLog('📄 Page loaded, initializing...', 'info');
         initializeAudioTracks();
+        
+        // Auto-show layers after a delay
+        setTimeout(() => {
+            showAllLayers();
+            testLayerVisibility();
+        }, 2000);
     });
 
     // Marker event handlers
     document.querySelector('a-marker').addEventListener('markerFound', function() {
         markerVisible = true;
         debugLog('📍 Marker found - starting timeline and animations', 'success');
+        
+        // Ensure layers are visible when marker is found
+        if (!layersVisible) {
+            showAllLayers();
+        }
         
         // Auto-start timeline when marker is found
         playTimeline();
@@ -651,12 +795,18 @@
         const layers = document.querySelectorAll('[id^="layer-"]');
         debugLog('Found ' + layers.length + ' layers to animate', 'info');
         
+        // First, ensure all layers are visible
+        layers.forEach(layer => {
+            layer.setAttribute('visible', 'true');
+        });
+        
         layers.forEach((layer, index) => {
             const layerId = layer.id;
+            const layerName = layer.getAttribute('data-layer-name') || 'Unknown';
             const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
             const specialEffect = layer.getAttribute('data-special-effect');
             
-            debugLog('Layer ' + (index + 1) + ' (' + layerId + '): Custom=' + enableCustom + ', Effect=' + specialEffect, 'info');
+            debugLog('Layer ' + (index + 1) + ' (' + layerId + ' - ' + layerName + '): Custom=' + enableCustom + ', Effect=' + specialEffect, 'info');
             
             if (enableCustom || specialEffect !== 'none') {
                 const speed = parseFloat(layer.getAttribute('data-animation-speed'));
@@ -741,7 +891,7 @@
                             }
                         }
                         
-                        // Apply special effects (same as original)
+                        // Apply special effects
                         if (specialEffect !== 'none') {
                             switch (specialEffect) {
                                 case 'swingToTarget':
@@ -843,6 +993,7 @@
                         layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                         layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
                         layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
+                        layer.setAttribute('visible', 'true');
                         
                     } catch (e) {
                         debugLog('❌ Animation error for ' + layerId + ': ' + e.message, 'error');
@@ -855,10 +1006,13 @@
                 debugLog('✅ Animation started for ' + layerId, 'success');
             } else {
                 debugLog('⏭️ No animation for ' + layerId + ' (disabled)', 'info');
+                // Even if no animation, make sure layer is visible
+                layer.setAttribute('visible', 'true');
             }
         });
         
         debugLog('🎬 All animations started (' + animationIntervals.length + ' active)', 'success');
+        updateLayerStatus();
     }
     
     function stopAllAnimations() {
@@ -883,6 +1037,7 @@
                 layer.setAttribute('rotation', (originalRot.x * 180 / Math.PI) + ' ' + (originalRot.y * 180 / Math.PI) + ' ' + (originalRot.z * 180 / Math.PI));
                 layer.setAttribute('scale', originalScale.x + ' ' + originalScale.y + ' ' + originalScale.z);
                 layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity);
+                layer.setAttribute('visible', 'true'); // Keep visible even when stopped
                 
                 resetCount++;
             } catch (e) {
@@ -891,6 +1046,7 @@
         });
         
         debugLog('⏹️ Stopped ' + stoppedCount + ' animations and reset ' + resetCount + ' layers', 'info');
+        updateLayerStatus();
     }
 
     // A-Frame scene initialization logging
@@ -905,6 +1061,7 @@
                 
                 scene.addEventListener('loaded', () => {
                     debugLog('✅ A-Frame scene loaded', 'success');
+                    testLayerVisibility();
                 });
                 
                 scene.addEventListener('renderstart', () => {

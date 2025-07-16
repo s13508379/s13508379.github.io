@@ -39,6 +39,10 @@ function generateHTMLContent() {
             background: #0052a3;
         }
 
+        .ar-controls button.active {
+            background: #00aa00;
+        }
+
         .timeline-info {
             background: rgba(0, 0, 0, 0.9);
             padding: 10px;
@@ -47,12 +51,11 @@ function generateHTMLContent() {
             font-size: 12px;
         }
 
-        /* Add debug console styles */
         .debug-console {
             position: fixed;
             top: 10px;
             right: 10px;
-            width: 300px;
+            width: 350px;
             max-height: 400px;
             background: rgba(0, 0, 0, 0.9);
             color: #00ff00;
@@ -90,7 +93,7 @@ function generateHTMLContent() {
         .debug-toggle {
             position: fixed;
             top: 10px;
-            right: 320px;
+            right: 370px;
             background: #333;
             color: white;
             border: none;
@@ -99,11 +102,28 @@ function generateHTMLContent() {
             cursor: pointer;
             z-index: 1001;
         }
+
+        .layer-info {
+            position: fixed;
+            top: 50px;
+            right: 370px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1001;
+            max-width: 200px;
+        }
     </style>
 </head>
 
 <body>
     <button class="debug-toggle" onclick="toggleDebugConsole()">Toggle Debug</button>
+    <div class="layer-info" id="layerInfo">
+        <div><strong>Layers Status:</strong></div>
+        <div id="layerStatus">Loading...</div>
+    </div>
     <div class="debug-console" id="debugConsole">
         <div class="log-entry log-info">🔧 Debug Console Initialized</div>
     </div>
@@ -112,11 +132,14 @@ function generateHTMLContent() {
         <div class="timeline-info">
             <span id="timeline-current">0:00</span> / <span id="timeline-duration">0:00</span>
         </div>
-        <button onclick="playAllAnimations()">Play All Animations</button>
+        <button onclick="playAllAnimations()">Play Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
         <button onclick="playTimeline()">Play Timeline</button>
         <button onclick="stopTimeline()">Stop Timeline</button>
         <button onclick="toggleTimelineLoop()">Toggle Loop</button>
+        <button onclick="showAllLayers()" id="showLayersBtn">Show All Layers</button>
+        <button onclick="hideAllLayers()">Hide All Layers</button>
+        <button onclick="testLayerVisibility()">Test Visibility</button>
         <button onclick="clearDebugLog()">Clear Log</button>
     </div>
 
@@ -196,6 +219,7 @@ function generateHTMLContent() {
                 rotation="${rotX} ${rotY} ${rotZ}"
                 scale="${scale.x.toFixed(2)} ${scale.y.toFixed(2)} ${scale.z.toFixed(2)}"
                 material="transparent: true; opacity: ${opacity.toFixed(2)}"
+                data-layer-name="${layer.name}"
                 data-animation-enabled="${layer.enableCustomAnimation}" 
                 data-special-effect="${layer.specialEffect}"
                 data-animation-speed="${layer.animationSpeed}" 
@@ -207,7 +231,8 @@ function generateHTMLContent() {
                 data-original-position="${originalPosJSON}"
                 data-original-rotation="${originalRotJSON}"
                 data-original-scale="${originalScaleJSON}"
-                data-original-opacity="${opacity.toFixed(2)}">
+                data-original-opacity="${opacity.toFixed(2)}"
+                visible="true">
             </a-plane>`;
         });
     }
@@ -219,16 +244,9 @@ function generateHTMLContent() {
     </a-scene>
 
     <script>
-    // Enhanced logging system
-    const originalConsole = {
-        log: console.log,
-        error: console.error,
-        warn: console.warn,
-        info: console.info
-    };
-
     let debugConsoleVisible = true;
     let debugEntries = [];
+    let layersVisible = true;
 
     function debugLog(message, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
@@ -246,7 +264,6 @@ function generateHTMLContent() {
         }
         
         // Also log to browser console
-        originalConsole[type]('[' + timestamp + '] ' + message);
         
         updateDebugConsole();
     }
@@ -274,6 +291,98 @@ function generateHTMLContent() {
         debugEntries = [];
         updateDebugConsole();
         debugLog('Debug log cleared', 'info');
+    }
+
+    // Update layer status display
+    function updateLayerStatus() {
+        const layerStatusDiv = document.getElementById('layerStatus');
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        
+        let visibleCount = 0;
+        let totalCount = layers.length;
+        
+        layers.forEach(layer => {
+            const isVisible = layer.getAttribute('visible') === 'true';
+            if (isVisible) visibleCount++;
+        });
+        
+        layerStatusDiv.innerHTML = 
+            'Total: ' + totalCount + '<br>' +
+            'Visible: ' + visibleCount + '<br>' +
+            'Hidden: ' + (totalCount - visibleCount);
+    }
+
+    // Show all layers function
+    function showAllLayers() {
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        let shownCount = 0;
+        
+        layers.forEach(layer => {
+            layer.setAttribute('visible', 'true');
+            layer.setAttribute('material', 'transparent: true; opacity: ' + layer.getAttribute('data-original-opacity'));
+            shownCount++;
+        });
+        
+        layersVisible = true;
+        document.getElementById('showLayersBtn').classList.add('active');
+        debugLog('👁️ Showing all layers (' + shownCount + ' layers)', 'success');
+        updateLayerStatus();
+    }
+
+    // Hide all layers function
+    function hideAllLayers() {
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        let hiddenCount = 0;
+        
+        layers.forEach(layer => {
+            layer.setAttribute('visible', 'false');
+            hiddenCount++;
+        });
+        
+        layersVisible = false;
+        document.getElementById('showLayersBtn').classList.remove('active');
+        debugLog('👁️‍🗨️ Hiding all layers (' + hiddenCount + ' layers)', 'info');
+        updateLayerStatus();
+    }
+
+    // Test layer visibility function
+    function testLayerVisibility() {
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        debugLog('🔍 Testing layer visibility...', 'info');
+        
+        layers.forEach((layer, index) => {
+            const layerId = layer.id;
+            const layerName = layer.getAttribute('data-layer-name') || 'Unknown';
+            const isVisible = layer.getAttribute('visible');
+            const opacity = layer.getAttribute('material');
+            const position = layer.getAttribute('position');
+            const scale = layer.getAttribute('scale');
+            const imgSrc = layer.getAttribute('src');
+            
+            debugLog('Layer ' + (index + 1) + ' (' + layerId + ' - ' + layerName + '):', 'info');
+            debugLog('  Visible: ' + isVisible, 'info');
+            debugLog('  Position: ' + position, 'info');
+            debugLog('  Scale: ' + scale, 'info');
+            debugLog('  Material: ' + opacity, 'info');
+            debugLog('  Image: ' + imgSrc, 'info');
+            
+            // Check if image asset exists
+            const imgElement = document.querySelector(imgSrc);
+            if (imgElement) {
+                debugLog('  ✅ Image asset found', 'success');
+                
+                // Check image loading status
+                if (imgElement.complete) {
+                    debugLog('  ✅ Image loaded successfully', 'success');
+                } else {
+                    debugLog('  ⏳ Image still loading...', 'warning');
+                }
+            } else {
+                debugLog('  ❌ Image asset not found!', 'error');
+            }
+        });
+        
+        updateLayerStatus();
     }
 
     // Override console methods to capture all logs
@@ -514,12 +623,23 @@ function generateHTMLContent() {
     window.addEventListener('load', () => {
         debugLog('📄 Page loaded, initializing...', 'info');
         initializeAudioTracks();
+        
+        // Auto-show layers after a delay
+        setTimeout(() => {
+            showAllLayers();
+            testLayerVisibility();
+        }, 2000);
     });
 
     // Marker event handlers
     document.querySelector('a-marker').addEventListener('markerFound', function() {
         markerVisible = true;
         debugLog('📍 Marker found - starting timeline and animations', 'success');
+        
+        // Ensure layers are visible when marker is found
+        if (!layersVisible) {
+            showAllLayers();
+        }
         
         // Auto-start timeline when marker is found
         playTimeline();
@@ -543,12 +663,18 @@ function generateHTMLContent() {
         const layers = document.querySelectorAll('[id^="layer-"]');
         debugLog('Found ' + layers.length + ' layers to animate', 'info');
         
+        // First, ensure all layers are visible
+        layers.forEach(layer => {
+            layer.setAttribute('visible', 'true');
+        });
+        
         layers.forEach((layer, index) => {
             const layerId = layer.id;
+            const layerName = layer.getAttribute('data-layer-name') || 'Unknown';
             const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
             const specialEffect = layer.getAttribute('data-special-effect');
             
-            debugLog('Layer ' + (index + 1) + ' (' + layerId + '): Custom=' + enableCustom + ', Effect=' + specialEffect, 'info');
+            debugLog('Layer ' + (index + 1) + ' (' + layerId + ' - ' + layerName + '): Custom=' + enableCustom + ', Effect=' + specialEffect, 'info');
             
             if (enableCustom || specialEffect !== 'none') {
                 const speed = parseFloat(layer.getAttribute('data-animation-speed'));
@@ -633,7 +759,7 @@ function generateHTMLContent() {
                             }
                         }
                         
-                        // Apply special effects (same as original)
+                        // Apply special effects
                         if (specialEffect !== 'none') {
                             switch (specialEffect) {
                                 case 'swingToTarget':
@@ -735,6 +861,7 @@ function generateHTMLContent() {
                         layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                         layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
                         layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
+                        layer.setAttribute('visible', 'true');
                         
                     } catch (e) {
                         debugLog('❌ Animation error for ' + layerId + ': ' + e.message, 'error');
@@ -747,10 +874,13 @@ function generateHTMLContent() {
                 debugLog('✅ Animation started for ' + layerId, 'success');
             } else {
                 debugLog('⏭️ No animation for ' + layerId + ' (disabled)', 'info');
+                // Even if no animation, make sure layer is visible
+                layer.setAttribute('visible', 'true');
             }
         });
         
         debugLog('🎬 All animations started (' + animationIntervals.length + ' active)', 'success');
+        updateLayerStatus();
     }
     
     function stopAllAnimations() {
@@ -775,6 +905,7 @@ function generateHTMLContent() {
                 layer.setAttribute('rotation', (originalRot.x * 180 / Math.PI) + ' ' + (originalRot.y * 180 / Math.PI) + ' ' + (originalRot.z * 180 / Math.PI));
                 layer.setAttribute('scale', originalScale.x + ' ' + originalScale.y + ' ' + originalScale.z);
                 layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity);
+                layer.setAttribute('visible', 'true'); // Keep visible even when stopped
                 
                 resetCount++;
             } catch (e) {
@@ -783,6 +914,7 @@ function generateHTMLContent() {
         });
         
         debugLog('⏹️ Stopped ' + stoppedCount + ' animations and reset ' + resetCount + ' layers', 'info');
+        updateLayerStatus();
     }
 
     // A-Frame scene initialization logging
@@ -797,6 +929,7 @@ function generateHTMLContent() {
                 
                 scene.addEventListener('loaded', () => {
                     debugLog('✅ A-Frame scene loaded', 'success');
+                    testLayerVisibility();
                 });
                 
                 scene.addEventListener('renderstart', () => {
