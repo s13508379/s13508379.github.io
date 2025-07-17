@@ -108,7 +108,7 @@ function generateHTMLContent() {
                 position="${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}"
                 rotation="${rotX} ${rotY} ${rotZ}"
                 scale="${scale.x.toFixed(2)} ${scale.y.toFixed(2)} ${scale.z.toFixed(2)}"
-                material="transparent: true; opacity: ${opacity.toFixed(2)}"
+                material="transparent: true; opacity: ${opacity.toFixed(2)}; side: double"
                 data-animation-enabled="${layer.enableCustomAnimation}" 
                 data-special-effect="${layer.specialEffect}"
                 data-animation-speed="${layer.animationSpeed}" 
@@ -521,7 +521,7 @@ function generateHTMLContent() {
                     layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                     layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
                     layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-                    layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
+                    layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity + '; side: double');
                     
                 }, 16); // ~60fps
                 
@@ -546,7 +546,7 @@ function generateHTMLContent() {
                 layer.setAttribute('position', originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z);
                 layer.setAttribute('rotation', (originalRot.x * 180 / Math.PI) + ' ' + (originalRot.y * 180 / Math.PI) + ' ' + (originalRot.z * 180 / Math.PI));
                 layer.setAttribute('scale', originalScale.x + ' ' + originalScale.y + ' ' + originalScale.z);
-                layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity);
+                layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity + '; side: double');
             } catch (e) {
                 console.error('Error resetting layer:', e);
             }

@@ -35,10 +35,6 @@
             background: #0052a3;
         }
 
-        .ar-controls button.active {
-            background: #00aa00;
-        }
-
         .timeline-info {
             background: rgba(0, 0, 0, 0.9);
             padding: 10px;
@@ -46,97 +42,13 @@
             margin-bottom: 10px;
             font-size: 12px;
         }
-
-        .debug-console {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            width: 350px;
-            max-height: 400px;
-            background: rgba(0, 0, 0, 0.9);
-            color: #00ff00;
-            font-family: monospace;
-            font-size: 12px;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-y: auto;
-            z-index: 1000;
-            border: 1px solid #333;
-        }
-
-        .debug-console .log-entry {
-            margin: 2px 0;
-            padding: 2px 0;
-            border-bottom: 1px solid #333;
-        }
-
-        .debug-console .log-error {
-            color: #ff4444;
-        }
-
-        .debug-console .log-warning {
-            color: #ffaa00;
-        }
-
-        .debug-console .log-info {
-            color: #00aaff;
-        }
-
-        .debug-console .log-success {
-            color: #00ff00;
-        }
-
-        .debug-toggle {
-            position: fixed;
-            top: 10px;
-            right: 370px;
-            background: #333;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            z-index: 1001;
-        }
-
-        .layer-info {
-            position: fixed;
-            top: 50px;
-            right: 370px;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            z-index: 1001;
-            max-width: 200px;
-        }
     </style>
 </head>
 
 <body>
-    <button class="debug-toggle" onclick="toggleDebugConsole()">Toggle Debug</button>
-    <div class="layer-info" id="layerInfo">
-        <div><strong>Layers Status:</strong></div>
-        <div id="layerStatus">Loading...</div>
-    </div>
-    <div class="debug-console" id="debugConsole">
-        <div class="log-entry log-info">🔧 Debug Console Initialized</div>
-    </div>
-
     <div class="ar-controls">
-        <div class="timeline-info">
-            <span id="timeline-current">0:00</span> / <span id="timeline-duration">0:00</span>
-        </div>
-        <button onclick="playAllAnimations()">Play Animations</button>
+        <button onclick="playAllAnimations()">Play All Animations</button>
         <button onclick="stopAllAnimations()">Stop Animations</button>
-        <button onclick="playTimeline()">Play Timeline</button>
-        <button onclick="stopTimeline()">Stop Timeline</button>
-        <button onclick="toggleTimelineLoop()">Toggle Loop</button>
-        <button onclick="showAllLayers()" id="showLayersBtn">Show All Layers</button>
-        <button onclick="hideAllLayers()">Hide All Layers</button>
-        <button onclick="testLayerVisibility()">Test Visibility</button>
-        <button onclick="clearDebugLog()">Clear Log</button>
     </div>
 
     <a-scene vr-mode-ui="enabled: false" embedded
@@ -145,18 +57,32 @@
         background="color: #000000; transparent: true">
 
         <a-assets>
-            <img id="img-0" src="images/pattern-project-qr-code.png" crossorigin="anonymous">
-            <img id="img-1" src="images/pattern-project-qr-code.png" crossorigin="anonymous">
-            <img id="img-2" src="images/buildings.png" crossorigin="anonymous">
+            <img id="img-0" src="images/buildings.png" crossorigin="anonymous">
+            <img id="img-1" src="images/girls.png" crossorigin="anonymous">
+            <img id="img-2" src="images/background_turk-01.png" crossorigin="anonymous">
+            <img id="img-3" src="images/Asset 9.png" crossorigin="anonymous">
+            <img id="img-4" src="images/cat.png" crossorigin="anonymous">
+            <img id="img-5" src="images/girl.png" crossorigin="anonymous">
+            <img id="img-6" src="images/big_title.png" crossorigin="anonymous">
+            <img id="img-7" src="images/rthk31.png" crossorigin="anonymous">
+            <img id="img-8" src="images/tea.png" crossorigin="anonymous">
+            <img id="img-10" src="images/datentime.png" crossorigin="anonymous">
+            <img id="img-11" src="images/small_title_turk.png" crossorigin="anonymous">
+            <img id="img-12" src="images/outline_cam.png" crossorigin="anonymous">
+            <img id="img-13" src="images/left.png" crossorigin="anonymous">
+            <img id="img-14" src="images/right.png" crossorigin="anonymous">
+            <img id="img-15" src="images/outline_plane.png" crossorigin="anonymous">
+            <audio id="audio-audio_1752725489332_6e6ca8lul" src="audio/sound.mp3" preload="auto"></audio>
+            <audio id="audio-audio_1752725489335_60j2d9y2i" src="audio/title.mp3" preload="auto"></audio>
         </a-assets>
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
             <a-plane id="layer-0" src="#img-0"
-                position="0.00 2.00 0.00"
-                rotation="90.00 0.00 0.00"
-                scale="1.00 1.00 1.00"
-                material="transparent: true; opacity: 1.00"
-                data-layer-name="pattern-project-qr-code.png"
+                position="0.00 0.60 0.00"
+                rotation="-90.00 0.00 0.00"
+                width="1.380"
+                height="1.000"
+                material="transparent: true; opacity: 1.00; side: double"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -165,38 +91,40 @@
                 data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
                 data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
                 data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:2,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0.6,&quot;z&quot;:0}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.5,&quot;y&quot;:0.5,&quot;z&quot;:0.5}"
                 data-original-opacity="1.00"
-                visible="true">
+                data-base-size="2"
+                data-image-aspect="1.380">
             </a-plane>
             <a-plane id="layer-1" src="#img-1"
-                position="0.00 -1.00 0.00"
-                rotation="90.00 0.00 0.00"
-                scale="3.00 3.00 3.00"
-                material="transparent: true; opacity: 1.00"
-                data-layer-name="pattern-project-qr-code.png"
+                position="-0.30 0.20 1.10"
+                rotation="-90.00 0.00 0.00"
+                width="0.997"
+                height="1.000"
+                material="transparent: true; opacity: 1.00; side: double"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
                 data-animation-duration="2"
                 data-loop-animation="false"
-                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
-                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
-                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:-1,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:3,&quot;y&quot;:3,&quot;z&quot;:3}"
+                data-custom-start="{&quot;inputX&quot;:-0.3,&quot;inputY&quot;:0.2,&quot;inputZ&quot;:1.1,&quot;inputScale&quot;:1,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:-0.3,&quot;y&quot;:0.2,&quot;z&quot;:1.1,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;inputX&quot;:-0.3,&quot;inputY&quot;:0.2,&quot;inputZ&quot;:1.1,&quot;inputScale&quot;:0.5,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:-0.3,&quot;y&quot;:0.2,&quot;z&quot;:1.1,&quot;scale&quot;:0.5,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:-0.3,&quot;y&quot;:0.2,&quot;z&quot;:1.1}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.5,&quot;y&quot;:0.5,&quot;z&quot;:0.5}"
                 data-original-opacity="1.00"
-                visible="true">
+                data-base-size="2"
+                data-image-aspect="0.997">
             </a-plane>
             <a-plane id="layer-2" src="#img-2"
                 position="0.00 0.00 0.00"
-                rotation="90.00 0.00 0.00"
-                scale="5.00 5.00 5.00"
-                material="transparent: true; opacity: 1.00"
-                data-layer-name="buildings.png"
+                rotation="-90.00 0.00 0.00"
+                width="2.684"
+                height="4.000"
+                material="transparent: true; opacity: 1.00; side: double"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -206,10 +134,263 @@
                 data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
                 data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
                 data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-rotation="{&quot;x&quot;:1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
-                data-original-scale="{&quot;x&quot;:5,&quot;y&quot;:5,&quot;z&quot;:5}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:2,&quot;y&quot;:2,&quot;z&quot;:2}"
                 data-original-opacity="1.00"
-                visible="true">
+                data-base-size="2"
+                data-image-aspect="0.671">
+            </a-plane>
+            <a-plane id="layer-3" src="#img-3"
+                position="0.20 1.00 0.10"
+                rotation="-90.00 0.00 0.00"
+                width="1.103"
+                height="0.800"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="true" 
+                data-special-effect="swingToTarget"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="true"
+                data-custom-start="{&quot;inputX&quot;:0.2,&quot;inputY&quot;:1,&quot;inputZ&quot;:0.1,&quot;inputScale&quot;:0.4,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:0.2,&quot;y&quot;:1,&quot;z&quot;:0.1,&quot;scale&quot;:0.4,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;inputX&quot;:0.2,&quot;inputY&quot;:1,&quot;inputZ&quot;:0.1,&quot;inputScale&quot;:0.4,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:0.2,&quot;y&quot;:1,&quot;z&quot;:0.1,&quot;scale&quot;:0.4,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:4,&quot;swingTargetX&quot;:3,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:4,&quot;swingTargetX&quot;:3,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:0.2,&quot;y&quot;:1,&quot;z&quot;:0.1}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.4,&quot;y&quot;:0.4,&quot;z&quot;:0.4}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="1.379">
+            </a-plane>
+            <a-plane id="layer-4" src="#img-4"
+                position="-0.60 0.40 1.40"
+                rotation="-90.00 0.00 0.00"
+                width="0.659"
+                height="0.400"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="true" 
+                data-special-effect="swingToTarget"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="true"
+                data-custom-start="{&quot;inputX&quot;:-0.6,&quot;inputY&quot;:0.4,&quot;inputZ&quot;:1.4,&quot;inputScale&quot;:0.2,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:-0.6,&quot;y&quot;:0.4,&quot;z&quot;:1.4,&quot;scale&quot;:0.2,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;inputX&quot;:-0.6,&quot;inputY&quot;:0.4,&quot;inputZ&quot;:1.4,&quot;inputScale&quot;:0.2,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:-0.6,&quot;y&quot;:0.4,&quot;z&quot;:1.4,&quot;scale&quot;:0.2,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:2,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:2,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:-0.6,&quot;y&quot;:0.4,&quot;z&quot;:1.4}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.2,&quot;y&quot;:0.2,&quot;z&quot;:0.2}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="1.648">
+            </a-plane>
+            <a-plane id="layer-5" src="#img-5"
+                position="0.40 0.80 1.00"
+                rotation="-90.00 0.00 0.00"
+                width="0.419"
+                height="0.800"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="true" 
+                data-special-effect="swingToTarget"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="true"
+                data-custom-start="{&quot;inputX&quot;:0.4,&quot;inputY&quot;:0.8,&quot;inputZ&quot;:1,&quot;inputScale&quot;:0.4,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:0.4,&quot;y&quot;:0.8,&quot;z&quot;:1,&quot;scale&quot;:0.4,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;inputX&quot;:0.4,&quot;inputY&quot;:0.8,&quot;inputZ&quot;:1,&quot;inputScale&quot;:0.4,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:0.4,&quot;y&quot;:0.8,&quot;z&quot;:1,&quot;scale&quot;:0.4,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:0.4,&quot;y&quot;:0.8,&quot;z&quot;:1}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.4,&quot;y&quot;:0.4,&quot;z&quot;:0.4}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="0.524">
+            </a-plane>
+            <a-plane id="layer-6" src="#img-6"
+                position="0.00 0.60 -1.00"
+                rotation="-90.00 0.00 0.00"
+                width="1.805"
+                height="1.000"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="false" 
+                data-special-effect="none"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="false"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0.6,&quot;z&quot;:-1}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.5,&quot;y&quot;:0.5,&quot;z&quot;:0.5}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="1.805">
+            </a-plane>
+            <a-plane id="layer-7" src="#img-7"
+                position="-0.30 0.50 1.60"
+                rotation="-90.00 0.00 0.00"
+                width="0.588"
+                height="0.200"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="false" 
+                data-special-effect="none"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="false"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
+                data-original-position="{&quot;x&quot;:-0.3,&quot;y&quot;:0.5,&quot;z&quot;:1.6}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.1,&quot;y&quot;:0.1,&quot;z&quot;:0.1}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="2.942">
+            </a-plane>
+            <a-plane id="layer-8" src="#img-8"
+                position="-0.60 0.80 0.00"
+                rotation="-90.00 0.00 0.00"
+                width="0.395"
+                height="0.400"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="false" 
+                data-special-effect="none"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="false"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
+                data-original-position="{&quot;x&quot;:-0.6,&quot;y&quot;:0.8,&quot;z&quot;:0}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.2,&quot;y&quot;:0.2,&quot;z&quot;:0.2}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="0.987">
+            </a-plane>
+            <a-plane id="layer-10" src="#img-10"
+                position="0.00 1.10 0.70"
+                rotation="-90.00 0.00 -11.00"
+                width="1.441"
+                height="0.400"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="false" 
+                data-special-effect="none"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="false"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:1.1,&quot;z&quot;:0.7}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:-0.19198621771937624}"
+                data-original-scale="{&quot;x&quot;:0.2,&quot;y&quot;:0.2,&quot;z&quot;:0.2}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="3.603">
+            </a-plane>
+            <a-plane id="layer-11" src="#img-11"
+                position="0.00 1.50 -0.30"
+                rotation="-90.00 0.00 0.00"
+                width="0.428"
+                height="0.200"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="false" 
+                data-special-effect="none"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="false"
+                data-custom-start="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0,&quot;scale&quot;:1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:1.5,&quot;z&quot;:-0.3}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.1,&quot;y&quot;:0.1,&quot;z&quot;:0.1}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="2.139">
+            </a-plane>
+            <a-plane id="layer-12" src="#img-12"
+                position="0.60 1.50 -0.70"
+                rotation="-90.00 0.00 0.00"
+                width="0.178"
+                height="0.200"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="true" 
+                data-special-effect="swingToTarget"
+                data-animation-speed="1" 
+                data-animation-duration="2"
+                data-loop-animation="true"
+                data-custom-start="{&quot;inputX&quot;:0.7,&quot;inputY&quot;:1.5,&quot;inputZ&quot;:-0.7,&quot;inputScale&quot;:0.1,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:0.7,&quot;y&quot;:1.5,&quot;z&quot;:-0.7,&quot;scale&quot;:0.1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-custom-end="{&quot;inputX&quot;:0.7,&quot;inputY&quot;:1.5,&quot;inputZ&quot;:-0.7,&quot;inputScale&quot;:0.1,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:0,&quot;x&quot;:0.7,&quot;y&quot;:1.5,&quot;z&quot;:-0.7,&quot;scale&quot;:0.1,&quot;opacity&quot;:1,&quot;rotation&quot;:0}"
+                data-special-settings="{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:5,&quot;swingTargetX&quot;:7,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:10,&quot;swingFreq&quot;:5,&quot;swingTargetX&quot;:7,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:0.6,&quot;y&quot;:1.5,&quot;z&quot;:-0.7}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.1,&quot;y&quot;:0.1,&quot;z&quot;:0.1}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="0.889">
+            </a-plane>
+            <a-plane id="layer-13" src="#img-13"
+                position="0.00 0.00 0.00"
+                rotation="-90.00 0.00 0.00"
+                width="0.153"
+                height="0.200"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="true" 
+                data-special-effect="none"
+                data-animation-speed="1.2" 
+                data-animation-duration="5.1"
+                data-loop-animation="true"
+                data-custom-start="{&quot;inputX&quot;:0.1,&quot;inputY&quot;:2,&quot;inputZ&quot;:1.4,&quot;inputScale&quot;:0.1,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:-29,&quot;x&quot;:0.1,&quot;y&quot;:2,&quot;z&quot;:1.4,&quot;scale&quot;:0.1,&quot;opacity&quot;:1,&quot;rotation&quot;:-29}"
+                data-custom-end="{&quot;inputX&quot;:1,&quot;inputY&quot;:0.9,&quot;inputZ&quot;:1.3,&quot;inputScale&quot;:0.1,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:-29,&quot;x&quot;:1,&quot;y&quot;:0.9,&quot;z&quot;:1.3,&quot;scale&quot;:0.1,&quot;opacity&quot;:1,&quot;rotation&quot;:-29}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:4,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:4,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:0.1,&quot;y&quot;:0.1,&quot;z&quot;:0.1}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="0.763">
+            </a-plane>
+            <a-plane id="layer-14" src="#img-14"
+                position="0.94 0.97 1.32"
+                rotation="-90.00 0.00 0.00"
+                width="2.017"
+                height="2.000"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="true" 
+                data-special-effect="none"
+                data-animation-speed="1.2" 
+                data-animation-duration="5.1"
+                data-loop-animation="true"
+                data-custom-start="{&quot;inputX&quot;:0.1,&quot;inputY&quot;:2,&quot;inputZ&quot;:1.5,&quot;inputScale&quot;:0.1,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:-18,&quot;x&quot;:0.1,&quot;y&quot;:2,&quot;z&quot;:1.5,&quot;scale&quot;:0.1,&quot;opacity&quot;:1,&quot;rotation&quot;:-18}"
+                data-custom-end="{&quot;inputX&quot;:1,&quot;inputY&quot;:0.9,&quot;inputZ&quot;:1.6,&quot;inputScale&quot;:0.1,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:-18,&quot;x&quot;:1,&quot;y&quot;:0.9,&quot;z&quot;:1.6,&quot;scale&quot;:0.1,&quot;opacity&quot;:1,&quot;rotation&quot;:-18}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:3,&quot;spiralRotations&quot;:6,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:0.9445595499999997,&quot;y&quot;:0.9677605500000004,&quot;z&quot;:1.31848015}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="1.009">
+            </a-plane>
+            <a-plane id="layer-15" src="#img-15"
+                position="0.00 0.00 0.00"
+                rotation="-90.00 0.00 0.00"
+                width="1.729"
+                height="2.000"
+                material="transparent: true; opacity: 1.00; side: double"
+                data-animation-enabled="true" 
+                data-special-effect="spiral"
+                data-animation-speed="1" 
+                data-animation-duration="3"
+                data-loop-animation="true"
+                data-custom-start="{&quot;inputX&quot;:0.6,&quot;inputY&quot;:1.4,&quot;inputZ&quot;:-1.6,&quot;inputScale&quot;:0.3,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:-56,&quot;x&quot;:0.6,&quot;y&quot;:1.4,&quot;z&quot;:-1.6,&quot;scale&quot;:0.3,&quot;opacity&quot;:1,&quot;rotation&quot;:-56}"
+                data-custom-end="{&quot;inputX&quot;:1.6,&quot;inputY&quot;:1.4,&quot;inputZ&quot;:-1.6,&quot;inputScale&quot;:0.3,&quot;inputOpacity&quot;:1,&quot;inputRotation&quot;:-56,&quot;x&quot;:1.6,&quot;y&quot;:1.4,&quot;z&quot;:-1.6,&quot;scale&quot;:0.3,&quot;opacity&quot;:1,&quot;rotation&quot;:-56}"
+                data-special-settings="{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:1,&quot;spiralRotations&quot;:1,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1,&quot;inputValues&quot;:{&quot;swingRange&quot;:90,&quot;swingFreq&quot;:8,&quot;swingTargetX&quot;:5,&quot;zigzagAmp&quot;:2,&quot;zigzagFreq&quot;:6,&quot;zigzagTargetX&quot;:5,&quot;zigzagTargetY&quot;:3,&quot;pendulumRange&quot;:60,&quot;pendulumSpeed&quot;:2,&quot;waveAmp&quot;:1.5,&quot;waveFreq&quot;:4,&quot;waveTargetX&quot;:4,&quot;waveTargetY&quot;:2,&quot;bounceHeight&quot;:2,&quot;bounceFreq&quot;:4,&quot;spiralRadius&quot;:1,&quot;spiralRotations&quot;:1,&quot;slideDistance&quot;:10,&quot;rotateCycles&quot;:1}}"
+                data-original-position="{&quot;x&quot;:0,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-rotation="{&quot;x&quot;:-1.5707963267948966,&quot;y&quot;:0,&quot;z&quot;:0}"
+                data-original-scale="{&quot;x&quot;:1,&quot;y&quot;:1,&quot;z&quot;:1}"
+                data-original-opacity="1.00"
+                data-base-size="2"
+                data-image-aspect="0.865">
             </a-plane>
         </a-marker>
 
@@ -217,153 +398,6 @@
     </a-scene>
 
     <script>
-    let debugConsoleVisible = true;
-    let debugEntries = [];
-    let layersVisible = true;
-
-    function debugLog(message, type = 'info') {
-        const timestamp = new Date().toLocaleTimeString();
-        const entry = {
-            timestamp,
-            message,
-            type
-        };
-        
-        debugEntries.push(entry);
-        
-        // Keep only last 100 entries
-        if (debugEntries.length > 100) {
-            debugEntries.shift();
-        }
-        
-        // Also log to browser console
-        
-        updateDebugConsole();
-    }
-
-    function updateDebugConsole() {
-        const console = document.getElementById('debugConsole');
-        if (!console) return;
-        
-        console.innerHTML = debugEntries.map(entry => 
-            '<div class="log-entry log-' + entry.type + '">[' + entry.timestamp + '] ' + entry.message + '</div>'
-        ).join('');
-        
-        // Auto-scroll to bottom
-        console.scrollTop = console.scrollHeight;
-    }
-
-    function toggleDebugConsole() {
-        const console = document.getElementById('debugConsole');
-        debugConsoleVisible = !debugConsoleVisible;
-        console.style.display = debugConsoleVisible ? 'block' : 'none';
-        debugLog('Debug console ' + (debugConsoleVisible ? 'shown' : 'hidden'), 'info');
-    }
-
-    function clearDebugLog() {
-        debugEntries = [];
-        updateDebugConsole();
-        debugLog('Debug log cleared', 'info');
-    }
-
-    // Update layer status display
-    function updateLayerStatus() {
-        const layerStatusDiv = document.getElementById('layerStatus');
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        
-        let visibleCount = 0;
-        let totalCount = layers.length;
-        
-        layers.forEach(layer => {
-            const isVisible = layer.getAttribute('visible') === 'true';
-            if (isVisible) visibleCount++;
-        });
-        
-        layerStatusDiv.innerHTML = 
-            'Total: ' + totalCount + '<br>' +
-            'Visible: ' + visibleCount + '<br>' +
-            'Hidden: ' + (totalCount - visibleCount);
-    }
-
-    // Show all layers function
-    function showAllLayers() {
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        let shownCount = 0;
-        
-        layers.forEach(layer => {
-            layer.setAttribute('visible', 'true');
-            layer.setAttribute('material', 'transparent: true; opacity: ' + layer.getAttribute('data-original-opacity'));
-            shownCount++;
-        });
-        
-        layersVisible = true;
-        document.getElementById('showLayersBtn').classList.add('active');
-        debugLog('👁️ Showing all layers (' + shownCount + ' layers)', 'success');
-        updateLayerStatus();
-    }
-
-    // Hide all layers function
-    function hideAllLayers() {
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        let hiddenCount = 0;
-        
-        layers.forEach(layer => {
-            layer.setAttribute('visible', 'false');
-            hiddenCount++;
-        });
-        
-        layersVisible = false;
-        document.getElementById('showLayersBtn').classList.remove('active');
-        debugLog('👁️‍🗨️ Hiding all layers (' + hiddenCount + ' layers)', 'info');
-        updateLayerStatus();
-    }
-
-    // Test layer visibility function
-    function testLayerVisibility() {
-        const layers = document.querySelectorAll('[id^="layer-"]');
-        debugLog('🔍 Testing layer visibility...', 'info');
-        
-        layers.forEach((layer, index) => {
-            const layerId = layer.id;
-            const layerName = layer.getAttribute('data-layer-name') || 'Unknown';
-            const isVisible = layer.getAttribute('visible');
-            const opacity = layer.getAttribute('material');
-            const position = layer.getAttribute('position');
-            const scale = layer.getAttribute('scale');
-            const imgSrc = layer.getAttribute('src');
-            
-            debugLog('Layer ' + (index + 1) + ' (' + layerId + ' - ' + layerName + '):', 'info');
-            debugLog('  Visible: ' + isVisible, 'info');
-            debugLog('  Position: ' + position, 'info');
-            debugLog('  Scale: ' + scale, 'info');
-            debugLog('  Material: ' + opacity, 'info');
-            debugLog('  Image: ' + imgSrc, 'info');
-            
-            // Check if image asset exists
-            const imgElement = document.querySelector(imgSrc);
-            if (imgElement) {
-                debugLog('  ✅ Image asset found', 'success');
-                
-                // Check image loading status
-                if (imgElement.complete) {
-                    debugLog('  ✅ Image loaded successfully', 'success');
-                } else {
-                    debugLog('  ⏳ Image still loading...', 'warning');
-                }
-            } else {
-                debugLog('  ❌ Image asset not found!', 'error');
-            }
-        });
-        
-        updateLayerStatus();
-    }
-
-    // Override console methods to capture all logs
-    console.log = (message) => debugLog(message, 'info');
-    console.error = (message) => debugLog(message, 'error');
-    console.warn = (message) => debugLog(message, 'warning');
-    console.info = (message) => debugLog(message, 'info');
-
     let animationIntervals = [];
     let audioTracks = [];
     let markerVisible = false;
@@ -378,13 +412,33 @@
         animationId: null
     };
 
-    debugLog('🚀 AR Application Starting Up', 'success');
-    debugLog('Timeline initialized with loop: ' + globalTimeline.loop, 'info');
-
     // Initialize audio tracks from HTML audio elements
     function initializeAudioTracks() {
-        debugLog('🎵 Initializing audio tracks...', 'info');
         audioTracks = [];
+        audioTracks.push({
+            id: "audio_1752725489332_6e6ca8lul",
+            name: "sound.mp3",
+            audio: document.getElementById("audio-audio_1752725489332_6e6ca8lul"),
+            playOrder: 1,
+            startTime: 0,
+            endTime: 18.133333,
+            duration: 18.133333,
+            timelineActive: false,
+            volume: 0.8,
+            isPlaying: false
+        });
+        audioTracks.push({
+            id: "audio_1752725489335_60j2d9y2i",
+            name: "title.mp3",
+            audio: document.getElementById("audio-audio_1752725489335_60j2d9y2i"),
+            playOrder: 2,
+            startTime: 0,
+            endTime: 3.584,
+            duration: 3.584,
+            timelineActive: false,
+            volume: 0.8,
+            isPlaying: false
+        });
         
         // Set audio properties and calculate timeline duration
         let maxEndTime = 0;
@@ -392,26 +446,7 @@
             if (track.audio) {
                 track.audio.volume = track.volume;
                 track.audio.loop = false;
-                
-                // Add event listeners for debugging
-                track.audio.addEventListener('loadstart', () => {
-                    debugLog('📥 Loading started: ' + track.name, 'info');
-                });
-                
-                track.audio.addEventListener('canplaythrough', () => {
-                    debugLog('✅ Can play through: ' + track.name, 'success');
-                });
-                
-                track.audio.addEventListener('error', (e) => {
-                    debugLog('❌ Audio error for ' + track.name + ': ' + e.message, 'error');
-                });
-                
-                track.audio.addEventListener('ended', () => {
-                    debugLog('🏁 Audio ended: ' + track.name, 'info');
-                    track.timelineActive = false;
-                });
             }
-            
             if (track.endTime > maxEndTime) {
                 maxEndTime = track.endTime;
             }
@@ -420,8 +455,20 @@
         globalTimeline.duration = maxEndTime;
         updateTimelineDisplay();
         
-        debugLog('🎵 Initialized ' + audioTracks.length + ' audio tracks', 'success');
-        debugLog('📏 Timeline duration: ' + globalTimeline.duration + ' seconds', 'info');
+        console.log('Initialized', audioTracks.length, 'audio tracks');
+        console.log('Timeline duration:', globalTimeline.duration, 'seconds');
+    }
+
+    // Function to properly scale elements in AR.js
+    function scaleARElement(element, scaleValue) {
+        const baseSize = parseFloat(element.getAttribute('data-base-size')) || 2;
+        const aspect = parseFloat(element.getAttribute('data-image-aspect')) || 1;
+        
+        const newWidth = baseSize * aspect * scaleValue;
+        const newHeight = baseSize * scaleValue;
+        
+        element.setAttribute('width', newWidth);
+        element.setAttribute('height', newHeight);
     }
 
     // Update timeline display
@@ -445,7 +492,6 @@
     // Play timeline (Adobe AE style)
     function playTimeline() {
         if (globalTimeline.isPlaying) {
-            debugLog('⏸️ Timeline already playing, stopping...', 'info');
             stopTimeline();
             return;
         }
@@ -454,7 +500,7 @@
         globalTimeline.startTime = Date.now();
         globalTimeline.currentTime = 0;
         
-        debugLog('▶️ Starting timeline playback (Duration: ' + globalTimeline.duration + 's, Loop: ' + globalTimeline.loop + ')', 'success');
+        console.log('Starting timeline playback (Duration: ' + globalTimeline.duration + 's, Loop: ' + globalTimeline.loop + ')');
         
         // Start timeline loop
         updateTimeline();
@@ -462,11 +508,6 @@
 
     // Stop timeline
     function stopTimeline() {
-        if (!globalTimeline.isPlaying) {
-            debugLog('⏹️ Timeline already stopped', 'info');
-            return;
-        }
-        
         globalTimeline.isPlaying = false;
         globalTimeline.currentTime = 0;
         
@@ -476,24 +517,22 @@
         }
         
         // Stop all tracks
-        let stoppedTracks = 0;
         audioTracks.forEach(track => {
-            if (track.audio && track.timelineActive) {
+            if (track.audio) {
                 track.audio.pause();
                 track.audio.currentTime = 0;
-                stoppedTracks++;
             }
             track.timelineActive = false;
         });
         
         updateTimelineDisplay();
-        debugLog('⏹️ Timeline stopped and reset (' + stoppedTracks + ' tracks stopped)', 'info');
+        console.log('Timeline stopped and reset');
     }
 
     // Toggle timeline loop
     function toggleTimelineLoop() {
         globalTimeline.loop = !globalTimeline.loop;
-        debugLog('🔄 Timeline loop: ' + (globalTimeline.loop ? 'enabled' : 'disabled'), 'info');
+        console.log('Timeline loop:', globalTimeline.loop ? 'enabled' : 'disabled');
     }
 
     // Update timeline (main timeline loop)
@@ -510,7 +549,7 @@
         if (elapsed >= globalTimeline.duration) {
             if (globalTimeline.loop) {
                 // Restart timeline
-                debugLog('🔄 Timeline loop - restarting', 'info');
+                console.log('Timeline loop - restarting');
                 globalTimeline.startTime = Date.now();
                 globalTimeline.currentTime = 0;
                 
@@ -524,7 +563,6 @@
                 });
             } else {
                 // Stop timeline
-                debugLog('🏁 Timeline completed', 'success');
                 stopTimeline();
                 return;
             }
@@ -540,11 +578,9 @@
                 // Start playing this track
                 track.timelineActive = true;
                 track.audio.currentTime = 0;
-                track.audio.play().then(() => {
-                    debugLog('▶️ Timeline: Playing ' + track.name + ' at ' + elapsed.toFixed(1) + 's', 'success');
-                }).catch(e => {
-                    debugLog('❌ Timeline: Failed to play ' + track.name + ': ' + e.message, 'error');
-                });
+                track.audio.play().catch(e => console.log('Audio play failed:', e));
+                
+                console.log('Timeline: Starting ' + track.name + ' at ' + elapsed.toFixed(1) + 's');
                 
             } else if (!shouldPlay && track.timelineActive) {
                 // Stop playing this track
@@ -552,7 +588,7 @@
                 track.audio.pause();
                 track.audio.currentTime = 0;
                 
-                debugLog('⏸️ Timeline: Stopping ' + track.name + ' at ' + elapsed.toFixed(1) + 's', 'info');
+                console.log('Timeline: Stopping ' + track.name + ' at ' + elapsed.toFixed(1) + 's');
             }
         });
         
@@ -561,26 +597,12 @@
     }
 
     // Call initialization when page loads
-    window.addEventListener('load', () => {
-        debugLog('📄 Page loaded, initializing...', 'info');
-        initializeAudioTracks();
-        
-        // Auto-show layers after a delay
-        setTimeout(() => {
-            showAllLayers();
-            testLayerVisibility();
-        }, 2000);
-    });
+    window.addEventListener('load', initializeAudioTracks);
 
     // Marker event handlers
     document.querySelector('a-marker').addEventListener('markerFound', function() {
         markerVisible = true;
-        debugLog('📍 Marker found - starting timeline and animations', 'success');
-        
-        // Ensure layers are visible when marker is found
-        if (!layersVisible) {
-            showAllLayers();
-        }
+        console.log('Marker found - starting timeline and animations');
         
         // Auto-start timeline when marker is found
         playTimeline();
@@ -589,48 +611,32 @@
 
     document.querySelector('a-marker').addEventListener('markerLost', function() {
         markerVisible = false;
-        debugLog('❌ Marker lost - stopping timeline and animations', 'warning');
+        console.log('Marker lost - stopping timeline and animations');
         
         // Stop timeline and animations
         stopTimeline();
         stopAllAnimations();
     });
 
-    // Animation functions with enhanced logging
+    // Animation functions with proper scaling
     function playAllAnimations() {
-        debugLog('🎬 Starting all animations...', 'info');
         stopAllAnimations();
-        
         const layers = document.querySelectorAll('[id^="layer-"]');
-        debugLog('Found ' + layers.length + ' layers to animate', 'info');
-        
-        // First, ensure all layers are visible
         layers.forEach(layer => {
-            layer.setAttribute('visible', 'true');
-        });
-        
-        layers.forEach((layer, index) => {
-            const layerId = layer.id;
-            const layerName = layer.getAttribute('data-layer-name') || 'Unknown';
             const enableCustom = layer.getAttribute('data-animation-enabled') === 'true';
             const specialEffect = layer.getAttribute('data-special-effect');
-            
-            debugLog('Layer ' + (index + 1) + ' (' + layerId + ' - ' + layerName + '): Custom=' + enableCustom + ', Effect=' + specialEffect, 'info');
             
             if (enableCustom || specialEffect !== 'none') {
                 const speed = parseFloat(layer.getAttribute('data-animation-speed'));
                 const duration = parseFloat(layer.getAttribute('data-animation-duration'));
                 const loop = layer.getAttribute('data-loop-animation') === 'true';
                 
-                debugLog('Animation settings: Speed=' + speed + ', Duration=' + duration + ', Loop=' + loop, 'info');
-                
                 // Parse special effect settings
                 let settings = {};
                 try {
                     settings = JSON.parse(layer.getAttribute('data-special-settings').replace(/&quot;/g, '"'));
-                    debugLog('Special effect settings loaded for ' + layerId, 'info');
                 } catch (e) {
-                    debugLog('❌ Error parsing special effect settings for ' + layerId + ': ' + e.message, 'error');
+                    console.error('Error parsing special effect settings:', e);
                     // Fallback to default settings
                     settings = {
                         swingRange: 90, swingFreq: 8, swingTargetX: 5,
@@ -651,7 +657,6 @@
                     let progress = (elapsed % duration) / duration;
                     
                     if (!loop && elapsed > duration) {
-                        debugLog('🏁 Animation completed for ' + layerId, 'info');
                         clearInterval(interval);
                         return;
                     }
@@ -660,181 +665,161 @@
                     const easedProgress = easeInOut(progress);
 
                     // Get original values
-                    try {
-                        const originalPosStr = layer.getAttribute('data-original-position').replace(/&quot;/g, '"');
-                        const originalPos = JSON.parse(originalPosStr);
-                        const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
-                        
-                        const originalRotStr = layer.getAttribute('data-original-rotation').replace(/&quot;/g, '"');
-                        const originalRot = JSON.parse(originalRotStr);
-                        const origRotX = originalRot.x * 180 / Math.PI;
-                        const origRotY = originalRot.y * 180 / Math.PI;
-                        const origRotZ = originalRot.z * 180 / Math.PI;
-                        
-                        const originalScaleStr = layer.getAttribute('data-original-scale').replace(/&quot;/g, '"');
-                        const originalScale = JSON.parse(originalScaleStr);
-                        const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
-
-                        let finalX = origX, finalY = origY, finalZ = origZ;
-                        let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
-                        let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
-                        let finalOpacity = parseFloat(layer.getAttribute('data-original-opacity'));
+                    const originalPosStr = layer.getAttribute('data-original-position').replace(/&quot;/g, '"');
+                    const originalPos = JSON.parse(originalPosStr);
+                    const origX = originalPos.x, origY = originalPos.y, origZ = originalPos.z;
                     
-                        // Apply custom animation if enabled
-                        if (enableCustom) {
-                            try {
-                                const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
-                                const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
-                                
-                                finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
-                                finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
-                                finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
-                                
-                                const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
-                                finalScaleX = finalScaleY = finalScaleZ = customScale;
-                                
-                                finalOpacity = customStart.opacity + (customEnd.opacity - customStart.opacity) * easedProgress;
-                                finalRotZ = origRotZ + (customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress);
-                            } catch (e) {
-                                debugLog('❌ Error parsing custom animation data for ' + layerId + ': ' + e.message, 'error');
-                            }
+                    const originalRotStr = layer.getAttribute('data-original-rotation').replace(/&quot;/g, '"');
+                    const originalRot = JSON.parse(originalRotStr);
+                    const origRotX = originalRot.x * 180 / Math.PI;
+                    const origRotY = originalRot.y * 180 / Math.PI;
+                    const origRotZ = originalRot.z * 180 / Math.PI;
+                    
+                    const originalScaleStr = layer.getAttribute('data-original-scale').replace(/&quot;/g, '"');
+                    const originalScale = JSON.parse(originalScaleStr);
+                    const origScaleX = originalScale.x, origScaleY = originalScale.y, origScaleZ = originalScale.z;
+
+                    let finalX = origX, finalY = origY, finalZ = origZ;
+                    let finalRotX = origRotX, finalRotY = origRotY, finalRotZ = origRotZ;
+                    let finalScaleX = origScaleX, finalScaleY = origScaleY, finalScaleZ = origScaleZ;
+                    let finalOpacity = parseFloat(layer.getAttribute('data-original-opacity'));
+                
+                    // Apply custom animation if enabled
+                    if (enableCustom) {
+                        try {
+                            const customStart = JSON.parse(layer.getAttribute('data-custom-start').replace(/&quot;/g, '"'));
+                            const customEnd = JSON.parse(layer.getAttribute('data-custom-end').replace(/&quot;/g, '"'));
+                            
+                            finalX = customStart.x + (customEnd.x - customStart.x) * easedProgress;
+                            finalY = customStart.y + (customEnd.y - customStart.y) * easedProgress;
+                            finalZ = customStart.z + (customEnd.z - customStart.z) * easedProgress;
+                            
+                            const customScale = customStart.scale + (customEnd.scale - customStart.scale) * easedProgress;
+                            finalScaleX = finalScaleY = finalScaleZ = customScale;
+                            
+                            finalOpacity = customStart.opacity + (customEnd.opacity - customStart.opacity) * easedProgress;
+                            finalRotZ = origRotZ + (customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress);
+                        } catch (e) {
+                            console.error('Error parsing custom animation data:', e);
                         }
-                        
-                        // Apply special effects
-                        if (specialEffect !== 'none') {
-                            switch (specialEffect) {
-                                case 'swingToTarget':
-                                    const swingAmplitude = (1 - easedProgress) * settings.swingRange;
-                                    const swingAngle = Math.sin(progress * settings.swingFreq * Math.PI) * swingAmplitude;
-                                    finalRotZ += swingAngle;
-                                    if (!enableCustom) {
-                                        finalX += settings.swingTargetX * easedProgress;
-                                    }
-                                    break;
-
-                                case 'zigzagToTarget':
-                                    const zigzagAmplitude = (1 - easedProgress) * settings.zigzagAmp;
-                                    const zigzagOffset = Math.sin(progress * settings.zigzagFreq * Math.PI) * zigzagAmplitude;
-                                    finalX += zigzagOffset;
-                                    if (!enableCustom) {
-                                        finalX += settings.zigzagTargetX * easedProgress;
-                                        finalY += settings.zigzagTargetY * easedProgress;
-                                    }
-                                    break;
-
-                                case 'pendulumMove':
-                                    const pendulumAngle = Math.sin(elapsed * settings.pendulumSpeed) * settings.pendulumRange;
-                                    finalRotZ += pendulumAngle;
-                                    break;
-
-                                case 'waveToTarget':
-                                    const waveY = Math.sin(progress * settings.waveFreq * Math.PI) * settings.waveAmp * (1 - easedProgress);
-                                    finalY += waveY;
-                                    finalRotZ += (waveY * 0.2);
-                                    if (!enableCustom) {
-                                        finalX += settings.waveTargetX * easedProgress;
-                                        finalY += settings.waveTargetY * easedProgress;
-                                    }
-                                    break;
-
-                                case 'elasticMove':
-                                    const scaleElastic = 1 + Math.sin(progress * 10) * 0.1 * (1 - progress);
-                                    finalScaleX *= scaleElastic;
-                                    finalScaleY *= scaleElastic;
-                                    finalScaleZ *= scaleElastic;
-                                    if (!enableCustom) {
-                                        const elasticEase = (t) => {
-                                            if (t === 0) return 0;
-                                            if (t === 1) return 1;
-                                            const c4 = (2 * Math.PI) / 3;
-                                            return t < 0.5
-                                                ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * c4)) / 2
-                                                : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * c4)) / 2 + 1;
-                                        };
-                                        const elasticProgress = elasticEase(progress);
-                                        finalX += 3 * elasticProgress;
-                                        finalY += 3 * elasticProgress;
-                                    }
-                                    break;
-
-                                case 'slideDown':
-                                    finalY += settings.slideDistance * (1 - easedProgress);
-                                    break;
-                                case 'slideUp':
-                                    finalY -= settings.slideDistance * (1 - easedProgress);
-                                    break;
-                                case 'slideLeft':
-                                    finalX += settings.slideDistance * (1 - easedProgress);
-                                    break;
-                                case 'slideRight':
-                                    finalX -= settings.slideDistance * (1 - easedProgress);
-                                    break;
-                                case 'fadeIn':
-                                    finalOpacity *= easedProgress;
-                                    break;
-                                case 'scaleIn':
-                                    const scaleInFactor = easedProgress;
-                                    finalScaleX *= scaleInFactor;
-                                    finalScaleY *= scaleInFactor;
-                                    finalScaleZ *= scaleInFactor;
-                                    break;
-                                case 'rotate':
-                                    finalRotZ += easedProgress * 360 * settings.rotateCycles;
-                                    break;
-                                case 'bounce':
-                                    const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * settings.bounceFreq)) * settings.bounceHeight;
-                                    finalY += bounceY;
-                                    break;
-                                case 'spiral':
-                                    const spiralRadius = settings.spiralRadius * (1 - easedProgress);
-                                    const spiralAngle = easedProgress * Math.PI * settings.spiralRotations;
-                                    finalX += spiralRadius * Math.cos(spiralAngle);
-                                    finalY += spiralRadius * Math.sin(spiralAngle);
-                                    break;
-                                default:
-                                    debugLog('⚠️ Unknown special effect: ' + specialEffect, 'warning');
-                                    break;
-                            }
-                        }
-                        
-                        // Update layer position, rotation, and scale
-                        layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
-                        layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
-                        layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
-                        layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity);
-                        layer.setAttribute('visible', 'true');
-                        
-                    } catch (e) {
-                        debugLog('❌ Animation error for ' + layerId + ': ' + e.message, 'error');
-                        clearInterval(interval);
                     }
+                    
+                    // Apply special effects (same as original)
+                    if (specialEffect !== 'none') {
+                        switch (specialEffect) {
+                            case 'swingToTarget':
+                                const swingAmplitude = (1 - easedProgress) * settings.swingRange;
+                                const swingAngle = Math.sin(progress * settings.swingFreq * Math.PI) * swingAmplitude;
+                                finalRotZ += swingAngle;
+                                if (!enableCustom) {
+                                    finalX += settings.swingTargetX * easedProgress;
+                                }
+                                break;
+
+                            case 'zigzagToTarget':
+                                const zigzagAmplitude = (1 - easedProgress) * settings.zigzagAmp;
+                                const zigzagOffset = Math.sin(progress * settings.zigzagFreq * Math.PI) * zigzagAmplitude;
+                                finalX += zigzagOffset;
+                                if (!enableCustom) {
+                                    finalX += settings.zigzagTargetX * easedProgress;
+                                    finalY += settings.zigzagTargetY * easedProgress;
+                                }
+                                break;
+
+                            case 'pendulumMove':
+                                const pendulumAngle = Math.sin(elapsed * settings.pendulumSpeed) * settings.pendulumRange;
+                                finalRotZ += pendulumAngle;
+                                break;
+
+                            case 'waveToTarget':
+                                const waveY = Math.sin(progress * settings.waveFreq * Math.PI) * settings.waveAmp * (1 - easedProgress);
+                                finalY += waveY;
+                                finalRotZ += (waveY * 0.2);
+                                if (!enableCustom) {
+                                    finalX += settings.waveTargetX * easedProgress;
+                                    finalY += settings.waveTargetY * easedProgress;
+                                }
+                                break;
+
+                            case 'elasticMove':
+                                const scaleElastic = 1 + Math.sin(progress * 10) * 0.1 * (1 - progress);
+                                finalScaleX *= scaleElastic;
+                                finalScaleY *= scaleElastic;
+                                finalScaleZ *= scaleElastic;
+                                if (!enableCustom) {
+                                    const elasticEase = (t) => {
+                                        if (t === 0) return 0;
+                                        if (t === 1) return 1;
+                                        const c4 = (2 * Math.PI) / 3;
+                                        return t < 0.5
+                                            ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * c4)) / 2
+                                            : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * c4)) / 2 + 1;
+                                    };
+                                    const elasticProgress = elasticEase(progress);
+                                    finalX += 3 * elasticProgress;
+                                    finalY += 3 * elasticProgress;
+                                }
+                                break;
+
+                            case 'slideDown':
+                                finalY += settings.slideDistance * (1 - easedProgress);
+                                break;
+                            case 'slideUp':
+                                finalY -= settings.slideDistance * (1 - easedProgress);
+                                break;
+                            case 'slideLeft':
+                                finalX += settings.slideDistance * (1 - easedProgress);
+                                break;
+                            case 'slideRight':
+                                finalX -= settings.slideDistance * (1 - easedProgress);
+                                break;
+                            case 'fadeIn':
+                                finalOpacity *= easedProgress;
+                                break;
+                            case 'scaleIn':
+                                const scaleInFactor = easedProgress;
+                                finalScaleX *= scaleInFactor;
+                                finalScaleY *= scaleInFactor;
+                                finalScaleZ *= scaleInFactor;
+                                break;
+                            case 'rotate':
+                                finalRotZ += easedProgress * 360 * settings.rotateCycles;
+                                break;
+                            case 'bounce':
+                                const bounceY = Math.abs(Math.sin(easedProgress * Math.PI * settings.bounceFreq)) * settings.bounceHeight;
+                                finalY += bounceY;
+                                break;
+                            case 'spiral':
+                                const spiralRadius = settings.spiralRadius * (1 - easedProgress);
+                                const spiralAngle = easedProgress * Math.PI * settings.spiralRotations;
+                                finalX += spiralRadius * Math.cos(spiralAngle);
+                                finalY += spiralRadius * Math.sin(spiralAngle);
+                                break;
+                        }
+                    }
+                    
+                    // Update layer position, rotation, and scale
+                    layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
+                    layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
+                    
+                    // Use the scale function for proper AR sizing
+                    scaleARElement(layer, finalScaleX);
+                    
+                    layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity + '; side: double');
                     
                 }, 16); // ~60fps
                 
                 animationIntervals.push(interval);
-                debugLog('✅ Animation started for ' + layerId, 'success');
-            } else {
-                debugLog('⏭️ No animation for ' + layerId + ' (disabled)', 'info');
-                // Even if no animation, make sure layer is visible
-                layer.setAttribute('visible', 'true');
             }
         });
-        
-        debugLog('🎬 All animations started (' + animationIntervals.length + ' active)', 'success');
-        updateLayerStatus();
     }
     
     function stopAllAnimations() {
-        debugLog('⏹️ Stopping all animations...', 'info');
-        
-        const stoppedCount = animationIntervals.length;
         animationIntervals.forEach(interval => clearInterval(interval));
         animationIntervals = [];
         
         // Reset all layers to original state
         const layers = document.querySelectorAll('[id^="layer-"]');
-        let resetCount = 0;
-        
         layers.forEach(layer => {
             try {
                 const originalPos = JSON.parse(layer.getAttribute('data-original-position').replace(/&quot;/g, '"'));
@@ -844,92 +829,16 @@
                 
                 layer.setAttribute('position', originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z);
                 layer.setAttribute('rotation', (originalRot.x * 180 / Math.PI) + ' ' + (originalRot.y * 180 / Math.PI) + ' ' + (originalRot.z * 180 / Math.PI));
-                layer.setAttribute('scale', originalScale.x + ' ' + originalScale.y + ' ' + originalScale.z);
-                layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity);
-                layer.setAttribute('visible', 'true'); // Keep visible even when stopped
                 
-                resetCount++;
+                // Reset scale using proper AR scaling
+                scaleARElement(layer, originalScale.x);
+                
+                layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity + '; side: double');
             } catch (e) {
-                debugLog('❌ Error resetting layer ' + layer.id + ': ' + e.message, 'error');
+                console.error('Error resetting layer:', e);
             }
         });
-        
-        debugLog('⏹️ Stopped ' + stoppedCount + ' animations and reset ' + resetCount + ' layers', 'info');
-        updateLayerStatus();
     }
-
-    // A-Frame scene initialization logging
-    document.addEventListener('DOMContentLoaded', function() {
-        debugLog('📄 DOM Content Loaded', 'info');
-        
-        // Wait for A-Frame to initialize
-        setTimeout(() => {
-            const scene = document.querySelector('a-scene');
-            if (scene) {
-                debugLog('🎬 A-Frame scene found', 'success');
-                
-                scene.addEventListener('loaded', () => {
-                    debugLog('✅ A-Frame scene loaded', 'success');
-                    testLayerVisibility();
-                });
-                
-                scene.addEventListener('renderstart', () => {
-                    debugLog('🎨 A-Frame rendering started', 'success');
-                });
-                
-                // Check for AR.js
-                if (typeof AFRAME !== 'undefined' && AFRAME.components && AFRAME.components.arjs) {
-                    debugLog('📱 AR.js component detected', 'success');
-                } else {
-                    debugLog('⚠️ AR.js component not found', 'warning');
-                }
-                
-                // Monitor camera
-                const camera = document.querySelector('[camera]');
-                if (camera) {
-                    debugLog('📷 Camera entity found', 'success');
-                } else {
-                    debugLog('❌ Camera entity not found', 'error');
-                }
-                
-                // Monitor marker
-                const marker = document.querySelector('a-marker');
-                if (marker) {
-                    debugLog('🎯 Marker entity found', 'success');
-                } else {
-                    debugLog('❌ Marker entity not found', 'error');
-                }
-                
-            } else {
-                debugLog('❌ A-Frame scene not found', 'error');
-            }
-        }, 1000);
-    });
-
-    // Add error handling for the entire application
-    window.addEventListener('error', function(event) {
-        debugLog('💥 Global error: ' + event.message + ' at ' + event.filename + ':' + event.lineno, 'error');
-    });
-
-    window.addEventListener('unhandledrejection', function(event) {
-        debugLog('💥 Unhandled promise rejection: ' + event.reason, 'error');
-    });
-
-    // Monitor performance
-    function logPerformance() {
-        if (performance && performance.memory) {
-            const memory = performance.memory;
-            debugLog('📊 Memory: Used=' + Math.round(memory.usedJSHeapSize / 1048576) + 'MB, Total=' + Math.round(memory.totalJSHeapSize / 1048576) + 'MB', 'info');
-        }
-    }
-
-    // Log performance every 30 seconds
-    setInterval(logPerformance, 30000);
-
-    // Initial performance log
-    setTimeout(logPerformance, 5000);
-
-    debugLog('🎉 AR Application fully initialized', 'success');
     
     </script>
 </body>
