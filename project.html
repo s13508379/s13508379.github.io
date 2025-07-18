@@ -371,9 +371,9 @@
                             
                             // FIXED: Properly interpolate rotation values
                             // The inputRotationX/Y/Z values are already in degrees from user input
-                            finalRotX = customStart.rotationX + (customEnd.rotationX - customStart.rotationX) * easedProgress;
-                            finalRotY = customStart.rotationY + (customEnd.rotationY - customStart.rotationY) * easedProgress;
-                            finalRotZ = customStart.rotationZ + (customEnd.rotationZ - customStart.rotationZ) * easedProgress;
+                            finalRotX = customStart.inputRotationX + (customEnd.inputRotationX - customStart.inputRotationX) * easedProgress;
+                            finalRotY = customStart.inputRotationY + (customEnd.inputRotationY - customStart.inputRotationY) * easedProgress;
+                            finalRotZ = customStart.inputRotationZ + (customEnd.inputRotationZ - customStart.inputRotationZ) * easedProgress;
 
                         } catch (e) {
                             console.error('Error parsing custom animation data:', e);
