@@ -42,6 +42,17 @@
             margin-bottom: 10px;
             font-size: 12px;
         }
+        
+        /* Fix for AR image flickering */
+        a-scene {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+        }
+        
+        a-plane[src] {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
     </style>
 </head>
 
@@ -53,7 +64,7 @@
 
     <a-scene vr-mode-ui="enabled: false" embedded
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;"
-        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true; antialias: true;"
         background="color: #000000; transparent: true">
 
         <a-assets>
@@ -82,11 +93,11 @@
 
         <a-marker type="pattern" url="pattern-project-qr-code.patt">
             <a-plane id="layer-0" src="#img-0"
-                position="0.00 -1.00 0.00"
+                position="0.00 -2.00 0.00"
                 rotation="-90.00 0.00 0.00"
                 width="4.000"
                 height="4.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -107,7 +118,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="1.200"
                 height="1.200"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -128,7 +139,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="1.000"
                 height="1.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -149,7 +160,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.200"
                 height="0.200"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -170,7 +181,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.400"
                 height="0.400"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -191,7 +202,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.240"
                 height="0.240"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="pendulumMove"
                 data-animation-speed="1" 
@@ -212,7 +223,7 @@
                 rotation="0.00 0.00 0.00"
                 width="2.000"
                 height="2.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="true" 
                 data-special-effect="swingToTarget"
                 data-animation-speed="1" 
@@ -233,7 +244,7 @@
                 rotation="0.00 0.00 0.00"
                 width="2.000"
                 height="2.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="true" 
                 data-special-effect="swingToTarget"
                 data-animation-speed="1" 
@@ -254,7 +265,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.400"
                 height="0.400"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -275,7 +286,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.400"
                 height="0.400"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -296,7 +307,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="1.000"
                 height="1.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -317,7 +328,7 @@
                 rotation="-90.00 0.00 -9.00"
                 width="0.200"
                 height="0.200"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -338,7 +349,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.200"
                 height="0.200"
-                material="transparent: true; opacity: 0.90; side: double"
+                material="transparent: true; opacity: 0.90; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -359,7 +370,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.400"
                 height="0.400"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="pendulumMove"
                 data-animation-speed="1" 
@@ -380,7 +391,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.240"
                 height="0.240"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -401,7 +412,7 @@
                 rotation="0.00 0.00 0.00"
                 width="2.000"
                 height="2.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="true" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -422,7 +433,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="2.000"
                 height="2.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="true" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -443,7 +454,7 @@
                 rotation="0.00 0.00 0.00"
                 width="2.000"
                 height="2.000"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="true" 
                 data-special-effect="spiral"
                 data-animation-speed="1" 
@@ -464,7 +475,7 @@
                 rotation="-90.00 0.00 0.00"
                 width="0.200"
                 height="0.200"
-                material="transparent: true; opacity: 1.00; side: double"
+                material="transparent: true; opacity: 1.00; side: front; alphaTest: 0.01"
                 data-animation-enabled="false" 
                 data-special-effect="none"
                 data-animation-speed="1" 
@@ -1060,11 +1071,46 @@
         console.log('==========================================');
     }
     
+    // Function to fix layer rendering and prevent flickering
+    function fixLayerRendering() {
+        console.log('🔧 Fixing layer rendering issues...');
+        
+        const layers = document.querySelectorAll('[id^="layer-"]');
+        layers.forEach((layer, index) => {
+            // Set proper render order
+            layer.setAttribute('render-order', index + 1);
+            
+            // Fix material properties
+            const material = layer.getAttribute('material');
+            if (material.includes('side: double')) {
+                const newMaterial = material.replace('side: double', 'side: front; alphaTest: 0.01; depthWrite: true');
+                layer.setAttribute('material', newMaterial);
+            }
+            
+            // Adjust z-positions to prevent z-fighting
+            const position = layer.getAttribute('position').split(' ');
+            const x = parseFloat(position[0]);
+            const y = parseFloat(position[1]);
+            let z = parseFloat(position[2]);
+            
+            // Add small increments to z-position based on layer index to prevent z-fighting
+            const zOffset = index * 0.001;
+            z += zOffset;
+            
+            layer.setAttribute('position', x + ' ' + y + ' ' + z);
+            
+            console.log('Fixed layer-' + layer.id + ': render-order=' + (index + 1) + ', z-offset=' + zOffset);
+        });
+        
+        console.log('✅ Layer rendering optimization complete!');
+    }
+    
     // Add event listeners to log dimensions when scene is ready
     document.addEventListener('DOMContentLoaded', function() {
         setTimeout(logImageDimensions, 1000); // Wait for images to load
         setTimeout(logEntityDimensions, 1500); // Wait for entities to initialize
         setTimeout(createInputImageReport, 2000); // Create comprehensive report
+        setTimeout(fixLayerRendering, 2500); // Fix rendering issues
     });
     
     </script>
