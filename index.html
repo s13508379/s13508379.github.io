@@ -34,7 +34,7 @@
                 <button onclick="addImageLayer()">Add Layer</button>
             </div>
 
-            <div class="control-group">
+            <div class="control-group" id="positionControls">
                 <label>Position X:</label>
                 <input type="number" id="xPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
 
@@ -45,15 +45,16 @@
                 <input type="number" id="zPos" min="-10" max="10" step="0.1" value="0" oninput="updatePosition()">
             </div>
 
-            <div class="control-group">
+            <div class="control-group" id="materialControls">
                 <label>Transparency:</label>
                 <input type="number" id="alpha" min="0" max="1" step="0.1" value="1" oninput="updateTransparency()">
 
                 <label>Scale:</label>
                 <input type="number" id="scale" min="0.1" max="5" step="0.1" value="1" oninput="updateScale()">
+
             </div>
 
-            <div class="control-group">
+            <div class="control-group" id="rotationControls">
                 <label>Rotation X:</label>
                 <input type="number" id="rotX" min="-180" max="180" step="1" value="0" oninput="updateRotation()">
 
@@ -226,8 +227,14 @@
                     <label>Start Opacity:</label>
                     <input type="number" id="startOpacity" min="0" max="1" step="0.1" value="1"
                         oninput="updateCustomValues()">
-                    <label>Start Rotation:</label>
-                    <input type="number" id="startRotation" min="-360" max="360" step="1" value="0"
+                    <label>Start Rotation X:</label>
+                    <input type="number" id="startRotationX" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>Start Rotation Y:</label>
+                    <input type="number" id="startRotationY" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>Start Rotation Z:</label>
+                    <input type="number" id="startRotationZ" min="-360" max="360" step="1" value="0"
                         oninput="updateCustomValues()">
 
                     <h5>End Properties:</h5>
@@ -237,8 +244,14 @@
                     <label>End Opacity:</label>
                     <input type="number" id="endOpacity" min="0" max="1" step="0.1" value="1"
                         oninput="updateCustomValues()">
-                    <label>End Rotation:</label>
-                    <input type="number" id="endRotation" min="-360" max="360" step="1" value="0"
+                    <label>End Rotation X:</label>
+                    <input type="number" id="endRotationX" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>End Rotation Y:</label>
+                    <input type="number" id="endRotationY" min="-360" max="360" step="1" value="0"
+                        oninput="updateCustomValues()">
+                    <label>End Rotation Z:</label>
+                    <input type="number" id="endRotationZ" min="-360" max="360" step="1" value="0"
                         oninput="updateCustomValues()">
                 </div>
 

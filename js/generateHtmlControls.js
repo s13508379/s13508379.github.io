@@ -1,3 +1,5 @@
+// generateHtmlControls.js - Updated with proper image scaling for AR.js
+
 function generateHTMLContent() {
     const name = (document.getElementById('projectName').value || 'AR_Project').trim();
 
@@ -81,7 +83,7 @@ function generateHTMLContent() {
 
         <a-marker type="pattern" url="pattern-${name}-qr-code.patt">`;
 
-    // Add each layer as A-Frame entities with all settings
+    // Add each layer as A-Frame entities with proper scaling
     imageLayers.forEach(layer => {
         const pos = layer.originalPosition;
         const rot = layer.originalRotation;
@@ -92,6 +94,15 @@ function generateHTMLContent() {
         const rotX = (rot.x * 180 / Math.PI).toFixed(2);
         const rotY = (rot.y * 180 / Math.PI).toFixed(2);
         const rotZ = (rot.z * 180 / Math.PI).toFixed(2);
+
+        // Calculate proper width and height for A-Frame
+        // A-Frame's plane uses width and height attributes, not scale
+        const aspect = layer.imageAspect || 1;
+        const baseSize = layer.baseSize || 2;
+        
+        // Calculate the actual size in AR.js coordinate system
+        const arWidth = (baseSize * aspect * scale.x).toFixed(3);
+        const arHeight = (baseSize * scale.y).toFixed(3);
 
         // Properly escape JSON data for HTML attributes
         const customStartJSON = JSON.stringify(layer.customAnimation.start).replace(/"/g, '&quot;');
@@ -107,7 +118,8 @@ function generateHTMLContent() {
             <a-plane id="layer-${layer.id}" src="#img-${layer.id}"
                 position="${pos.x.toFixed(2)} ${pos.y.toFixed(2)} ${pos.z.toFixed(2)}"
                 rotation="${rotX} ${rotY} ${rotZ}"
-                scale="${scale.x.toFixed(2)} ${scale.y.toFixed(2)} ${scale.z.toFixed(2)}"
+                width="${arWidth}"
+                height="${arHeight}"
                 material="transparent: true; opacity: ${opacity.toFixed(2)}; side: double"
                 data-animation-enabled="${layer.enableCustomAnimation}" 
                 data-special-effect="${layer.specialEffect}"
@@ -120,7 +132,9 @@ function generateHTMLContent() {
                 data-original-position="${originalPosJSON}"
                 data-original-rotation="${originalRotJSON}"
                 data-original-scale="${originalScaleJSON}"
-                data-original-opacity="${opacity.toFixed(2)}">
+                data-original-opacity="${opacity.toFixed(2)}"
+                data-base-size="${baseSize}"
+                data-image-aspect="${aspect.toFixed(3)}">
             </a-plane>`;
     });
 
@@ -188,6 +202,18 @@ function generateHTMLContent() {
         
         console.log('Initialized', audioTracks.length, 'audio tracks');
         console.log('Timeline duration:', globalTimeline.duration, 'seconds');
+    }
+
+    // Function to properly scale elements in AR.js
+    function scaleARElement(element, scaleValue) {
+        const baseSize = parseFloat(element.getAttribute('data-base-size')) || 2;
+        const aspect = parseFloat(element.getAttribute('data-image-aspect')) || 1;
+        
+        const newWidth = baseSize * aspect * scaleValue;
+        const newHeight = baseSize * scaleValue;
+        
+        element.setAttribute('width', newWidth);
+        element.setAttribute('height', newHeight);
     }
 
     // Update timeline display
@@ -337,7 +363,7 @@ function generateHTMLContent() {
         stopAllAnimations();
     });
 
-    // Animation functions (unchanged)
+    // Animation functions with proper scaling
     function playAllAnimations() {
         stopAllAnimations();
         const layers = document.querySelectorAll('[id^="layer-"]');
@@ -417,7 +443,15 @@ function generateHTMLContent() {
                             finalScaleX = finalScaleY = finalScaleZ = customScale;
                             
                             finalOpacity = customStart.opacity + (customEnd.opacity - customStart.opacity) * easedProgress;
-                            finalRotZ = origRotZ + (customStart.rotation + (customEnd.rotation - customStart.rotation) * easedProgress);
+                            
+                            // Handle separate X, Y, Z rotation axes
+                            const startRotX = customStart.rotationX + (customEnd.rotationX - customStart.rotationX) * easedProgress;
+                            const startRotY = customStart.rotationY + (customEnd.rotationY - customStart.rotationY) * easedProgress;
+                            const startRotZ = customStart.rotationZ + (customEnd.rotationZ - customStart.rotationZ) * easedProgress;
+                            
+                            finalRotX = origRotX + startRotX;
+                            finalRotY = origRotY + startRotY;
+                            finalRotZ = origRotZ + startRotZ;
                         } catch (e) {
                             console.error('Error parsing custom animation data:', e);
                         }
@@ -520,7 +554,10 @@ function generateHTMLContent() {
                     // Update layer position, rotation, and scale
                     layer.setAttribute('position', finalX + ' ' + finalY + ' ' + finalZ);
                     layer.setAttribute('rotation', finalRotX + ' ' + finalRotY + ' ' + finalRotZ);
-                    layer.setAttribute('scale', finalScaleX + ' ' + finalScaleY + ' ' + finalScaleZ);
+                    
+                    // Use the scale function for proper AR sizing
+                    scaleARElement(layer, finalScaleX);
+                    
                     layer.setAttribute('material', 'transparent: true; opacity: ' + finalOpacity + '; side: double');
                     
                 }, 16); // ~60fps
@@ -545,7 +582,10 @@ function generateHTMLContent() {
                 
                 layer.setAttribute('position', originalPos.x + ' ' + originalPos.y + ' ' + originalPos.z);
                 layer.setAttribute('rotation', (originalRot.x * 180 / Math.PI) + ' ' + (originalRot.y * 180 / Math.PI) + ' ' + (originalRot.z * 180 / Math.PI));
-                layer.setAttribute('scale', originalScale.x + ' ' + originalScale.y + ' ' + originalScale.z);
+                
+                // Reset scale using proper AR scaling
+                scaleARElement(layer, originalScale.x);
+                
                 layer.setAttribute('material', 'transparent: true; opacity: ' + originalOpacity + '; side: double');
             } catch (e) {
                 console.error('Error resetting layer:', e);

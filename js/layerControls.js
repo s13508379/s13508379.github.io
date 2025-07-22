@@ -16,8 +16,14 @@ function addImageLayer() {
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
 
+            // Calculate proper aspect ratio
             const aspect = img.width / img.height;
-            const geometry = new THREE.PlaneGeometry(2 * aspect, 2);
+
+            const baseSize = 2; 
+
+            // Create geometry with proper proportions for AR
+            const geometry = new THREE.PlaneGeometry(baseSize * aspect, baseSize);
+
             const material = new THREE.MeshBasicMaterial({
                 map: texture,
                 transparent: true,
@@ -35,7 +41,7 @@ function addImageLayer() {
                 texture: texture,
                 originalPosition: { x: 0, y: 0, z: 0 },
                 originalRotation: { x: 0, y: 0, z: 0 },
-                originalScale: { x: 1, y: 1, z: 1 },
+                originalScale: { x: 1, y: 1, z: 1 }, // Start with scale 1.0
                 originalOpacity: 1,
                 animation: null,
                 enableCustomAnimation: false,
@@ -43,9 +49,21 @@ function addImageLayer() {
                 animationSpeed: 1,
                 animationDuration: 2,
                 loopAnimation: false,
+                // Store image dimensions for AR export
+                imageAspect: aspect,
+                imageWidth: img.width,
+                imageHeight: img.height,
+                baseSize: baseSize, // Store base size for AR calculations
                 customAnimation: {
-                    start: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotation: 0 },
-                    end: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotation: 0 }
+                    start: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotationX: 0, rotationY: 0, rotationZ: 0 },
+                    end: { x: 0, y: 0, z: 0, scale: 1, opacity: 1, rotationX: 0, rotationY: 0, rotationZ: 0 }
+                },
+                // Initialize separated controls for animation mode
+                separatedControls: {
+                    position: { x: 0, y: 0, z: 0 },
+                    rotation: { x: 0, y: 0, z: 0 },
+                    scale: 1,
+                    opacity: 1
                 },
                 specialEffectSettings: {
                     swingRange: 90,
@@ -75,19 +93,24 @@ function addImageLayer() {
 
             updateLayersList();
             selectLayer(layer);
+
+            console.log(`Added image: ${file.name}`);
+            console.log(`Dimensions: ${img.width}x${img.height}, Aspect: ${aspect.toFixed(2)}`);
+            console.log(`Three.js geometry: ${(baseSize * aspect).toFixed(2)} x ${baseSize}`);
+            console.log(`This matches AR.js width="${(baseSize * aspect).toFixed(2)}" height="${baseSize}"`);
         };
         img.src = URL.createObjectURL(file);
     });
 
     fileInput.value = '';
 }
-
 // Update layers list
 function updateLayersList() {
     const layersDiv = document.getElementById('layers');
     layersDiv.innerHTML = '';
 
     imageLayers.forEach(layer => {
+
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
         layerDiv.innerHTML = `
@@ -97,6 +120,8 @@ function updateLayersList() {
         layerDiv.onclick = (e) => {
             if (e.target.classList.contains('delete-btn')) return;
             selectLayer(layer);
+            console.log(`Selected layer: ${layer.name} (ID: ${layer.id})`);
+            console.log(`Position: (${layer.mesh.position.x}, ${layer.mesh.position.y}, ${layer.mesh.position.z})`);
         };
         layersDiv.appendChild(layerDiv);
     });
@@ -137,14 +162,31 @@ function selectLayer(layer) {
     const scale = layer.mesh.scale.x;
     const alpha = layer.mesh.material.opacity;
 
-    document.getElementById('xPos').value = pos.x;
-    document.getElementById('yPos').value = pos.y;
-    document.getElementById('zPos').value = pos.z;
-    document.getElementById('rotX').value = rot.x / Math.PI * 180;
-    document.getElementById('rotY').value = rot.y / Math.PI * 180;
-    document.getElementById('rotZ').value = rot.z / Math.PI * 180;
-    document.getElementById('scale').value = scale;
-    document.getElementById('alpha').value = alpha;
+    // If animation is enabled, use stored separated values instead of mesh values
+    if (layer.enableCustomAnimation && layer.separatedControls) {
+        document.getElementById('xPos').value = layer.separatedControls.position.x || 0;
+        document.getElementById('yPos').value = layer.separatedControls.position.y || 0;
+        document.getElementById('zPos').value = layer.separatedControls.position.z || 0;
+        document.getElementById('rotX').value = layer.separatedControls.rotation.x || 0;
+        document.getElementById('rotY').value = layer.separatedControls.rotation.y || 0;
+        document.getElementById('rotZ').value = layer.separatedControls.rotation.z || 0;
+        document.getElementById('scale').value = layer.separatedControls.scale || 1;
+        document.getElementById('alpha').value = layer.separatedControls.opacity || 1;
+    } else {
+        // Normal mode: use current mesh values
+        document.getElementById('xPos').value = pos.x;
+        document.getElementById('yPos').value = pos.y;
+        document.getElementById('zPos').value = pos.z;
+        document.getElementById('rotX').value = rot.x / Math.PI * 180;
+        document.getElementById('rotY').value = rot.y / Math.PI * 180;
+        document.getElementById('rotZ').value = rot.z / Math.PI * 180;
+        document.getElementById('scale').value = scale;
+        document.getElementById('alpha').value = alpha;
+    }
+
+    console.log(`Selected layer: ${layer.name} (ID: ${layer.id})`);
+    console.log(`Position: (${layer.mesh.position.x}, ${layer.mesh.position.y}, ${layer.mesh.position.z})`);
+    
     document.getElementById('enableCustomAnimation').checked = layer.enableCustomAnimation;
     document.getElementById('specialEffect').value = layer.specialEffect;
     document.getElementById('animationSpeed').value = layer.animationSpeed;
@@ -158,14 +200,18 @@ function selectLayer(layer) {
     document.getElementById('startZ').value = custom.start.z;
     document.getElementById('startScale').value = custom.start.scale;
     document.getElementById('startOpacity').value = custom.start.opacity;
-    document.getElementById('startRotation').value = custom.start.rotation;
+    document.getElementById('startRotationX').value = custom.start.rotationX || 0;
+    document.getElementById('startRotationY').value = custom.start.rotationY || 0;
+    document.getElementById('startRotationZ').value = custom.start.rotationZ || 0;
 
     document.getElementById('endX').value = custom.end.x;
     document.getElementById('endY').value = custom.end.y;
     document.getElementById('endZ').value = custom.end.z;
     document.getElementById('endScale').value = custom.end.scale;
     document.getElementById('endOpacity').value = custom.end.opacity;
-    document.getElementById('endRotation').value = custom.end.rotation;
+    document.getElementById('endRotationX').value = custom.end.rotationX || 0;
+    document.getElementById('endRotationY').value = custom.end.rotationY || 0;
+    document.getElementById('endRotationZ').value = custom.end.rotationZ || 0;
 
     // Update special effect settings
     const settings = layer.specialEffectSettings;
@@ -193,6 +239,7 @@ function selectLayer(layer) {
     updateSpecialEffect();
 }
 
+// Updated createAnimationForLayer with proper AR scaling
 function createAnimationForLayer(layer) {
     if (!layer.enableCustomAnimation && layer.specialEffect === 'none') {
         return null;
@@ -218,7 +265,9 @@ function createAnimationForLayer(layer) {
 
             // Show time within current cycle (resets to 0 on each loop)
             const cycleTime = elapsed % duration;
-            runtimeEl.textContent = `animation time: ${cycleTime.toFixed(1)} seconds`;
+            if (runtimeEl) {
+                runtimeEl.textContent = `animation time: ${cycleTime.toFixed(1)} seconds`;
+            }
 
             let progress = (elapsed % duration) / duration;
 
@@ -258,8 +307,10 @@ function createAnimationForLayer(layer) {
                 // Interpolate custom opacity
                 finalOpacity = start.opacity + (end.opacity - start.opacity) * easedProgress;
 
-                // Interpolate custom rotation
-                finalRotZ = (start.rotation + (end.rotation - start.rotation) * easedProgress) * Math.PI / 180;
+                // Interpolate custom rotation (separate X, Y, Z axes)
+                finalRotX = (start.rotationX + (end.rotationX - start.rotationX) * easedProgress) * Math.PI / 180;
+                finalRotY = (start.rotationY + (end.rotationY - start.rotationY) * easedProgress) * Math.PI / 180;
+                finalRotZ = (start.rotationZ + (end.rotationZ - start.rotationZ) * easedProgress) * Math.PI / 180;
             }
 
             // Apply special effects on top of custom animation with user-controlled settings
@@ -367,4 +418,4 @@ function createAnimationForLayer(layer) {
             mesh.material.opacity = finalOpacity;
         }
     };
-}   
+}
